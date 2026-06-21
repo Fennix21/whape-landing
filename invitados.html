@@ -226,9 +226,14 @@
     }
   }
 
-  // 1) Personalización por invitado: ?n=Juan  (o ?nombre=Juan)
+  // 1) Personalización por invitado: ?i=<token oculto>  (o ?n=Juan)
   var p = new URLSearchParams(location.search);
-  var raw = (p.get('n') || p.get('nombre') || '').trim();
+  function b64dec(t){ try{ t = t.replace(/-/g,'+').replace(/_/g,'/'); return decodeURIComponent(escape(atob(t))); } catch(e){ return ''; } }
+  var raw = (p.get('i') ? b64dec(p.get('i')) : (p.get('n') || p.get('nombre') || '')).trim();
+  // Limpiar la URL para que no se vea el nombre ni el token
+  if((p.get('i') || p.get('n') || p.get('nombre')) && window.history && history.replaceState){
+    history.replaceState({}, '', location.pathname);
+  }
   if(raw){
     var name = raw.replace(/[^\p{L}\s]/gu,'').replace(/\s+/g,' ').trim().slice(0,24);
     if(name){

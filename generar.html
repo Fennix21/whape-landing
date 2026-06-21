@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>WHAPE — Generador de enlaces de invitación</title>
+<meta name="robots" content="noindex" />
+<link rel="icon" href="logo.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root{--bg:#0F0C1C;--surface:#1A1630;--surface2:#241F3D;--stroke:#332C52;--accent:#8E2DE2;--accent2:#4A00E0;--success:#2BD9A6;--text:#FFFFFF;--muted:#ABA4C7}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Sora',system-ui,Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:28px 18px}
+  .box{max-width:520px;margin:0 auto}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.16em;font-size:18px;justify-content:center;margin-bottom:6px}
+  .brand img{width:30px;height:30px}
+  h1{text-align:center;font-size:22px;font-weight:800;margin-bottom:4px}
+  .sub{text-align:center;color:var(--muted);font-size:14px;margin-bottom:26px}
+  .priv{background:rgba(255,210,74,.1);border:1px solid rgba(255,210,74,.4);color:#ffe0a3;font-size:12.5px;border-radius:12px;padding:10px 14px;margin-bottom:22px;text-align:center}
+  label{display:block;font-size:13px;color:var(--muted);margin-bottom:8px}
+  input{width:100%;font-family:inherit;font-size:18px;padding:14px 16px;border-radius:14px;border:1px solid var(--stroke);background:var(--surface);color:#fff}
+  input:focus{outline:none;border-color:var(--accent)}
+  button{font-family:inherit;cursor:pointer;border:none;font-weight:800;border-radius:14px;transition:transform .12s ease}
+  .gen{width:100%;margin-top:14px;padding:15px;font-size:16px;background:linear-gradient(120deg,var(--accent),var(--accent2));color:#fff}
+  .gen:hover{transform:translateY(-2px)}
+  .result{display:none;margin-top:26px}
+  .field{background:var(--surface);border:1px solid var(--stroke);border-radius:14px;padding:14px 16px;margin-bottom:12px}
+  .field .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:8px}
+  .field .val{font-size:14px;word-break:break-word;color:#fff;line-height:1.45}
+  .field .val.link{color:var(--success);font-family:monospace}
+  .copy{margin-top:10px;width:100%;padding:11px;font-size:14px;background:var(--surface2);color:#fff;border:1px solid var(--stroke)}
+  .copy:hover{border-color:var(--success)}
+  .copy.ok{background:var(--success);color:#06241B;border-color:var(--success)}
+</style>
+</head>
+<body>
+  <div class="box">
+    <div class="brand"><img src="logo.png" alt="WHAPE" /> WHAPE</div>
+    <h1>Generador de enlaces de invitación</h1>
+    <p class="sub">Crea el link personalizado de cada invitado. El nombre queda oculto en el link.</p>
+    <div class="priv">🔒 Página privada. Úsala tú para armar los enlaces; no es para compartir.</div>
+
+    <label for="nombre">Nombre del invitado</label>
+    <input id="nombre" type="text" placeholder="Ej: Marianella" autocomplete="off" />
+    <button class="gen" onclick="generar()">Generar enlace</button>
+
+    <div class="result" id="result">
+      <div class="field">
+        <div class="lbl">🔗 Enlace de invitación (nombre oculto)</div>
+        <div class="val link" id="linkOut"></div>
+        <button class="copy" id="copyLink" onclick="copiar('linkOut', this)">Copiar enlace</button>
+      </div>
+      <div class="field">
+        <div class="lbl">💬 Mensaje listo para WhatsApp</div>
+        <div class="val" id="msgOut"></div>
+        <button class="copy" id="copyMsg" onclick="copiar('msgOut', this)">Copiar mensaje</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  function enc(s){ return btoa(unescape(encodeURIComponent(s))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
+
+  function generar(){
+    var name = document.getElementById('nombre').value.trim().replace(/\s+/g,' ');
+    if(!name){ alert('Escribe el nombre del invitado'); return; }
+    var link = 'https://whape.club/invitados?i=' + enc(name);
+    var msg = 'Hola ' + name + ' 👋 Te elegí para probar GRATIS y en exclusiva WHAPE: la app que te lee tus pagos y mensajes en voz alta (Yape, WhatsApp y más). Tu acceso de fundador aquí 👉 ' + link;
+    document.getElementById('linkOut').textContent = link;
+    document.getElementById('msgOut').textContent = msg;
+    document.getElementById('result').style.display = 'block';
+  }
+
+  function copiar(id, btn){
+    var txt = document.getElementById(id).textContent;
+    navigator.clipboard.writeText(txt).then(function(){
+      var orig = btn.textContent;
+      btn.textContent = '✓ Copiado';
+      btn.classList.add('ok');
+      setTimeout(function(){ btn.textContent = orig; btn.classList.remove('ok'); }, 1600);
+    });
+  }
+
+  document.getElementById('nombre').addEventListener('keydown', function(e){ if(e.key==='Enter') generar(); });
+</script>
+</body>
+</html>
