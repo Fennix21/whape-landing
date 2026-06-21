@@ -32,7 +32,9 @@
   .btn-wa{display:inline-flex;gap:9px;align-items:center;justify-content:center;background:var(--success);color:#06241B;font-weight:800;
           padding:16px 30px;border-radius:16px;font-size:17px;transition:transform .15s ease, box-shadow .15s ease;box-shadow:0 12px 34px rgba(43,217,166,.3)}
   .btn-wa:hover{transform:translateY(-2px)}
-  .cta2{display:inline-block;margin-top:14px;color:var(--success);font-weight:700;font-size:14.5px;border-bottom:1px solid rgba(43,217,166,.4);padding-bottom:2px}
+  .cta2{display:inline-block;color:var(--muted);font-weight:600;font-size:13.5px;border-bottom:1px solid var(--stroke);padding-bottom:2px;transition:color .2s}
+  .cta2:hover{color:#fff}
+  .helplinks{margin-top:16px}
   .steps3{margin-top:16px;color:var(--muted);font-size:13.5px}
   /* ---- dinámico ---- */
   .saludo{display:none;font-size:48px;line-height:1.04;font-weight:800;margin-bottom:8px;
@@ -40,7 +42,7 @@
     animation:popIn .7s cubic-bezier(.2,1.5,.35,1) both}
   @keyframes popIn{0%{opacity:0;transform:scale(.7) translateY(14px)}60%{transform:scale(1.05)}100%{opacity:1;transform:none}}
   @media(max-width:780px){.saludo{font-size:34px}}
-  .rotline{margin-top:14px;color:var(--muted);font-size:16px}
+  .rotline{margin:30px 0 28px;color:var(--muted);font-size:21px}
   #rot{transition:opacity .25s ease;font-weight:800}
   .card,.alert,.why,.cta-band{transition:opacity .65s ease, transform .65s cubic-bezier(.2,.8,.2,1), box-shadow .25s ease, border-color .25s ease}
   .reveal{opacity:0;transform:translateY(26px)}
@@ -115,11 +117,9 @@
     <p class="lead">No se la damos a cualquiera. Te invitamos a ser <b>fundador/a</b>: usa la app sin pagar y ayúdanos a hacerla aún mejor con tu opinión.</p>
     <p class="rotline">Hecho para <span id="rot" class="grad-text">bodegueros</span></p>
     <a class="btn-wa" href="/WHAPE.apk" download>⬇️ Descargar WHAPE gratis</a>
-    <div class="steps3">1️⃣ Descárgala · 2️⃣ Sigue la guía · 3️⃣ Pídenos tu clave y a cobrar</div>
-    <div><a class="cta2" href="/guia">📲 Mira la guía de instalación paso a paso →</a></div>
-    <div><a class="cta2" href="https://wa.me/51960838350?text=Hola,%20ya%20descargu%C3%A9%20WHAPE,%20quiero%20mi%20clave%20de%20activaci%C3%B3n%20%F0%9F%8E%9F%EF%B8%8F" target="_blank" rel="noopener">¿Ya la descargaste? Pídenos tu clave de activación →</a></div>
-    <div class="anchor">Valor normal <span class="old">S/21</span> · Para ti hoy: <span class="free">GRATIS</span></div>
-    <div class="spots">⏳ Cupos de fundador limitados</div>
+    <div class="anchor">Valor normal <span class="old">S/21</span> · Hoy <span class="free">GRATIS</span> · ⏳ cupos limitados</div>
+    <div class="steps3">1️⃣ Descárgala · 2️⃣ Instálala con la guía · 3️⃣ Pide tu clave</div>
+    <div class="helplinks"><a class="cta2" href="/guia">📲 Ver la guía</a> &nbsp;·&nbsp; <a class="cta2" href="https://wa.me/51960838350?text=Hola,%20ya%20descargu%C3%A9%20WHAPE,%20quiero%20mi%20clave%20de%20activaci%C3%B3n%20%F0%9F%8E%9F%EF%B8%8F" target="_blank" rel="noopener">💬 Pedir mi clave</a></div>
   </section>
 </div>
 
@@ -180,8 +180,7 @@
       <h2>¿Aceptas la invitación?</h2>
       <p class="muted" style="max-width:540px;margin:0 auto 24px">Reclama tu acceso de fundador/a ahora. Cupos limitados — cuando se llenen, volvemos al precio normal de S/21.</p>
       <a class="btn-wa" href="/WHAPE.apk" download>⬇️ Descargar WHAPE gratis</a>
-      <div><a class="cta2" href="/guia">📲 Ver la guía de instalación paso a paso →</a></div>
-      <div><a class="cta2" href="https://wa.me/51960838350?text=Hola,%20ya%20descargu%C3%A9%20WHAPE,%20quiero%20mi%20clave%20de%20activaci%C3%B3n%20%F0%9F%8E%9F%EF%B8%8F" target="_blank" rel="noopener">Pedir mi clave de activación por WhatsApp →</a></div>
+      <div class="helplinks"><a class="cta2" href="/guia">📲 Ver la guía</a> &nbsp;·&nbsp; <a class="cta2" href="https://wa.me/51960838350?text=Hola,%20ya%20descargu%C3%A9%20WHAPE,%20quiero%20mi%20clave%20de%20activaci%C3%B3n%20%F0%9F%8E%9F%EF%B8%8F" target="_blank" rel="noopener">💬 Pedir mi clave</a></div>
       <div class="anchor" style="margin-top:14px">Valor normal <span class="old">S/21</span> · Hoy: <span class="free">GRATIS para invitados</span></div>
     </div>
   </section>
