@@ -35,6 +35,12 @@
   .cta2{display:inline-block;color:var(--muted);font-weight:600;font-size:13.5px;border-bottom:1px solid var(--stroke);padding-bottom:2px;transition:color .2s}
   .cta2:hover{color:#fff}
   .helplinks{margin-top:16px}
+  .stepper{max-width:360px;margin:24px auto 0;display:grid;gap:10px;text-align:left}
+  .step{display:flex;align-items:center;gap:14px;background:var(--surface);border:1px solid var(--stroke);border-radius:14px;padding:13px 16px;color:var(--text);transition:border-color .2s ease, transform .2s ease, background .2s ease}
+  a.step:hover{border-color:var(--accent);transform:translateX(3px);background:#1f1a33}
+  .step .num{flex:none;width:30px;height:30px;border-radius:50%;background:linear-gradient(120deg,var(--accent),var(--accent2));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;color:#fff}
+  .step .stext{font-size:15px;font-weight:600}
+  .step .arrow{color:var(--success);font-weight:800;margin-left:4px}
   .steps3{margin-top:16px;color:var(--muted);font-size:13.5px}
   /* ---- dinámico ---- */
   .saludo{display:none;font-size:48px;line-height:1.04;font-weight:800;margin-bottom:8px;
@@ -68,7 +74,7 @@
           padding:8px 16px;border-radius:999px;font-size:13.5px;letter-spacing:.05em;margin-bottom:22px}
   .hero h1{font-size:42px;line-height:1.1;font-weight:800;letter-spacing:-.5px;max-width:760px;margin:0 auto}
   .hero p.lead{font-size:18px;color:var(--muted);margin:18px auto 26px;max-width:600px}
-  .anchor{margin-top:16px;font-size:15px;color:var(--muted)}
+  .anchor{margin-top:18px;font-size:17px;color:var(--muted)}
   .anchor .old{text-decoration:line-through;opacity:.7}
   .anchor .free{color:var(--success);font-weight:800}
   .spots{margin-top:8px;font-size:13px;color:var(--gold)}
@@ -118,8 +124,11 @@
     <p class="rotline">Hecho para <span id="rot" class="grad-text">bodegueros</span></p>
     <a class="btn-wa" href="/WHAPE.apk" download>⬇️ Descargar WHAPE gratis</a>
     <div class="anchor">Valor normal <span class="old">S/21</span> · Hoy <span class="free">GRATIS</span> · ⏳ cupos limitados</div>
-    <div class="steps3">1️⃣ Descárgala · 2️⃣ Instálala con la guía · 3️⃣ Pide tu clave</div>
-    <div class="helplinks"><a class="cta2" href="/guia">📲 Ver la guía</a> &nbsp;·&nbsp; <a class="cta2" href="https://wa.me/51960838350?text=Hola,%20ya%20descargu%C3%A9%20WHAPE,%20quiero%20mi%20clave%20de%20activaci%C3%B3n%20%F0%9F%8E%9F%EF%B8%8F" target="_blank" rel="noopener">💬 Pedir mi clave</a></div>
+    <div class="stepper">
+      <div class="step"><span class="num">1</span><span class="stext">Descárgala con el botón de arriba</span></div>
+      <a class="step" href="/guia"><span class="num">2</span><span class="stext">Instálala con la guía <span class="arrow">→</span></span></a>
+      <a class="step" href="https://wa.me/51960838350?text=Hola,%20ya%20descargu%C3%A9%20WHAPE,%20quiero%20mi%20clave%20de%20activaci%C3%B3n%20%F0%9F%8E%9F%EF%B8%8F" target="_blank" rel="noopener"><span class="num">3</span><span class="stext">Pide tu clave de activación <span class="arrow">→</span></span></a>
+    </div>
   </section>
 </div>
 
