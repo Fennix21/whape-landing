@@ -35,7 +35,11 @@
   .cta2{display:inline-block;margin-top:14px;color:var(--success);font-weight:700;font-size:14.5px;border-bottom:1px solid rgba(43,217,166,.4);padding-bottom:2px}
   .steps3{margin-top:16px;color:var(--muted);font-size:13.5px}
   /* ---- dinámico ---- */
-  .saludo{display:none;font-size:19px;font-weight:700;color:var(--gold);margin-bottom:8px}
+  .saludo{display:none;font-size:48px;line-height:1.04;font-weight:800;margin-bottom:8px;
+    background:linear-gradient(100deg,var(--accent) 10%,var(--success) 90%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+    animation:popIn .7s cubic-bezier(.2,1.5,.35,1) both}
+  @keyframes popIn{0%{opacity:0;transform:scale(.7) translateY(14px)}60%{transform:scale(1.05)}100%{opacity:1;transform:none}}
+  @media(max-width:780px){.saludo{font-size:34px}}
   .rotline{margin-top:14px;color:var(--muted);font-size:16px}
   #rot{transition:opacity .25s ease;font-weight:800}
   .card,.alert,.why,.cta-band{transition:opacity .65s ease, transform .65s cubic-bezier(.2,.8,.2,1), box-shadow .25s ease, border-color .25s ease}
@@ -46,7 +50,7 @@
   @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
   @keyframes glow{0%,100%{box-shadow:0 12px 34px rgba(43,217,166,.28)}50%{box-shadow:0 16px 52px rgba(43,217,166,.55)}}
   .btn-wa{animation:glow 2.6s ease-in-out infinite}
-  @media (prefers-reduced-motion: reduce){ .reveal{opacity:1;transform:none} .btn-wa,header .brand img{animation:none} #rot{transition:none} }
+  @media (prefers-reduced-motion: reduce){ .reveal{opacity:1;transform:none} .btn-wa,header .brand img,.saludo{animation:none} #rot{transition:none} }
   section{padding:52px 0}
   h2{font-size:30px;font-weight:800;line-height:1.2;margin-bottom:14px}
   .muted{color:var(--muted)}
