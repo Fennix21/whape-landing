@@ -58,7 +58,7 @@
   @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
   @keyframes glow{0%,100%{box-shadow:0 12px 34px rgba(43,217,166,.28)}50%{box-shadow:0 16px 52px rgba(43,217,166,.55)}}
   .btn-wa{animation:glow 2.6s ease-in-out infinite}
-  @media (prefers-reduced-motion: reduce){ .reveal{opacity:1;transform:none} .btn-wa,header .brand img,.saludo{animation:none} #rot{transition:none} }
+  @media (prefers-reduced-motion: reduce){ .reveal{opacity:1;transform:none} .btn-wa,header .brand img,.saludo,.ticket::after{animation:none} #rot{transition:none} .ticket .caret{display:none} }
   section{padding:52px 0}
   h2{font-size:30px;font-weight:800;line-height:1.2;margin-bottom:14px}
   .muted{color:var(--muted)}
@@ -70,8 +70,16 @@
   .brand img{width:32px;height:32px}
 
   .hero{text-align:center;padding:54px 0 8px}
-  .ticket{display:inline-block;background:rgba(255,210,74,.12);border:1px solid var(--gold);color:var(--gold);font-weight:700;
-          padding:8px 16px;border-radius:999px;font-size:13.5px;letter-spacing:.05em;margin-bottom:22px}
+  .ticket{position:relative;overflow:hidden;display:inline-flex;align-items:center;gap:8px;
+          background:linear-gradient(180deg, rgba(255,210,74,.15), rgba(255,210,74,.05));
+          border:1px solid rgba(255,210,74,.55);color:var(--gold);font-weight:700;
+          padding:11px 22px;border-radius:999px;font-size:14px;letter-spacing:.04em;margin-bottom:22px;min-height:42px;
+          box-shadow:0 8px 26px rgba(255,210,74,.14), inset 0 0 14px rgba(255,210,74,.06)}
+  .ticket .caret{display:inline-block;width:2px;height:1.05em;background:var(--gold);vertical-align:middle;animation:blink 1s steps(1) infinite}
+  .ticket::after{content:"";position:absolute;top:0;left:-60%;width:45%;height:100%;pointer-events:none;
+          background:linear-gradient(100deg, transparent, rgba(255,255,255,.38), transparent);transform:skewX(-20deg);animation:sheen 3.6s ease-in-out infinite}
+  @keyframes blink{50%{opacity:0}}
+  @keyframes sheen{0%{left:-60%}45%,100%{left:130%}}
   .hero h1{font-size:42px;line-height:1.1;font-weight:800;letter-spacing:-.5px;max-width:760px;margin:0 auto}
   .hero p.lead{font-size:18px;color:var(--muted);margin:18px auto 26px;max-width:600px}
   .anchor{margin-top:18px;font-size:17px;color:var(--muted)}
@@ -117,7 +125,7 @@
 <!-- HERO -->
 <div class="wrap">
   <section class="hero">
-    <div class="ticket">🎟️ Invitación exclusiva · solo para seleccionados</div>
+    <div class="ticket"><span>🎟️</span><span id="typed"></span><span class="caret" aria-hidden="true"></span></div>
     <div id="saludo" class="saludo"></div>
     <h1>Fuiste elegido/a para probar <span class="grad-text">WHAPE</span> gratis.</h1>
     <p class="lead">No se la damos a cualquiera. Te invitamos a ser <b>fundador/a</b>: usa la app sin pagar y ayúdanos a hacerla aún mejor con tu opinión.</p>
@@ -204,6 +212,20 @@
 
 <script>
 (function(){
+  // 0) Efecto máquina de escribir en el badge
+  var tEl = document.getElementById('typed');
+  if(tEl){
+    var txt = 'Invitación exclusiva · solo para seleccionados';
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if(reduce){ tEl.textContent = txt; }
+    else {
+      var ti = 0;
+      (function type(){
+        if(ti <= txt.length){ tEl.textContent = txt.slice(0, ti); ti++; setTimeout(type, 55); }
+      })();
+    }
+  }
+
   // 1) Personalización por invitado: ?n=Juan  (o ?nombre=Juan)
   var p = new URLSearchParams(location.search);
   var raw = (p.get('n') || p.get('nombre') || '').trim();
