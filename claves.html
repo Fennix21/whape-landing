@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>WHAPE — Generador de claves</title>
+<meta name="robots" content="noindex" />
+<link rel="icon" href="logo.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root{--bg:#0F0C1C;--surface:#1A1630;--surface2:#241F3D;--stroke:#332C52;--accent:#8E2DE2;--accent2:#4A00E0;--success:#2BD9A6;--warn:#ff6b81;--text:#FFFFFF;--muted:#ABA4C7}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Sora',system-ui,Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:28px 18px}
+  .box{max-width:480px;margin:0 auto}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.16em;font-size:18px;justify-content:center;margin-bottom:6px}
+  .brand img{width:30px;height:30px}
+  h1{text-align:center;font-size:22px;font-weight:800;margin-bottom:4px}
+  .sub{text-align:center;color:var(--muted);font-size:14px;margin-bottom:24px}
+  .priv{background:rgba(255,107,129,.1);border:1px solid rgba(255,107,129,.4);color:#ffc2cc;font-size:12.5px;border-radius:12px;padding:10px 14px;margin-bottom:22px;text-align:center}
+  label{display:block;font-size:13px;color:var(--muted);margin:14px 0 8px}
+  input{width:100%;font-family:inherit;font-size:17px;padding:13px 16px;border-radius:14px;border:1px solid var(--stroke);background:var(--surface);color:#fff}
+  input:focus{outline:none;border-color:var(--accent)}
+  .remember{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;color:var(--muted)}
+  button{font-family:inherit;cursor:pointer;border:none;font-weight:800;border-radius:14px;transition:transform .12s ease}
+  .gen{width:100%;margin-top:18px;padding:15px;font-size:16px;background:linear-gradient(120deg,var(--accent),var(--accent2));color:#fff}
+  .gen:hover{transform:translateY(-2px)}
+  .gen:disabled{opacity:.6;cursor:wait}
+  .out{display:none;margin-top:24px;text-align:center;background:var(--surface);border:1px solid var(--stroke);border-radius:16px;padding:20px}
+  .out .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px}
+  .key{font-family:monospace;font-size:26px;font-weight:800;color:var(--success);letter-spacing:1px;word-break:break-all}
+  .copy{margin-top:14px;width:100%;padding:12px;font-size:14px;background:var(--surface2);color:#fff;border:1px solid var(--stroke)}
+  .copy.ok{background:var(--success);color:#06241B;border-color:var(--success)}
+  .err{display:none;margin-top:16px;color:var(--warn);font-size:14px;text-align:center;font-weight:600}
+</style>
+</head>
+<body>
+  <div class="box">
+    <div class="brand"><img src="logo.png" alt="WHAPE" /> WHAPE</div>
+    <h1>Generador de claves</h1>
+    <p class="sub">Genera la clave de activación para un cliente.</p>
+    <div class="priv">🔒 Privado. Protegido con tu contraseña. El secreto vive en el servidor, nunca aquí.</div>
+
+    <label for="pass">Tu contraseña de administrador</label>
+    <input id="pass" type="password" placeholder="••••••••" autocomplete="current-password" />
+    <label class="remember"><input type="checkbox" id="rem" style="width:auto" /> Recordar en este dispositivo</label>
+
+    <label for="code">Código de equipo del cliente</label>
+    <input id="code" type="text" placeholder="Ej: A7F3-9KQ2-1MBW-ZX08" autocomplete="off" style="text-transform:uppercase" />
+
+    <button class="gen" id="genBtn" onclick="generar()">Generar clave</button>
+
+    <div class="err" id="err"></div>
+
+    <div class="out" id="out">
+      <div class="lbl">Clave de activación (envíasela al cliente)</div>
+      <div class="key" id="key"></div>
+      <button class="copy" id="copyBtn" onclick="copiar()">Copiar clave</button>
+    </div>
+  </div>
+
+<script>
+  // Recordar contraseña (solo en este dispositivo)
+  var saved = localStorage.getItem('whape_admin');
+  if(saved){ document.getElementById('pass').value = saved; document.getElementById('rem').checked = true; }
+
+  async function generar(){
+    var pass = document.getElementById('pass').value;
+    var code = document.getElementById('code').value.trim();
+    var err = document.getElementById('err'), out = document.getElementById('out'), btn = document.getElementById('genBtn');
+    err.style.display = 'none'; out.style.display = 'none';
+    if(!pass || !code){ err.textContent = 'Completa la contraseña y el código.'; err.style.display='block'; return; }
+    btn.disabled = true; btn.textContent = 'Generando…';
+    try{
+      var r = await fetch('/api/genkey', {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ pass: pass, code: code })
+      });
+      var data = await r.json();
+      if(!r.ok){ throw new Error(data.error || 'Error'); }
+      document.getElementById('key').textContent = data.key;
+      out.style.display = 'block';
+      if(document.getElementById('rem').checked){ localStorage.setItem('whape_admin', pass); }
+      else { localStorage.removeItem('whape_admin'); }
+    }catch(e){
+      err.textContent = e.message || 'No se pudo generar la clave.';
+      err.style.display = 'block';
+    }finally{
+      btn.disabled = false; btn.textContent = 'Generar clave';
+    }
+  }
+
+  function copiar(){
+    var t = document.getElementById('key').textContent;
+    navigator.clipboard.writeText(t).then(function(){
+      var b = document.getElementById('copyBtn');
+      b.textContent = '✓ Copiado'; b.classList.add('ok');
+      setTimeout(function(){ b.textContent = 'Copiar clave'; b.classList.remove('ok'); }, 1600);
+    });
+  }
+  document.getElementById('code').addEventListener('keydown', function(e){ if(e.key==='Enter') generar(); });
+</script>
+</body>
+</html>
