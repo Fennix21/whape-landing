@@ -45,13 +45,15 @@ ENLACES:
 
 const SYSTEM_PROMPT = process.env.WHAPE_BOT_PROMPT || DEFAULT_PROMPT;
 
-const HAS_REDIS = !!(process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN);
+const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
+const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
+const HAS_REDIS = !!(REDIS_URL && REDIS_TOKEN);
 
 async function redis(cmd) {
   if (!HAS_REDIS) return null;
-  const r = await fetch(process.env.UPSTASH_REDIS_REST_URL, {
+  const r = await fetch(REDIS_URL, {
     method: 'POST',
-    headers: { Authorization: 'Bearer ' + process.env.UPSTASH_REDIS_REST_TOKEN, 'content-type': 'application/json' },
+    headers: { Authorization: 'Bearer ' + REDIS_TOKEN, 'content-type': 'application/json' },
     body: JSON.stringify(cmd),
   });
   const data = await r.json();

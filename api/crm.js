@@ -7,11 +7,13 @@
 //   pause  { phone, paused }   -> activas/pausas el bot para ese lead
 
 const GRAPH = 'https://graph.facebook.com/v21.0';
+const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
+const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
 
 async function redis(cmd) {
-  const r = await fetch(process.env.UPSTASH_REDIS_REST_URL, {
+  const r = await fetch(REDIS_URL, {
     method: 'POST',
-    headers: { Authorization: 'Bearer ' + process.env.UPSTASH_REDIS_REST_TOKEN, 'content-type': 'application/json' },
+    headers: { Authorization: 'Bearer ' + REDIS_TOKEN, 'content-type': 'application/json' },
     body: JSON.stringify(cmd),
   });
   const data = await r.json();
