@@ -85,6 +85,13 @@ module.exports = async (req, res) => {
       return res.status(200).json({ ok: true });
     }
 
+    if (b.action === 'rename') {
+      const l = await loadLead(b.phone);
+      l.name = (b.name || '').slice(0, 60);
+      await redis(['SET', 'lead:' + l.phone, JSON.stringify(l)]);
+      return res.status(200).json({ ok: true, name: l.name });
+    }
+
     if (b.action === 'pause') {
       const l = await loadLead(b.phone);
       l.paused = !!b.paused;

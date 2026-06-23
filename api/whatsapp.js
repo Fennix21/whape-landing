@@ -119,7 +119,7 @@ module.exports = async (req, res) => {
     let lead = null;
     if (HAS_REDIS) {
       lead = await getLead(from);
-      if (profileName) lead.name = profileName;
+      if (profileName && !lead.name) lead.name = profileName; // no pisar el nombre puesto a mano
       lead.messages.push({ role: 'user', text: text || '[adjunto: ' + msg.type + ']', ts: Date.now() });
     }
 

@@ -96,6 +96,7 @@
       <div id="convbox" style="display:none;flex:1;flex-direction:column;min-height:0">
         <div class="chead">
           <span class="h" id="chTitle"></span>
+          <button id="chEdit" onclick="renameLead()" title="Editar nombre" style="background:var(--surface);border:1px solid var(--stroke);color:var(--muted);padding:4px 9px;font-size:12px;border-radius:8px">✏️ Nombre</button>
           <div style="flex:1"></div>
           <select id="chStatus" onchange="changeStatus()">
             <option value="nuevo">Nuevo</option>
@@ -197,6 +198,14 @@
     });
   }
   function changeStatus(){ api('status', { phone: current, status: document.getElementById('chStatus').value }).then(loadLeads); }
+  function renameLead(){
+    if(!current) return;
+    var actual = document.getElementById('chTitle').textContent.split('  ·  ')[0];
+    if(actual.charAt(0)==='+') actual='';
+    var nuevo = prompt('Nombre del cliente (ej. "Juan, bodega esquina"):', actual);
+    if(nuevo===null) return;
+    api('rename', { phone: current, name: nuevo.trim() }).then(function(){ refreshConv(); loadLeads(); });
+  }
   function togglePause(){
     api('get', { phone: current }).then(function(res){
       var paused = res.d.lead ? !res.d.lead.paused : false;
