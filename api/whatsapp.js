@@ -73,6 +73,20 @@ async function saveLead(lead) {
   await redis(['ZADD', 'leads', String(lead.updatedAt), lead.phone]);
 }
 
+// Clasificación automática del lead (solo avanza; nunca retrocede ni pisa lo confirmado a mano).
+const STATUS_ORDER = { nuevo: 0, interesado: 1, pago_pendiente: 2, pagado: 3, activado: 4 };
+function autoStatus(current, text, isAttachment) {
+  current = current || 'nuevo';
+  if (current === 'pagado' || current === 'activado' || current === 'descartado') return current;
+  const t = (text || '').toLowerCase();
+  const pago = /(comprobante|constancia|captura|ya\s*(te|le)?\s*(pagu|yape|yapi|deposit|transfer)|yape[ée]|yapie|ya\s*pagu[eé]|aqu[ií]\s*(est[aá]|va)\s*(el\s*)?(pago|comprobante)|te\s*envi[eé]\s*(el\s*)?(pago|comprobante|yape))/i;
+  const interes = /(cu[aá]nto|precio|cuesta|vale|comprar|lo\s*quiero|me\s*interesa|c[oó]mo\s*(lo\s*)?(instalo|compro|pago|descargo|consigo)|quiero\s*(la\s*app|whape|comprar))/i;
+  let target = current;
+  if (isAttachment || pago.test(t)) target = 'pago_pendiente';
+  else if (interes.test(t)) target = 'interesado';
+  return STATUS_ORDER[target] > STATUS_ORDER[current] ? target : current;
+}
+
 async function askClaude(messages) {
   // messages: [{role:'user'|'assistant', content:'...'}], empezando por user
   while (messages.length && messages[0].role !== 'user') messages.shift();
@@ -121,12 +135,18 @@ module.exports = async (req, res) => {
       lead = await getLead(from);
       if (profileName && !lead.name) lead.name = profileName; // no pisar el nombre puesto a mano
       lead.messages.push({ role: 'user', text: text || '[adjunto: ' + msg.type + ']', ts: Date.now() });
+      lead.status = autoStatus(lead.status, text, text === null); // clasifica solo (solo avanza)
     }
 
-    // Mensaje que no es texto
+    // Mensaje que no es texto (imagen/audio/etc.) — suele ser el comprobante de pago
     if (text === null) {
       if (HAS_REDIS) await saveLead(lead);
-      if (!lead || !lead.paused) await sendWhatsApp(from, '¡Gracias! 🙂 Por ahora escríbeme tu consulta por texto y te ayudo.');
+      if (!lead || !lead.paused) {
+        const isImg = msg.type === 'image' || msg.type === 'document';
+        await sendWhatsApp(from, isImg
+          ? '¡Gracias! 🙌 Recibí tu comprobante. Lo estoy verificando y en un momento te confirmo y te envío tu clave de activación. 🔑'
+          : '¡Gracias! 🙂 Escríbeme tu consulta por texto y te ayudo al toque.');
+      }
       return res.status(200).send('ok');
     }
 
