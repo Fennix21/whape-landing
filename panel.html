@@ -69,6 +69,10 @@
     body.open .conv{display:flex}
     .back{display:inline-block;background:var(--surface2);color:#fff;border:1px solid var(--stroke);padding:6px 12px;font-size:13px}
   }
+  /* Pantalla de carga (evita el parpadeo del login al recargar) */
+  #loading{display:none;align-items:center;justify-content:center;height:100vh}
+  #loading .spin{width:40px;height:40px;border-radius:50%;border:3px solid var(--stroke);border-top-color:var(--accent);animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
   /* Lightbox (ver comprobante en grande) */
   #lightbox{display:none;position:fixed;inset:0;z-index:99;background:rgba(0,0,0,.88);align-items:center;justify-content:center;padding:24px;cursor:zoom-out}
   #lightbox.open{display:flex}
@@ -87,6 +91,14 @@
   <label class="rem"><input type="checkbox" id="rem" style="width:auto"/> Recordar en este dispositivo</label>
   <div class="err" id="lerr"></div>
 </div>
+<div id="loading"><div class="spin"></div></div>
+<script>
+  // Si ya está recordado, ocultamos el login ANTES de pintar (evita el parpadeo).
+  if (localStorage.getItem('whape_panel')) {
+    document.getElementById('login').style.display = 'none';
+    document.getElementById('loading').style.display = 'flex';
+  }
+</script>
 
 <div id="app">
   <div class="top">
@@ -142,9 +154,17 @@
     PASS = document.getElementById('pass').value;
     document.getElementById('lerr').textContent = '';
     api('list').then(function(res){
-      if(!res.ok){ document.getElementById('lerr').textContent = res.d.error || 'Error'; return; }
+      if(!res.ok){
+        // Contraseña inválida (o guardada y ya no sirve): volvemos al login limpio.
+        localStorage.removeItem('whape_panel');
+        document.getElementById('loading').style.display='none';
+        document.getElementById('login').style.display='flex';
+        document.getElementById('lerr').textContent = res.d.error || 'Error';
+        return;
+      }
       if(document.getElementById('rem').checked) localStorage.setItem('whape_panel', PASS);
       document.getElementById('login').style.display='none';
+      document.getElementById('loading').style.display='none';
       document.getElementById('app').style.display='flex';
       renderLeads(res.d.leads);
       poll = setInterval(tick, 12000);
