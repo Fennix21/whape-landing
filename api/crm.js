@@ -196,11 +196,21 @@ module.exports = async (req, res) => {
         const vals = await redis(['MGET', ...refs.map((r) => 'stat:ref:' + r)]);
         refs.forEach((r, i) => { refCounts[r] = Number((vals && vals[i]) || 0); });
       }
+      // Desglose por página de cada evento (ej. clics a WhatsApp por página).
+      const evByPage = {};
+      for (const e of events) {
+        const ps = (await redis(['SMEMBERS', 'stat:evpages:' + e])) || [];
+        if (!ps.length) continue;
+        const vals = await redis(['MGET', ...ps.map((p) => 'stat:evp:' + e + ':' + p)]);
+        const obj = {};
+        ps.forEach((p, i) => { obj[p] = Number((vals && vals[i]) || 0); });
+        evByPage[e] = obj;
+      }
       const days = [];
       for (let i = 6; i >= 0; i--) days.push(new Date(Date.now() - i * 86400000).toISOString().slice(0, 10));
       const pvVals = await redis(['MGET', ...days.map((d) => 'stat:pageview:' + d)]);
       const daily = days.map((d, i) => ({ day: d, n: Number((pvVals && pvVals[i]) || 0) }));
-      return res.status(200).json({ events: evTotals, pages: pageCounts, refs: refCounts, daily });
+      return res.status(200).json({ events: evTotals, pages: pageCounts, refs: refCounts, daily, evByPage });
     }
 
     if (b.action === 'setnotify') {

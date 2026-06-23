@@ -478,9 +478,20 @@
       + (refArr.length ? refArr.map(function(r){ return '<div class="st-row"><span>'+esc(r.k)+'</span><span class="st-n">'+r.n+'</span></div>'; }).join('') : '<div class="st-empty">Aún sin datos</div>')
       + '</div>';
 
+    // Desglose por página de los clics clave
+    var ebp = d.evByPage || {};
+    function pageBreakdown(title, obj){
+      var arr = Object.keys(obj||{}).map(function(k){ return {k:k,n:obj[k]}; }).sort(function(a,b){return b.n-a.n;}).slice(0,7);
+      return '<div class="st-box"><h4>'+title+'</h4>'
+        + (arr.length ? arr.map(function(p){ return '<div class="st-row"><span>'+esc(p.k)+'</span><span class="st-n">'+p.n+'</span></div>'; }).join('') : '<div class="st-empty">Aún sin datos</div>')
+        + '</div>';
+    }
+    var wspByPage = pageBreakdown('💬 Clics a WhatsApp por página', ebp.whatsapp_click);
+    var dlByPage = pageBreakdown('📥 Descargas APK por página', ebp.download_apk);
+
     return '<p class="pm-hint">Tu embudo de inicio a fin. Mira en qué paso se cae la gente para saber qué mejorar.</p>'
       + funnel
-      + '<div class="st-grid">' + spark + topPages + topRefs + '</div>';
+      + '<div class="st-grid">' + spark + topPages + topRefs + wspByPage + dlByPage + '</div>';
   }
 
   // --- Editor del cerebro del bot ---

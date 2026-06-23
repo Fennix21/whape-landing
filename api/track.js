@@ -27,14 +27,18 @@ module.exports = async (req, res) => {
   const ev = (b.ev || '').toString().slice(0, 40).replace(/[^a-z0-9_]/gi, '');
   if (!ev) return res.status(200).end();
   const day = new Date().toISOString().slice(0, 10);
+  const path = ((b.p || '/').toString().slice(0, 60).replace(/[^a-z0-9/_-]/gi, '')) || '/';
 
   try {
     await redis(['INCR', 'stat:' + ev]);
     await redis(['INCR', 'stat:' + ev + ':' + day]);
     await redis(['SADD', 'stat:events', ev]);
 
+    // En qué página ocurrió el evento (sirve para saber qué botón/página convierte).
+    await redis(['INCR', 'stat:evp:' + ev + ':' + path]);
+    await redis(['SADD', 'stat:evpages:' + ev, path]);
+
     if (ev === 'pageview') {
-      const path = ((b.p || '/').toString().slice(0, 60).replace(/[^a-z0-9/_-]/gi, '')) || '/';
       await redis(['INCR', 'stat:page:' + path]);
       await redis(['SADD', 'stat:pages', path]);
 
