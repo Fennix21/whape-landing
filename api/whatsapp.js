@@ -27,7 +27,8 @@ FLUJO (avanza según la persona, sin forzar):
 3. Responde objeciones.
 4. Si hay interés, explica el precio (S/21) y que el pago es por Yape.
 5. Pide el comprobante de pago. Cuando llegue, di que se está verificando.
-6. La clave de activación la entrega una persona del equipo SOLO tras confirmar el pago. NO prometas ni inventes claves.
+6. Para preparar la activación, pídele su "Código de equipo": que abra WHAPE → pantalla de activación → copie el código que aparece (formato XXXX-XXXX-XXXX-XXXX) y te lo mande.
+7. La clave de activación la entrega el equipo SOLO tras confirmar el pago. NO la generes ni la inventes tú; solo pide el código y avisa que en breve le llega su clave.
 
 OBJECIONES:
 - "Yape ya tiene sonido gratis" → Sí, pero solo hace "¡Yape!", NO dice cuánto. WHAPE dice el monto exacto sin que mires.
@@ -71,6 +72,14 @@ async function saveLead(lead) {
   if (lead.messages.length > 60) lead.messages = lead.messages.slice(-60);
   await redis(['SET', 'lead:' + lead.phone, JSON.stringify(lead)]);
   await redis(['ZADD', 'leads', String(lead.updatedAt), lead.phone]);
+}
+
+// Detecta el "Código de equipo" (ANDROID_ID = 16 hex, con o sin guiones/espacios).
+function detectDeviceCode(text) {
+  if (!text) return null;
+  const m = text.match(/[0-9a-f]{4}[\s-]?[0-9a-f]{4}[\s-]?[0-9a-f]{4}[\s-]?[0-9a-f]{4}/i)
+    || text.match(/\b[0-9a-f]{16}\b/i);
+  return m ? m[0].trim() : null;
 }
 
 // Clasificación automática del lead (solo avanza; nunca retrocede ni pisa lo confirmado a mano).
@@ -142,6 +151,8 @@ module.exports = async (req, res) => {
       if (media && media.id) entry.media = media;
       lead.messages.push(entry);
       lead.status = autoStatus(lead.status, text, text === null); // clasifica solo (solo avanza)
+      const dc = detectDeviceCode(text);
+      if (dc) lead.deviceCode = dc; // guarda el código de equipo si lo mandó
     }
 
     // Mensaje que no es texto (imagen/audio/etc.) — suele ser el comprobante de pago

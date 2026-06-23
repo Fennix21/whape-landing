@@ -124,6 +124,7 @@
             <option value="activado">Activado</option>
             <option value="descartado">Descartado</option>
           </select>
+          <button class="ptoggle" id="chKey" onclick="sendKey()" style="background:rgba(255,210,74,.14);color:var(--gold);border-color:var(--gold)">🔑 Enviar clave</button>
           <button class="ptoggle" id="chPause" onclick="togglePause()"></button>
         </div>
         <div class="msgs" id="msgs"></div>
@@ -205,6 +206,9 @@
       if(!res.ok || !res.d.lead) return;
       var l = res.d.lead;
       document.getElementById('chTitle').textContent = (l.name||('+'+l.phone)) + '  ·  +' + l.phone;
+      var kb = document.getElementById('chKey');
+      kb.textContent = l.key ? ('🔑 ' + l.key) : '🔑 Enviar clave';
+      kb.title = l.key ? 'Clave ya enviada (clic para reenviar)' : 'Generar y enviar la clave';
       document.getElementById('chStatus').value = l.status || 'nuevo';
       var pb = document.getElementById('chPause');
       pb.textContent = l.paused ? '✋ Tú respondes — reactivar bot' : '🤖 Bot activo';
@@ -252,6 +256,23 @@
   document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeZoom(); });
 
   function changeStatus(){ api('status', { phone: current, status: document.getElementById('chStatus').value }).then(loadLeads); }
+  function sendKey(){
+    if(!current) return;
+    api('get', { phone: current }).then(function(res){
+      var l = res.d && res.d.lead;
+      var pre = (l && l.deviceCode) || '';
+      var code = prompt('Código de equipo del cliente (lo ve en la pantalla de activación de WHAPE):', pre);
+      if(code===null) return;
+      code = code.trim();
+      if(!code) return;
+      if(!confirm('Se GENERARÁ la clave y se ENVIARÁ al cliente por WhatsApp.\n\n¿Confirmas que ya verificaste el pago de S/21 en tu Yape?')) return;
+      api('genkey', { phone: current, code: code }).then(function(r){
+        if(!r.ok){ alert(r.d.error || 'No se pudo generar/enviar la clave'); return; }
+        alert('✅ Clave enviada al cliente:\n\n' + r.d.key);
+        refreshConv(); loadLeads();
+      });
+    });
+  }
   function renameLead(){
     if(!current) return;
     var actual = document.getElementById('chTitle').textContent.split('  ·  ')[0];

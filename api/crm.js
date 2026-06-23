@@ -5,8 +5,29 @@
 //   send   { phone, text }     -> envías tú un mensaje (pausa el bot para ese lead)
 //   status { phone, status }   -> cambias el estado del lead
 //   pause  { phone, paused }   -> activas/pausas el bot para ese lead
+//   rename { phone, name }     -> renombras al lead
+//   genkey { phone, code }     -> generas la clave del código y se la envías por WhatsApp
 
+const crypto = require('crypto');
 const GRAPH = 'https://graph.facebook.com/v21.0';
+
+// --- Generación de la clave de activación (idéntica a api/genkey.js y a la app) ---
+const B32 = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
+function base32(buf) {
+  let value = 0, bits = 0, out = '';
+  for (const b of buf) {
+    value = (value << 8) | b; bits += 8;
+    while (bits >= 5) { out += B32[(value >>> (bits - 5)) & 31]; bits -= 5; value &= (1 << bits) - 1; }
+  }
+  if (bits > 0) out += B32[(value << (5 - bits)) & 31];
+  return out;
+}
+function makeKey(code) {
+  const canonical = (code || '').replace(/[^a-z0-9]/gi, '').toLowerCase();
+  if (canonical.length < 6) return null;
+  const mac = crypto.createHmac('sha256', process.env.WHAPE_SECRET).update(canonical, 'utf8').digest();
+  return base32(mac.subarray(0, 10)).match(/.{1,4}/g).join('-');
+}
 const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
 const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
 
@@ -83,6 +104,29 @@ module.exports = async (req, res) => {
       l.status = b.status;
       await redis(['SET', 'lead:' + l.phone, JSON.stringify(l)]);
       return res.status(200).json({ ok: true });
+    }
+
+    if (b.action === 'genkey') {
+      if (!process.env.WHAPE_SECRET) return res.status(500).json({ error: 'Falta WHAPE_SECRET en Vercel.' });
+      const key = makeKey(b.code);
+      if (!key) return res.status(400).json({ error: 'Código de equipo inválido. Pídele al cliente el código completo (ej. A7F3-9KQ2-1MBW-ZX08).' });
+      const cuerpo =
+        '🎉 ¡Pago confirmado! Aquí está tu *clave de activación* de WHAPE:\n\n' +
+        '🔑 *' + key + '*\n\n' +
+        'Para activar:\n' +
+        '1) Abre WHAPE en tu celular.\n' +
+        '2) En la pantalla de activación, escribe o pega esta clave.\n' +
+        '3) Toca "Activar". ¡Listo! 🎊\n\n' +
+        '📲 Guía completa: whape.club/guia\n' +
+        '¡Gracias por tu compra! 🙌';
+      await sendWhatsApp(b.phone, cuerpo);
+      const l = await loadLead(b.phone);
+      l.deviceCode = b.code;
+      l.key = key;
+      l.status = 'activado';
+      l.messages.push({ role: 'assistant', text: cuerpo, ts: Date.now(), human: true });
+      await persist(l);
+      return res.status(200).json({ ok: true, key });
     }
 
     if (b.action === 'rename') {
