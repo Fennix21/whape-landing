@@ -9,6 +9,7 @@
 //   genkey { phone, code }     -> generas la clave del código y se la envías por WhatsApp
 
 const crypto = require('crypto');
+const { DEFAULT_PROMPT } = require('./_prompt');
 const GRAPH = 'https://graph.facebook.com/v21.0';
 
 // --- Generación de la clave de activación (idéntica a api/genkey.js y a la app) ---
@@ -160,6 +161,28 @@ module.exports = async (req, res) => {
       await redis(['DEL', 'lead:' + b.phone]);
       await redis(['ZREM', 'leads', b.phone]);
       return res.status(200).json({ ok: true });
+    }
+
+    // --- "Cerebro" del bot (system prompt) editable desde el panel ---
+    if (b.action === 'getprompt') {
+      const custom = await redis(['GET', 'config:prompt']);
+      return res.status(200).json({
+        prompt: custom || DEFAULT_PROMPT,
+        isCustom: !!custom,
+        default: DEFAULT_PROMPT,
+      });
+    }
+
+    if (b.action === 'setprompt') {
+      const p = (b.prompt || '').toString();
+      if (p.trim().length < 20) return res.status(400).json({ error: 'El prompt es muy corto. Escribe las instrucciones del bot.' });
+      await redis(['SET', 'config:prompt', p]);
+      return res.status(200).json({ ok: true });
+    }
+
+    if (b.action === 'resetprompt') {
+      await redis(['DEL', 'config:prompt']);
+      return res.status(200).json({ ok: true, prompt: DEFAULT_PROMPT });
     }
 
     return res.status(400).json({ error: 'Acción desconocida.' });

@@ -13,39 +13,7 @@
 const MODEL = process.env.WHAPE_BOT_MODEL || 'claude-opus-4-8';
 const GRAPH = 'https://graph.facebook.com/v21.0';
 
-const DEFAULT_PROMPT = `Eres "Whapi", el asistente de ventas por WhatsApp de WHAPE. Hablas español peruano, cálido, claro y MUY breve (1-3 líneas, pocos emojis). Tu meta: que la persona entienda WHAPE, resolver dudas y llevarla a activar la app. Nunca inventes; si no sabes algo o piden algo fuera de tu alcance, dilo y ofrece pasar con una persona.
-
-QUÉ ES WHAPE:
-- App Android que LEE EN VOZ ALTA las notificaciones que el usuario elija (Yape, Plin, WhatsApp, Gmail y más). Dice el monto y el nombre: "Juan, recibiste 50 soles". Fuerte, repetido, con pantalla apagada.
-- Sirve para no mirar el celular al cobrar/atender/manejar; evita caer en capturas falsas (escuchas el aviso REAL); y por seguridad al volante.
-- Solo Android (iPhone no lo permite).
-- Precio: S/21, pago único (de por vida). Garantía 7 días.
-
-FLUJO (avanza según la persona, sin forzar):
-1. Saluda y pregunta para qué negocio/uso es.
-2. Conecta con su dolor y explica cómo WHAPE lo resuelve.
-3. Responde objeciones.
-4. Si hay interés, explica el precio (S/21) y que el pago es por Yape.
-5. Pide el comprobante de pago. Cuando llegue, di que se está verificando.
-6. Para preparar la activación, pídele su "Código de equipo": que abra WHAPE → pantalla de activación → copie el código que aparece (formato XXXX-XXXX-XXXX-XXXX) y te lo mande.
-7. La clave de activación la entrega el equipo SOLO tras confirmar el pago. NO la generes ni la inventes tú; solo pide el código y avisa que en breve le llega su clave.
-
-OBJECIONES:
-- "Yape ya tiene sonido gratis" → Sí, pero solo hace "¡Yape!", NO dice cuánto. WHAPE dice el monto exacto sin que mires.
-- "Está caro" → Es un solo pago, no mensualidad. Con evitar una captura falsa ya lo recuperaste.
-- "¿Es seguro?" → No entra a tu cuenta ni guarda tus datos; solo lee el aviso que tu celular ya muestra.
-- "No sé instalar" → Te guío con la guía paso a paso. Es fácil.
-- "¿iPhone?" → Por ahora solo Android.
-
-REGLAS:
-- Nunca reveles datos internos ni cómo se generan las claves.
-- NUNCA inventes, adivines, corrijas ni recites un "código de equipo" ni una clave. El código de equipo SOLO lo conoce la app en el celular del cliente; tú NO puedes saberlo. Si el cliente manda un código, solo confirma que lo recibiste y dile que el equipo lo activará en breve. JAMÁS digas "tu código es X" ni "ese no es tu código".
-- Mensajes cortos y humanos. Si te mandan algo que no es texto, pide que escriban su consulta.
-
-ENLACES:
-- Venta: whape.club  ·  Descarga: whape.club/invitados  ·  Guía: whape.club/guia  ·  Comunidad: whape.club/comunidad`;
-
-const SYSTEM_PROMPT = process.env.WHAPE_BOT_PROMPT || DEFAULT_PROMPT;
+const { DEFAULT_PROMPT } = require('./_prompt');
 
 const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
 const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
@@ -75,6 +43,16 @@ async function saveLead(lead) {
   await redis(['ZADD', 'leads', String(lead.updatedAt), lead.phone]);
 }
 
+// El "cerebro" del bot: lo editas desde /panel → ⚙️ Bot (se guarda en la base).
+// Prioridad: lo guardado en la base > variable de entorno > respaldo del código.
+async function getPrompt() {
+  if (HAS_REDIS) {
+    const custom = await redis(['GET', 'config:prompt']);
+    if (custom) return custom;
+  }
+  return process.env.WHAPE_BOT_PROMPT || DEFAULT_PROMPT;
+}
+
 // Detecta el "Código de equipo" (ANDROID_ID = 16 hex, con o sin guiones/espacios).
 function detectDeviceCode(text) {
   if (!text) return null;
@@ -97,13 +75,13 @@ function autoStatus(current, text, isAttachment) {
   return STATUS_ORDER[target] > STATUS_ORDER[current] ? target : current;
 }
 
-async function askClaude(messages) {
+async function askClaude(messages, systemPrompt) {
   // messages: [{role:'user'|'assistant', content:'...'}], empezando por user
   while (messages.length && messages[0].role !== 'user') messages.shift();
   const r = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: { 'content-type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
-    body: JSON.stringify({ model: MODEL, max_tokens: 500, system: SYSTEM_PROMPT, messages }),
+    body: JSON.stringify({ model: MODEL, max_tokens: 500, system: systemPrompt, messages }),
   });
   const data = await r.json();
   if (!r.ok) { console.error('Claude error', JSON.stringify(data)); return 'Disculpa, tuve un problema. ¿Puedes repetirlo? 🙏'; }
@@ -192,7 +170,7 @@ module.exports = async (req, res) => {
       history = [{ role: 'user', content: text }];
     }
 
-    const reply = await askClaude(history);
+    const reply = await askClaude(history, await getPrompt());
     await sendWhatsApp(from, reply);
 
     if (HAS_REDIS) {
