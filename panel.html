@@ -182,7 +182,19 @@
       var atBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 60;
       box.innerHTML = (l.messages||[]).map(function(m){
         var cls = m.role==='user' ? 'user' : (m.human ? 'human' : 'bot');
-        return '<div class="m '+cls+'">'+esc(m.text)+'<span class="t">'+fmtTime(m.ts)+'</span></div>';
+        var inner;
+        if(m.media && m.media.id){
+          var src = '/api/media?id='+encodeURIComponent(m.media.id)+'&pass='+encodeURIComponent(PASS);
+          if(m.media.type==='image'){
+            inner = '<img src="'+src+'" alt="comprobante" loading="lazy" style="max-width:230px;max-height:320px;border-radius:10px;display:block;cursor:zoom-in" onclick="window.open(this.src,\'_blank\')" />';
+          } else {
+            inner = '<a href="'+src+'" target="_blank" style="color:inherit;text-decoration:underline">📎 Ver adjunto</a>';
+          }
+          if(m.text && m.text.charAt(0)!=='['){ inner += '<div style="margin-top:5px">'+esc(m.text)+'</div>'; }
+        } else {
+          inner = esc(m.text);
+        }
+        return '<div class="m '+cls+'">'+inner+'<span class="t">'+fmtTime(m.ts)+'</span></div>';
       }).join('');
       if(atBottom) box.scrollTop = box.scrollHeight;
     });

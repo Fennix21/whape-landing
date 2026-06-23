@@ -129,12 +129,18 @@ module.exports = async (req, res) => {
     const from = msg.from;
     const profileName = value?.contacts?.[0]?.profile?.name || '';
     const text = msg.type === 'text' ? msg.text.body : null;
+    // Adjunto (el comprobante de pago suele venir como imagen)
+    let media = null, caption = '';
+    if (msg.type === 'image') { media = { id: msg.image?.id, type: 'image' }; caption = msg.image?.caption || ''; }
+    else if (msg.type === 'document') { media = { id: msg.document?.id, type: 'document' }; caption = msg.document?.caption || ''; }
 
     let lead = null;
     if (HAS_REDIS) {
       lead = await getLead(from);
       if (profileName && !lead.name) lead.name = profileName; // no pisar el nombre puesto a mano
-      lead.messages.push({ role: 'user', text: text || '[adjunto: ' + msg.type + ']', ts: Date.now() });
+      const entry = { role: 'user', text: text || caption || '[adjunto: ' + msg.type + ']', ts: Date.now() };
+      if (media && media.id) entry.media = media;
+      lead.messages.push(entry);
       lead.status = autoStatus(lead.status, text, text === null); // clasifica solo (solo avanza)
     }
 
