@@ -69,6 +69,12 @@
     body.open .conv{display:flex}
     .back{display:inline-block;background:var(--surface2);color:#fff;border:1px solid var(--stroke);padding:6px 12px;font-size:13px}
   }
+  /* Lightbox (ver comprobante en grande) */
+  #lightbox{display:none;position:fixed;inset:0;z-index:99;background:rgba(0,0,0,.88);align-items:center;justify-content:center;padding:24px;cursor:zoom-out}
+  #lightbox.open{display:flex}
+  #lightbox img{max-width:95%;max-height:92vh;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,.6);cursor:default}
+  #lbClose{position:fixed;top:16px;right:16px;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.25)}
+  #lbClose:hover{background:rgba(255,255,255,.26)}
 </style>
 </head>
 <body>
@@ -116,6 +122,11 @@
       </div>
     </div>
   </div>
+</div>
+
+<div id="lightbox" onclick="closeZoom(event)">
+  <button id="lbClose" onclick="closeZoom(event)" aria-label="Cerrar">✕</button>
+  <img id="lbImg" src="" alt="comprobante" onclick="event.stopPropagation()" />
 </div>
 
 <script>
@@ -186,7 +197,7 @@
         if(m.media && m.media.id){
           var src = '/api/media?id='+encodeURIComponent(m.media.id)+'&pass='+encodeURIComponent(PASS);
           if(m.media.type==='image'){
-            inner = '<img src="'+src+'" alt="comprobante" loading="lazy" style="max-width:230px;max-height:320px;border-radius:10px;display:block;cursor:zoom-in" onclick="window.open(this.src,\'_blank\')" />';
+            inner = '<img src="'+src+'" alt="comprobante" loading="lazy" style="max-width:230px;max-height:320px;border-radius:10px;display:block;cursor:zoom-in" onclick="zoomImg(this.src)" />';
           } else {
             inner = '<a href="'+src+'" target="_blank" style="color:inherit;text-decoration:underline">📎 Ver adjunto</a>';
           }
@@ -209,6 +220,17 @@
       refreshConv();
     });
   }
+  function zoomImg(src){
+    document.getElementById('lbImg').src = src;
+    document.getElementById('lightbox').classList.add('open');
+  }
+  function closeZoom(e){
+    if(e) e.stopPropagation();
+    document.getElementById('lightbox').classList.remove('open');
+    document.getElementById('lbImg').src = '';
+  }
+  document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeZoom(); });
+
   function changeStatus(){ api('status', { phone: current, status: document.getElementById('chStatus').value }).then(loadLeads); }
   function renameLead(){
     if(!current) return;
