@@ -96,7 +96,17 @@
   .pm-cancel{background:var(--surface2);color:#fff;border:1px solid var(--stroke)}
   .pm-save{background:linear-gradient(120deg,var(--accent),var(--accent2));color:#fff}
   /* Kanban (embudo) */
-  #kanban{display:none;flex:1;gap:12px;padding:14px;overflow-x:auto;overflow-y:hidden;background:var(--bg)}
+  #kanban{display:none;flex-direction:column;flex:1;padding:14px;overflow:hidden;background:var(--bg)}
+  .ksummary{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;flex:none}
+  .kchip{display:flex;flex-direction:column;gap:2px;background:var(--surface);border:1px solid var(--stroke);border-radius:11px;padding:8px 14px;min-width:120px}
+  .kchip .kc-l{font-size:11px;color:var(--muted)}
+  .kchip .kc-v{font-size:15px;font-weight:800}
+  .kchip.cob{border-color:rgba(43,217,166,.5)} .kchip.cob .kc-v{color:var(--success)}
+  .kchip.pro{border-color:rgba(255,210,74,.5)} .kchip.pro .kc-v{color:var(--gold)}
+  .kboard{flex:1;display:flex;gap:12px;overflow-x:auto;overflow-y:hidden;min-height:0}
+  .ksum{padding:5px 12px;font-size:11.5px;font-weight:800;color:var(--muted);border-bottom:1px solid var(--stroke)}
+  .ksum.cobrado{color:var(--success);background:rgba(43,217,166,.06)}
+  .ksum.perdido{color:#8d86a8;opacity:.7}
   .kcol{min-width:236px;width:236px;flex:none;background:var(--surface);border:1px solid var(--stroke);border-radius:12px;display:flex;flex-direction:column;max-height:100%}
   .kcol-head{padding:10px 12px;font-weight:700;font-size:12.5px;border-bottom:1px solid var(--stroke);display:flex;align-items:center;gap:8px;border-radius:12px 12px 0 0}
   .kcount{margin-left:auto;background:rgba(0,0,0,.25);color:#fff;border-radius:999px;padding:1px 9px;font-size:11px}
@@ -197,6 +207,7 @@
 
 <script>
   var PASS = '', current = null, poll = null, LEADS = [], viewMode = 'chat', dragPhone = null;
+  var PRICE = 21; // precio de WHAPE (S/) — usado para los totales del embudo
   var STAGES = [
     { k:'nuevo', t:'Nuevo' },
     { k:'interesado', t:'Interesado' },
@@ -251,8 +262,17 @@
   function renderKanban(){
     var k = document.getElementById('kanban');
     if(!k) return;
-    k.innerHTML = STAGES.map(function(s){
-      var cards = (LEADS||[]).filter(function(l){ return (l.status||'nuevo') === s.k; });
+    var leads = LEADS || [];
+    function countIn(keys){ return leads.filter(function(l){ return keys.indexOf(l.status||'nuevo') >= 0; }).length; }
+    var nCobrado = countIn(['pagado','activado']);
+    var nProceso = countIn(['interesado','pago_pendiente']);
+    var summary = '<div class="ksummary">'
+      + '<div class="kchip"><span class="kc-l">👥 Total</span><span class="kc-v">'+leads.length+' leads</span></div>'
+      + '<div class="kchip cob"><span class="kc-l">💰 Cobrado</span><span class="kc-v">S/ '+(nCobrado*PRICE)+' · '+nCobrado+'</span></div>'
+      + '<div class="kchip pro"><span class="kc-l">🔥 En proceso</span><span class="kc-v">S/ '+(nProceso*PRICE)+' · '+nProceso+'</span></div>'
+      + '</div>';
+    var board = STAGES.map(function(s){
+      var cards = leads.filter(function(l){ return (l.status||'nuevo') === s.k; });
       var cardsHtml = cards.map(function(l){
         var name = l.name || ('+'+l.phone);
         return '<div class="kcard" draggable="true" data-phone="'+l.phone+'" '
@@ -261,12 +281,16 @@
           + '<div class="knm"><span class="kbot">'+(l.paused?'✋':'🤖')+'</span>'+esc(name)+'</div>'
           + '<div class="klast">'+esc(l.lastText||'')+'</div></div>';
       }).join('');
+      var soles = cards.length * PRICE;
+      var cobrado = (s.k === 'pagado' || s.k === 'activado');
       return '<div class="kcol">'
         + '<div class="kcol-head b-'+s.k+'">'+s.t+'<span class="kcount">'+cards.length+'</span></div>'
+        + '<div class="ksum'+(cobrado?' cobrado':(s.k==='descartado'?' perdido':''))+'">S/ '+soles+'</div>'
         + '<div class="kcards" data-status="'+s.k+'" ondragover="allowDrop(event)" ondragleave="dragLeave(event)" ondrop="dropCard(event,\''+s.k+'\')">'
         + (cardsHtml || '<div class="kempty">—</div>')
         + '</div></div>';
     }).join('');
+    k.innerHTML = summary + '<div class="kboard">' + board + '</div>';
   }
   function dragStart(e, phone){ dragPhone = phone; e.currentTarget.classList.add('drag'); e.dataTransfer.effectAllowed='move'; try{ e.dataTransfer.setData('text/plain', phone); }catch(_){} }
   function dragEnd(e){ if(e&&e.currentTarget) e.currentTarget.classList.remove('drag'); dragPhone=null; var n=document.querySelectorAll('.kcards.drop'); for(var i=0;i<n.length;i++) n[i].classList.remove('drop'); }
