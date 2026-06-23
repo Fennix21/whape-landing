@@ -69,9 +69,15 @@
   .m.bot{align-self:flex-end;background:linear-gradient(120deg,var(--accent),var(--accent2))}
   .m.human{align-self:flex-end;background:var(--success);color:#06241B}
   .m .t{display:block;font-size:10px;opacity:.7;margin-top:3px}
-  .send{display:flex;gap:8px;padding:12px;border-top:1px solid var(--stroke);background:var(--surface)}
-  .send textarea{flex:1;resize:none;height:44px;padding:11px 14px;border-radius:12px;border:1px solid var(--stroke);background:var(--bg);color:#fff;font-family:inherit;font-size:14px}
-  .send button{padding:0 18px;font-weight:800;background:var(--success);color:#06241B}
+  .send{display:flex;gap:8px;padding:12px;border-top:1px solid var(--stroke);background:var(--surface);align-items:flex-end}
+  .composer{flex:1;position:relative;display:flex}
+  .composer textarea{flex:1;resize:none;min-height:48px;max-height:150px;padding:13px 40px 13px 14px;border-radius:14px;border:1px solid var(--stroke);background:var(--bg);color:#fff;font-family:inherit;font-size:14px;line-height:1.4;transition:border-color .15s}
+  .composer textarea:focus{outline:none;border-color:var(--accent)}
+  .clearx{position:absolute;top:9px;right:9px;width:26px;height:26px;border-radius:50%;background:var(--surface2);color:var(--muted);border:1px solid var(--stroke);font-size:12px;align-items:center;justify-content:center;padding:0;display:none}
+  .clearx.show{display:flex}
+  .clearx:hover{color:#fff;border-color:var(--warn)}
+  .sendbtn{height:48px;padding:0 22px;font-weight:800;font-size:14px;background:var(--success);color:#06241B;border-radius:14px;white-space:nowrap}
+  .sendbtn:hover{filter:brightness(1.05)}
   /* Segunda fila de la conversación: notas, recordar, tags */
   .csub{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:8px 16px;border-bottom:1px solid var(--stroke);background:var(--surface)}
   .ctags{display:flex;gap:5px;flex-wrap:wrap}
@@ -260,8 +266,11 @@
         <div class="msgs" id="msgs"></div>
         <div class="tpls" id="tpls"></div>
         <div class="send">
-          <textarea id="reply" placeholder="Escribe tú (esto pausa el bot)…" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg();}"></textarea>
-          <button onclick="sendMsg()">Enviar</button>
+          <div class="composer">
+            <textarea id="reply" placeholder="Escribe tú (esto pausa el bot)…" oninput="onComposerInput()" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg();}"></textarea>
+            <button class="clearx" id="clearx" onclick="clearReply()" title="Borrar lo escrito">✕</button>
+          </div>
+          <button class="sendbtn" onclick="sendMsg()">Enviar ➤</button>
         </div>
       </div>
     </div>
@@ -525,11 +534,28 @@
   function sendMsg(){
     var t = document.getElementById('reply').value.trim();
     if(!t || !current) return;
-    document.getElementById('reply').value='';
+    resetComposer();
     api('send', { phone: current, text: t }).then(function(res){
       if(!res.ok){ alert(res.d.error || 'No se pudo enviar'); return; }
       refreshConv();
     });
+  }
+  // --- Compositor (escribir / plantillas) ---
+  function autoGrow(){
+    var r = document.getElementById('reply');
+    r.style.height = 'auto';
+    r.style.height = Math.min(150, Math.max(48, r.scrollHeight)) + 'px';
+  }
+  function toggleClear(){
+    document.getElementById('clearx').classList.toggle('show', !!document.getElementById('reply').value);
+  }
+  function onComposerInput(){ autoGrow(); toggleClear(); }
+  function clearReply(){ resetComposer(); document.getElementById('reply').focus(); }
+  function resetComposer(){
+    var r = document.getElementById('reply');
+    r.value = '';
+    r.style.height = '48px';
+    document.getElementById('clearx').classList.remove('show');
   }
   // --- Analíticas ---
   function openStats(){
@@ -729,6 +755,7 @@
     var t = TPL[i]; if(!t) return;
     var r = document.getElementById('reply');
     r.value = t.text; r.focus();
+    autoGrow(); toggleClear();
   }
   function openTpls(){
     document.getElementById('tplModal').classList.add('open');
