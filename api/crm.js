@@ -177,6 +177,32 @@ module.exports = async (req, res) => {
       });
     }
 
+    if (b.action === 'stats') {
+      const events = (await redis(['SMEMBERS', 'stat:events'])) || [];
+      const evTotals = {};
+      if (events.length) {
+        const vals = await redis(['MGET', ...events.map((e) => 'stat:' + e)]);
+        events.forEach((e, i) => { evTotals[e] = Number((vals && vals[i]) || 0); });
+      }
+      const pages = (await redis(['SMEMBERS', 'stat:pages'])) || [];
+      const pageCounts = {};
+      if (pages.length) {
+        const vals = await redis(['MGET', ...pages.map((p) => 'stat:page:' + p)]);
+        pages.forEach((p, i) => { pageCounts[p] = Number((vals && vals[i]) || 0); });
+      }
+      const refs = (await redis(['SMEMBERS', 'stat:refs'])) || [];
+      const refCounts = {};
+      if (refs.length) {
+        const vals = await redis(['MGET', ...refs.map((r) => 'stat:ref:' + r)]);
+        refs.forEach((r, i) => { refCounts[r] = Number((vals && vals[i]) || 0); });
+      }
+      const days = [];
+      for (let i = 6; i >= 0; i--) days.push(new Date(Date.now() - i * 86400000).toISOString().slice(0, 10));
+      const pvVals = await redis(['MGET', ...days.map((d) => 'stat:pageview:' + d)]);
+      const daily = days.map((d, i) => ({ day: d, n: Number((pvVals && pvVals[i]) || 0) }));
+      return res.status(200).json({ events: evTotals, pages: pageCounts, refs: refCounts, daily });
+    }
+
     if (b.action === 'setnotify') {
       const ownerPhone = (b.ownerPhone || '').toString().replace(/\D/g, '').slice(0, 15);
       await redis(['SET', 'config:ownerphone', ownerPhone]);
