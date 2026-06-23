@@ -98,6 +98,18 @@ async function sendWhatsApp(to, body) {
   if (!r.ok) console.error('WhatsApp send error', await r.text());
 }
 
+// Aviso al WhatsApp personal del dueño (config en /panel → ⚙️). No se avisa a sí mismo.
+async function notifyOwner(text, from) {
+  try {
+    if (!HAS_REDIS) return;
+    if ((await redis(['GET', 'config:notify'])) === '0') return; // avisos apagados
+    const owner = ((await redis(['GET', 'config:ownerphone'])) || process.env.WHAPE_OWNER_PHONE || '').replace(/\D/g, '');
+    if (!owner) return;
+    if (from && from.replace(/\D/g, '') === owner) return; // no avisarte de tus propios mensajes
+    await sendWhatsApp(owner, text);
+  } catch (e) { console.error('notifyOwner error', e); }
+}
+
 module.exports = async (req, res) => {
   // Verificación del webhook
   if (req.method === 'GET') {
@@ -126,12 +138,23 @@ module.exports = async (req, res) => {
     let lead = null;
     if (HAS_REDIS) {
       lead = await getLead(from);
+      const isNewLead = !lead.messages || lead.messages.length === 0;
+      const prevStatus = lead.status || 'nuevo';
       if (profileName && !lead.name) lead.name = profileName; // no pisar el nombre puesto a mano
       const entry = { role: 'user', text: text || caption || '[adjunto: ' + msg.type + ']', ts: Date.now() };
       if (media && media.id) entry.media = media;
       lead.messages.push(entry);
       lead.status = autoStatus(lead.status, text, text === null); // clasifica solo (solo avanza)
       if (deviceCode) lead.deviceCode = deviceCode; // guarda el código de equipo si lo mandó
+
+      // Avisos a tu WhatsApp personal
+      const who = lead.name || ('+' + from);
+      if (isNewLead) {
+        const preview = text || ('(envió ' + msg.type + ')');
+        await notifyOwner('🆕 *Nuevo lead* en WHAPE\n👤 ' + who + ' (+' + from + ')\n💬 "' + preview + '"\n\nÉchale un vistazo 👉 whape.club/panel', from);
+      } else if (lead.status === 'pago_pendiente' && prevStatus !== 'pago_pendiente') {
+        await notifyOwner('💸 *' + who + '* pasó a PAGO PENDIENTE (mandó comprobante o dijo que pagó).\nVerifica y envíale su clave 👉 whape.club/panel', from);
+      }
     }
 
     // Mensaje que no es texto (imagen/audio/etc.) — suele ser el comprobante de pago

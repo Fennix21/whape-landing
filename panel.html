@@ -89,6 +89,13 @@
   .pm-head strong{flex:1}
   .pm-x{background:var(--surface2);color:#fff;border:1px solid var(--stroke);width:34px;height:34px;border-radius:8px;font-size:15px}
   .pm-hint{color:var(--muted);font-size:12.5px;margin:8px 0 10px;line-height:1.45}
+  .pm-notify{margin-top:10px}
+  .pm-nlabel{display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.4;cursor:pointer}
+  .pm-nlabel input{margin-top:2px;width:auto}
+  .pm-nrow{display:flex;gap:8px;margin-top:9px;flex-wrap:wrap}
+  .pm-nrow input{flex:1;min-width:200px;padding:10px 12px;border-radius:10px;border:1px solid var(--stroke);background:var(--bg);color:#fff;font-size:14px}
+  .pm-nhint{color:var(--muted);font-size:11.5px;margin-top:7px;line-height:1.4}
+  .pm-hr{border:none;border-top:1px solid var(--stroke);margin:14px 0 4px}
   #pmText{flex:1;min-height:320px;resize:vertical;width:100%;padding:13px 14px;border-radius:12px;border:1px solid var(--stroke);background:var(--bg);color:#fff;font-family:ui-monospace,Consolas,monospace;font-size:13px;line-height:1.5}
   .pm-foot{display:flex;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap}
   .pm-foot button{padding:10px 16px;font-weight:700;font-size:13.5px}
@@ -191,10 +198,21 @@
 <div id="promptModal">
   <div class="pm-card">
     <div class="pm-head">
-      <strong>⚙️ Cerebro del bot</strong>
+      <strong>⚙️ Ajustes del bot</strong>
       <button class="pm-x" onclick="closePrompt()" aria-label="Cerrar">✕</button>
     </div>
-    <p class="pm-hint">Edita las instrucciones del bot. Los cambios aplican al instante en las siguientes respuestas. Sé claro y específico (tono, acento peruano neutro, qué decir, qué no decir).</p>
+
+    <div class="pm-notify">
+      <label class="pm-nlabel"><input type="checkbox" id="pmNotify" /> 🔔 Avisarme a mi WhatsApp cuando entre un lead nuevo o un pago pendiente</label>
+      <div class="pm-nrow">
+        <input id="pmOwner" type="text" inputmode="numeric" placeholder="Tu WhatsApp con código país, ej. 51987654321" />
+        <button class="pm-save" onclick="saveNotify()">Guardar avisos</button>
+      </div>
+      <p class="pm-nhint">Pon tu número con el código de país (Perú = 51) y sin el "+". Importante: para que te lleguen, escríbele "hola" al bot desde ESE número al menos una vez al día (WhatsApp solo deja enviar avisos dentro de las 24 h de tu último mensaje).</p>
+    </div>
+    <hr class="pm-hr" />
+
+    <p class="pm-hint"><strong>🧠 Cerebro del bot.</strong> Edita las instrucciones. Los cambios aplican al instante en las siguientes respuestas. Sé claro y específico (tono, acento peruano neutro, qué decir, qué no decir).</p>
     <textarea id="pmText" placeholder="Cargando…"></textarea>
     <div class="pm-foot">
       <button class="pm-reset" onclick="resetPrompt()">↩️ Restaurar original</button>
@@ -384,6 +402,17 @@
     api('getprompt').then(function(res){
       if(!res.ok){ ta.value=''; alert(res.d.error||'No se pudo cargar'); return; }
       ta.value = res.d.prompt || '';
+      document.getElementById('pmOwner').value = res.d.ownerPhone || '';
+      document.getElementById('pmNotify').checked = res.d.notify !== false;
+    });
+  }
+  function saveNotify(){
+    var owner = document.getElementById('pmOwner').value;
+    var on = document.getElementById('pmNotify').checked;
+    api('setnotify', { ownerPhone: owner, notify: on }).then(function(res){
+      if(!res.ok){ alert(res.d.error||'No se pudo guardar'); return; }
+      document.getElementById('pmOwner').value = res.d.ownerPhone || '';
+      alert(on ? '🔔 Avisos activados. Recuerda escribirle "hola" al bot desde tu número para abrir la ventana de 24 h.' : '🔕 Avisos desactivados.');
     });
   }
   function closePrompt(){ document.getElementById('promptModal').classList.remove('open'); }

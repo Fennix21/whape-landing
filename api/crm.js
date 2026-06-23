@@ -166,11 +166,22 @@ module.exports = async (req, res) => {
     // --- "Cerebro" del bot (system prompt) editable desde el panel ---
     if (b.action === 'getprompt') {
       const custom = await redis(['GET', 'config:prompt']);
+      const ownerPhone = await redis(['GET', 'config:ownerphone']);
+      const notify = await redis(['GET', 'config:notify']);
       return res.status(200).json({
         prompt: custom || DEFAULT_PROMPT,
         isCustom: !!custom,
         default: DEFAULT_PROMPT,
+        ownerPhone: ownerPhone || '',
+        notify: notify !== '0', // por defecto activado
       });
+    }
+
+    if (b.action === 'setnotify') {
+      const ownerPhone = (b.ownerPhone || '').toString().replace(/\D/g, '').slice(0, 15);
+      await redis(['SET', 'config:ownerphone', ownerPhone]);
+      await redis(['SET', 'config:notify', b.notify ? '1' : '0']);
+      return res.status(200).json({ ok: true, ownerPhone });
     }
 
     if (b.action === 'setprompt') {
