@@ -44,7 +44,7 @@ async function persist(lead) {
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
-  if (!process.env.UPSTASH_REDIS_REST_URL) return res.status(500).json({ error: 'Falta configurar Upstash (base de datos).' });
+  if (!REDIS_URL || !REDIS_TOKEN) return res.status(500).json({ error: 'Falta configurar Upstash (base de datos).' });
 
   const b = req.body || {};
   if ((b.pass || '') !== process.env.WHAPE_ADMIN_PASS) return res.status(401).json({ error: 'Contraseña incorrecta.' });
