@@ -59,10 +59,20 @@ async function loadLead(phone) {
 
 async function persist(lead) {
   lead.updatedAt = Date.now();
-  if (lead.messages.length > 60) lead.messages = lead.messages.slice(-60);
+  if (lead.messages.length > 300) lead.messages = lead.messages.slice(-300);
   await redis(['SET', 'lead:' + lead.phone, JSON.stringify(lead)]);
   await redis(['ZADD', 'leads', String(lead.updatedAt), lead.phone]);
 }
+
+// Plantillas de respuesta rápida por defecto (editables desde el panel).
+const DEFAULT_TEMPLATES = [
+  { label: '💳 Datos para Yape', text: 'Para activar WHAPE son S/21 por Yape. Te paso el número: [PON AQUÍ TU NÚMERO DE YAPE]. Cuando pagues, mándame la captura del comprobante y te envío tu clave. 🙌' },
+  { label: '📲 Guía de instalación', text: 'Aquí tienes la guía paso a paso para instalar WHAPE: whape.club/guia 📲' },
+  { label: '👋 ¿Sigues ahí?', text: '¡Hola! 👋 ¿Sigues interesado en WHAPE? Cualquier duda, con gusto te ayudo.' },
+  { label: '🔑 Pedir código', text: 'Para enviarte tu clave necesito tu "Código de equipo": abre WHAPE → pantalla de activación → cópiame el código que aparece (ej. A7F3-9KQ2-1MBW-ZX08).' },
+];
+
+const { flushDueReminders } = require('./_reminders');
 
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
@@ -73,14 +83,22 @@ module.exports = async (req, res) => {
 
   try {
     if (b.action === 'list') {
-      const phones = (await redis(['ZREVRANGE', 'leads', '0', '80'])) || [];
+      const phones = (await redis(['ZREVRANGE', 'leads', '0', '300'])) || [];
       const leads = [];
       for (const p of phones) {
         const raw = await redis(['GET', 'lead:' + p]);
         if (!raw) continue;
         let l; try { l = JSON.parse(raw); } catch (e) { continue; }
-        const last = l.messages && l.messages.length ? l.messages[l.messages.length - 1] : null;
-        leads.push({ phone: l.phone, name: l.name || '', status: l.status || 'nuevo', paused: !!l.paused, updatedAt: l.updatedAt || 0, lastText: last ? last.text : '', count: (l.messages || []).length });
+        const msgs = l.messages || [];
+        const last = msgs.length ? msgs[msgs.length - 1] : null;
+        leads.push({
+          phone: l.phone, name: l.name || '', status: l.status || 'nuevo', paused: !!l.paused,
+          updatedAt: l.updatedAt || 0, lastText: last ? last.text : '', count: msgs.length,
+          lastRole: last ? (last.human ? 'human' : last.role) : '',
+          hasMedia: msgs.some((m) => m.media && m.media.id),
+          hasNote: !!(l.note && l.note.trim()),
+          tags: l.tags || [], source: l.source || '', remindAt: l.remindAt || 0,
+        });
       }
       return res.status(200).json({ leads });
     }
@@ -135,6 +153,62 @@ module.exports = async (req, res) => {
       l.name = (b.name || '').slice(0, 60);
       await redis(['SET', 'lead:' + l.phone, JSON.stringify(l)]);
       return res.status(200).json({ ok: true, name: l.name });
+    }
+
+    // Nota privada del lead (el cliente NO la ve).
+    if (b.action === 'note') {
+      const l = await loadLead(b.phone);
+      l.note = (b.note || '').toString().slice(0, 1000);
+      await redis(['SET', 'lead:' + l.phone, JSON.stringify(l)]);
+      return res.status(200).json({ ok: true });
+    }
+
+    // Etiquetas libres del lead.
+    if (b.action === 'tags') {
+      const l = await loadLead(b.phone);
+      const tags = (Array.isArray(b.tags) ? b.tags : [])
+        .map((t) => (t || '').toString().trim().slice(0, 24)).filter(Boolean).slice(0, 12);
+      l.tags = Array.from(new Set(tags));
+      await redis(['SET', 'lead:' + l.phone, JSON.stringify(l)]);
+      return res.status(200).json({ ok: true, tags: l.tags });
+    }
+
+    // Recordatorio: avisa a tu WhatsApp en X minutos para retomar al lead.
+    if (b.action === 'remind') {
+      const l = await loadLead(b.phone);
+      const mins = Number(b.minutes) || 0;
+      if (mins <= 0) { // cancelar
+        delete l.remindAt; delete l.remindNote;
+        await redis(['ZREM', 'reminders', l.phone]);
+      } else {
+        l.remindAt = Date.now() + mins * 60000;
+        l.remindNote = (b.note || '').toString().slice(0, 120);
+        await redis(['ZADD', 'reminders', String(l.remindAt), l.phone]);
+      }
+      await redis(['SET', 'lead:' + l.phone, JSON.stringify(l)]);
+      return res.status(200).json({ ok: true, remindAt: l.remindAt || 0 });
+    }
+
+    // Dispara los recordatorios vencidos (lo llama el panel y el cron).
+    if (b.action === 'flushreminders') {
+      const fired = await flushDueReminders();
+      return res.status(200).json({ ok: true, fired });
+    }
+
+    // Plantillas de respuesta rápida (lista de {label, text}).
+    if (b.action === 'gettemplates') {
+      const raw = await redis(['GET', 'config:templates']);
+      let tpl = [];
+      if (raw) { try { tpl = JSON.parse(raw); } catch (e) {} }
+      if (!tpl.length) tpl = DEFAULT_TEMPLATES;
+      return res.status(200).json({ templates: tpl });
+    }
+    if (b.action === 'settemplates') {
+      const tpl = (Array.isArray(b.templates) ? b.templates : [])
+        .map((t) => ({ label: (t.label || '').toString().slice(0, 30), text: (t.text || '').toString().slice(0, 1000) }))
+        .filter((t) => t.label && t.text).slice(0, 12);
+      await redis(['SET', 'config:templates', JSON.stringify(tpl)]);
+      return res.status(200).json({ ok: true, templates: tpl });
     }
 
     if (b.action === 'pause') {

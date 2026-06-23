@@ -4,6 +4,9 @@
   "functions": {
     "api/whatsapp.js": { "maxDuration": 30 }
   },
+  "crons": [
+    { "path": "/api/cron", "schedule": "0 * * * *" }
+  ],
   "headers": [
     {
       "source": "/WHAPE.apk",

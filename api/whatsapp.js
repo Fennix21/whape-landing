@@ -14,6 +14,7 @@ const MODEL = process.env.WHAPE_BOT_MODEL || 'claude-opus-4-8';
 const GRAPH = 'https://graph.facebook.com/v21.0';
 
 const { DEFAULT_PROMPT } = require('./_prompt');
+const { flushDueReminders } = require('./_reminders');
 
 const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
 const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
@@ -38,7 +39,7 @@ async function getLead(phone) {
 
 async function saveLead(lead) {
   lead.updatedAt = Date.now();
-  if (lead.messages.length > 60) lead.messages = lead.messages.slice(-60);
+  if (lead.messages.length > 300) lead.messages = lead.messages.slice(-300);
   await redis(['SET', 'lead:' + lead.phone, JSON.stringify(lead)]);
   await redis(['ZADD', 'leads', String(lead.updatedAt), lead.phone]);
 }
@@ -59,6 +60,17 @@ function detectDeviceCode(text) {
   const m = text.match(/[0-9a-f]{4}[\s-]?[0-9a-f]{4}[\s-]?[0-9a-f]{4}[\s-]?[0-9a-f]{4}/i)
     || text.match(/\b[0-9a-f]{16}\b/i);
   return m ? m[0].trim() : null;
+}
+
+// Detecta de dónde viene el lead por una marca en su primer mensaje (la pone el enlace).
+function detectSource(text) {
+  const t = (text || '').toLowerCase();
+  if (t.indexOf('(instagram)') >= 0) return 'instagram';
+  if (t.indexOf('(invitado)') >= 0) return 'invitado';
+  if (t.indexOf('(facebook)') >= 0) return 'facebook';
+  if (t.indexOf('(tiktok)') >= 0) return 'tiktok';
+  if (t.indexOf('(web)') >= 0) return 'web';
+  return 'directo';
 }
 
 // Clasificación automática del lead (solo avanza; nunca retrocede ni pisa lo confirmado a mano).
@@ -122,6 +134,8 @@ module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).send('Method not allowed');
 
   try {
+    flushDueReminders().catch(() => {}); // aprovecha la actividad para disparar recordatorios vencidos
+
     const value = req.body?.entry?.[0]?.changes?.[0]?.value;
     const msg = value?.messages?.[0];
     if (!msg) return res.status(200).send('ok');
@@ -140,6 +154,7 @@ module.exports = async (req, res) => {
       lead = await getLead(from);
       const isNewLead = !lead.messages || lead.messages.length === 0;
       const prevStatus = lead.status || 'nuevo';
+      if (isNewLead && !lead.source) lead.source = detectSource(text); // de dónde vino
       if (profileName && !lead.name) lead.name = profileName; // no pisar el nombre puesto a mano
       const entry = { role: 'user', text: text || caption || '[adjunto: ' + msg.type + ']', ts: Date.now() };
       if (media && media.id) entry.media = media;
