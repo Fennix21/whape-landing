@@ -146,13 +146,15 @@ module.exports = async (req, res) => {
 
     // Mensaje que no es texto (imagen/audio/etc.) — suele ser el comprobante de pago
     if (text === null) {
-      if (HAS_REDIS) await saveLead(lead);
       if (!lead || !lead.paused) {
         const isImg = msg.type === 'image' || msg.type === 'document';
-        await sendWhatsApp(from, isImg
+        const ack = isImg
           ? '¡Gracias! 🙌 Recibí tu comprobante. Lo estoy verificando y en un momento te confirmo y te envío tu clave de activación. 🔑'
-          : '¡Gracias! 🙂 Escríbeme tu consulta por texto y te ayudo al toque.');
+          : '¡Gracias! 🙂 Escríbeme tu consulta por texto y te ayudo al toque.';
+        await sendWhatsApp(from, ack);
+        if (HAS_REDIS) lead.messages.push({ role: 'assistant', text: ack, ts: Date.now() }); // guardar también en el CRM
       }
+      if (HAS_REDIS) await saveLead(lead);
       return res.status(200).send('ok');
     }
 
