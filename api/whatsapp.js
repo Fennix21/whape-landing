@@ -39,6 +39,7 @@ OBJECIONES:
 
 REGLAS:
 - Nunca reveles datos internos ni cómo se generan las claves.
+- NUNCA inventes, adivines, corrijas ni recites un "código de equipo" ni una clave. El código de equipo SOLO lo conoce la app en el celular del cliente; tú NO puedes saberlo. Si el cliente manda un código, solo confirma que lo recibiste y dile que el equipo lo activará en breve. JAMÁS digas "tu código es X" ni "ese no es tu código".
 - Mensajes cortos y humanos. Si te mandan algo que no es texto, pide que escriban su consulta.
 
 ENLACES:
@@ -138,6 +139,7 @@ module.exports = async (req, res) => {
     const from = msg.from;
     const profileName = value?.contacts?.[0]?.profile?.name || '';
     const text = msg.type === 'text' ? msg.text.body : null;
+    const deviceCode = detectDeviceCode(text); // ¿mandó su código de equipo?
     // Adjunto (el comprobante de pago suele venir como imagen)
     let media = null, caption = '';
     if (msg.type === 'image') { media = { id: msg.image?.id, type: 'image' }; caption = msg.image?.caption || ''; }
@@ -151,8 +153,7 @@ module.exports = async (req, res) => {
       if (media && media.id) entry.media = media;
       lead.messages.push(entry);
       lead.status = autoStatus(lead.status, text, text === null); // clasifica solo (solo avanza)
-      const dc = detectDeviceCode(text);
-      if (dc) lead.deviceCode = dc; // guarda el código de equipo si lo mandó
+      if (deviceCode) lead.deviceCode = deviceCode; // guarda el código de equipo si lo mandó
     }
 
     // Mensaje que no es texto (imagen/audio/etc.) — suele ser el comprobante de pago
@@ -172,6 +173,14 @@ module.exports = async (req, res) => {
     // Si tú tomaste el control, el bot NO responde (solo guarda el mensaje)
     if (HAS_REDIS && lead.paused) {
       await saveLead(lead);
+      return res.status(200).send('ok');
+    }
+
+    // Si mandó su CÓDIGO DE EQUIPO: respuesta FIJA (la IA NUNCA debe inventar/validar/recitar códigos).
+    if (deviceCode) {
+      const ack = '¡Recibí tu código de equipo! ✅ Lo verifico junto con tu pago y te envío tu clave de activación en breve. 🔑';
+      await sendWhatsApp(from, ack);
+      if (HAS_REDIS) { lead.messages.push({ role: 'assistant', text: ack, ts: Date.now() }); await saveLead(lead); }
       return res.status(200).send('ok');
     }
 
