@@ -143,6 +143,25 @@ module.exports = async (req, res) => {
       return res.status(200).json({ ok: true, paused: l.paused });
     }
 
+    // Vacía la conversación pero MANTIENE el contacto (lo deja como nuevo).
+    if (b.action === 'clearchat') {
+      const l = await loadLead(b.phone);
+      l.messages = [];
+      l.status = 'nuevo';
+      l.paused = false;
+      delete l.deviceCode;
+      delete l.key;
+      await persist(l);
+      return res.status(200).json({ ok: true });
+    }
+
+    // Elimina el contacto Y todos sus registros (desaparece del panel).
+    if (b.action === 'delete') {
+      await redis(['DEL', 'lead:' + b.phone]);
+      await redis(['ZREM', 'leads', b.phone]);
+      return res.status(200).json({ ok: true });
+    }
+
     return res.status(400).json({ error: 'Acción desconocida.' });
   } catch (e) {
     console.error('CRM error', e);

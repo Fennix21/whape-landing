@@ -52,6 +52,8 @@
   .chead select{background:var(--surface);color:#fff;border:1px solid var(--stroke);border-radius:8px;padding:6px 8px;font-size:12.5px}
   .ptoggle{font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid var(--stroke);background:var(--surface);color:var(--muted)}
   .ptoggle.on{background:rgba(43,217,166,.14);color:var(--success);border-color:var(--success)}
+  .ptoggle.danger{background:rgba(255,107,129,.1);color:var(--warn);border-color:rgba(255,107,129,.45)}
+  .ptoggle.danger:hover{background:rgba(255,107,129,.2)}
   .msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:8px;background:var(--bg)}
   .m{max-width:78%;padding:9px 13px;border-radius:14px;font-size:14px;line-height:1.4;white-space:pre-wrap;word-break:break-word}
   .m.user{align-self:flex-start;background:var(--surface);border:1px solid var(--stroke)}
@@ -126,6 +128,8 @@
           </select>
           <button class="ptoggle" id="chKey" onclick="sendKey()" style="background:rgba(255,210,74,.14);color:var(--gold);border-color:var(--gold)">🔑 Enviar clave</button>
           <button class="ptoggle" id="chPause" onclick="togglePause()"></button>
+          <button class="ptoggle danger" onclick="clearChat()" title="Vaciar la conversación (mantiene el contacto)">🧹 Vaciar</button>
+          <button class="ptoggle danger" onclick="deleteLead()" title="Eliminar el contacto y sus registros">🗑️ Eliminar</button>
         </div>
         <div class="msgs" id="msgs"></div>
         <div class="send">
@@ -256,6 +260,26 @@
   document.addEventListener('keydown', function(e){ if(e.key==='Escape') closeZoom(); });
 
   function changeStatus(){ api('status', { phone: current, status: document.getElementById('chStatus').value }).then(loadLeads); }
+  function clearChat(){
+    if(!current) return;
+    if(!confirm('¿Vaciar TODA la conversación de este contacto?\n\nSe borran los mensajes y vuelve a estado "Nuevo". El contacto se mantiene.\n\nEsto no se puede deshacer.')) return;
+    api('clearchat', { phone: current }).then(function(r){
+      if(!r.ok){ alert(r.d.error || 'No se pudo vaciar'); return; }
+      refreshConv(); loadLeads();
+    });
+  }
+  function deleteLead(){
+    if(!current) return;
+    if(!confirm('¿ELIMINAR este contacto y TODOS sus registros?\n\nDesaparece del panel por completo. Si te escribe de nuevo, se crea desde cero.\n\nEsto no se puede deshacer.')) return;
+    api('delete', { phone: current }).then(function(r){
+      if(!r.ok){ alert(r.d.error || 'No se pudo eliminar'); return; }
+      current = null;
+      document.body.classList.remove('open');
+      document.getElementById('convbox').style.display='none';
+      document.getElementById('empty').style.display='flex';
+      loadLeads();
+    });
+  }
   function sendKey(){
     if(!current) return;
     api('get', { phone: current }).then(function(res){
