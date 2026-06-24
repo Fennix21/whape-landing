@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>WHAPE — Generador de enlaces de invitación</title>
+<title>OYE — Generador de enlaces de invitación</title>
 <meta name="robots" content="noindex" />
 <link rel="icon" href="logo.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -37,7 +37,7 @@
 </head>
 <body>
   <div class="box">
-    <div class="brand"><img src="logo.png" alt="WHAPE" /> WHAPE</div>
+    <div class="brand"><img src="logo.png" alt="OYE" /> OYE</div>
     <h1>Generador de enlaces de invitación</h1>
     <p class="sub">Crea el link personalizado de cada invitado. El nombre queda oculto en el link.</p>
     <div class="priv">🔒 Página privada. Úsala tú para armar los enlaces; no es para compartir.</div>
@@ -67,7 +67,7 @@
     var name = document.getElementById('nombre').value.trim().replace(/\s+/g,' ');
     if(!name){ alert('Escribe el nombre del invitado'); return; }
     var link = 'https://whape.club/invitados?i=' + enc(name);
-    var msg = 'Hola ' + name + ' 👋 Te elegí para probar GRATIS y en exclusiva WHAPE: la app que te lee tus pagos y mensajes en voz alta (Yape, WhatsApp y más). Tu acceso de fundador aquí 👉 ' + link;
+    var msg = 'Hola ' + name + ' 👋 Te elegí para probar GRATIS y en exclusiva OYE: la app que te lee tus pagos y mensajes en voz alta (Yape, WhatsApp y más). Tu acceso de fundador aquí 👉 ' + link;
     document.getElementById('linkOut').textContent = link;
     document.getElementById('msgOut').textContent = msg;
     document.getElementById('result').style.display = 'block';

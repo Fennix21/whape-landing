@@ -66,10 +66,10 @@ async function persist(lead) {
 
 // Plantillas de respuesta rápida por defecto (editables desde el panel).
 const DEFAULT_TEMPLATES = [
-  { label: '💳 Datos para Yape', text: 'Para activar WHAPE son S/21 por Yape. Te paso el número: [PON AQUÍ TU NÚMERO DE YAPE]. Cuando pagues, mándame la captura del comprobante y te envío tu clave. 🙌' },
-  { label: '📲 Guía de instalación', text: 'Aquí tienes la guía paso a paso para instalar WHAPE: whape.club/guia 📲' },
-  { label: '👋 ¿Sigues ahí?', text: '¡Hola! 👋 ¿Sigues interesado en WHAPE? Cualquier duda, con gusto te ayudo.' },
-  { label: '🔑 Pedir código', text: 'Para enviarte tu clave necesito tu "Código de equipo": abre WHAPE → pantalla de activación → cópiame el código que aparece (ej. A7F3-9KQ2-1MBW-ZX08).' },
+  { label: '💳 Datos para Yape', text: 'Para activar OYE son S/21 por Yape. Te paso el número: [PON AQUÍ TU NÚMERO DE YAPE]. Cuando pagues, mándame la captura del comprobante y te envío tu clave. 🙌' },
+  { label: '📲 Guía de instalación', text: 'Aquí tienes la guía paso a paso para instalar OYE: whape.club/guia 📲' },
+  { label: '👋 ¿Sigues ahí?', text: '¡Hola! 👋 ¿Sigues interesado en OYE? Cualquier duda, con gusto te ayudo.' },
+  { label: '🔑 Pedir código', text: 'Para enviarte tu clave necesito tu "Código de equipo": abre OYE → pantalla de activación → cópiame el código que aparece (ej. A7F3-9KQ2-1MBW-ZX08).' },
 ];
 
 const { flushDueReminders } = require('./_reminders');
@@ -130,10 +130,10 @@ module.exports = async (req, res) => {
       const key = makeKey(b.code);
       if (!key) return res.status(400).json({ error: 'Código de equipo inválido. Pídele al cliente el código completo (ej. A7F3-9KQ2-1MBW-ZX08).' });
       const cuerpo =
-        '🎉 ¡Pago confirmado! Aquí está tu *clave de activación* de WHAPE:\n\n' +
+        '🎉 ¡Pago confirmado! Aquí está tu *clave de activación* de OYE:\n\n' +
         '🔑 *' + key + '*\n\n' +
         'Para activar:\n' +
-        '1) Abre WHAPE en tu celular.\n' +
+        '1) Abre OYE en tu celular.\n' +
         '2) En la pantalla de activación, escribe o pega esta clave.\n' +
         '3) Toca "Activar". ¡Listo! 🎊\n\n' +
         '📲 Guía completa: whape.club/guia\n' +

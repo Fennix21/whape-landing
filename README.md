@@ -1,6 +1,6 @@
-# WHAPE — Landing page
+# OYE — Landing page
 
-Página de aterrizaje de **WHAPE**, la app Android que lee en voz alta los pagos
+Página de aterrizaje de **OYE**, la app Android que lee en voz alta los pagos
 y mensajes (Yape, Plin, WhatsApp, Gmail y más) sin que tengas que mirar el celular.
 
 - **Sitio:** https://whape.club
@@ -11,5 +11,5 @@ y mensajes (Yape, Plin, WhatsApp, Gmail y más) sin que tengas que mirar el celu
 Es estático: abre `index.html` en el navegador para verlo.
 
 ## Notas
-WHAPE es una herramienta independiente; no está afiliada a Yape, Plin, WhatsApp
+OYE es una herramienta independiente; no está afiliada a Yape, Plin, WhatsApp
 ni Google. Las marcas se mencionan solo para indicar compatibilidad.

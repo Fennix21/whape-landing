@@ -1,4 +1,4 @@
-// Webhook del bot de WhatsApp de WHAPE.
+// Webhook del bot de WhatsApp de OYE.
 // - GET  : verificación del webhook con Meta.
 // - POST : recibe mensajes, guarda el lead (si hay Upstash), responde con Claude
 //          (con memoria de la conversación) y envía la respuesta por WhatsApp.
@@ -80,7 +80,7 @@ function autoStatus(current, text, isAttachment) {
   if (current === 'pagado' || current === 'activado' || current === 'descartado') return current;
   const t = (text || '').toLowerCase();
   const pago = /(comprobante|constancia|captura|ya\s*(te|le)?\s*(pagu|yape|yapi|deposit|transfer)|yape[ée]|yapie|ya\s*pagu[eé]|aqu[ií]\s*(est[aá]|va)\s*(el\s*)?(pago|comprobante)|te\s*envi[eé]\s*(el\s*)?(pago|comprobante|yape))/i;
-  const interes = /(cu[aá]nto|precio|cuesta|vale|comprar|lo\s*quiero|me\s*interesa|c[oó]mo\s*(lo\s*)?(instalo|compro|pago|descargo|consigo)|quiero\s*(la\s*app|whape|comprar))/i;
+  const interes = /(cu[aá]nto|precio|cuesta|vale|comprar|lo\s*quiero|me\s*interesa|c[oó]mo\s*(lo\s*)?(instalo|compro|pago|descargo|consigo)|quiero\s*(la\s*app|oye|comprar))/i;
   let target = current;
   if (isAttachment || pago.test(t)) target = 'pago_pendiente';
   else if (interes.test(t)) target = 'interesado';
@@ -166,7 +166,7 @@ module.exports = async (req, res) => {
       const who = lead.name || ('+' + from);
       if (isNewLead) {
         const preview = text || ('(envió ' + msg.type + ')');
-        await notifyOwner('🆕 *Nuevo lead* en WHAPE\n👤 ' + who + ' (+' + from + ')\n💬 "' + preview + '"\n\nÉchale un vistazo 👉 whape.club/panel', from);
+        await notifyOwner('🆕 *Nuevo lead* en OYE\n👤 ' + who + ' (+' + from + ')\n💬 "' + preview + '"\n\nÉchale un vistazo 👉 whape.club/panel', from);
       } else if (lead.status === 'pago_pendiente' && prevStatus !== 'pago_pendiente') {
         await notifyOwner('💸 *' + who + '* pasó a PAGO PENDIENTE (mandó comprobante o dijo que pagó).\nVerifica y envíale su clave 👉 whape.club/panel', from);
       }
