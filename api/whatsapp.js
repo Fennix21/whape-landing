@@ -141,17 +141,6 @@ module.exports = async (req, res) => {
     if (!msg) return res.status(200).send('ok');
 
     const from = msg.from;
-
-    // === DEBUG TEMPORAL: reenvía a tu WhatsApp el mensaje crudo (para leer el código de verificación de Meta). QUITAR después. ===
-    try {
-      console.log('WHAPE_DEBUG_RAW', JSON.stringify(req.body));
-      if (HAS_REDIS) {
-        const dbgOwner = ((await redis(['GET', 'config:ownerphone'])) || process.env.WHAPE_OWNER_PHONE || '').replace(/\D/g, '');
-        if (dbgOwner) await sendWhatsApp(dbgOwner, '🐛 DEBUG (mensaje crudo):\n' + JSON.stringify(value).slice(0, 3500));
-      }
-    } catch (e) { console.error('debug fwd', e); }
-    // === FIN DEBUG TEMPORAL ===
-
     const profileName = value?.contacts?.[0]?.profile?.name || '';
     const text = msg.type === 'text' ? msg.text.body : null;
     const deviceCode = detectDeviceCode(text); // ¿mandó su código de equipo?
