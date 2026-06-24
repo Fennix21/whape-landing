@@ -110,8 +110,11 @@
   #lbClose{position:fixed;top:16px;right:16px;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.25)}
   #lbClose:hover{background:rgba(255,255,255,.26)}
   /* Editor del prompt del bot */
-  #promptModal,#statsModal,#tplModal{display:none;position:fixed;inset:0;z-index:120;background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:18px}
-  #promptModal.open,#statsModal.open,#tplModal.open{display:flex}
+  #promptModal,#statsModal,#tplModal,#wtplModal{display:none;position:fixed;inset:0;z-index:120;background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:18px}
+  #promptModal.open,#statsModal.open,#tplModal.open,#wtplModal.open{display:flex}
+  .wrow{display:flex;align-items:center;gap:10px;justify-content:space-between;border:1px solid var(--stroke);border-radius:10px;padding:10px 12px;margin-bottom:8px}
+  .wrow .wbody{color:var(--muted);font-size:12px;margin-top:4px;line-height:1.4}
+  .wrow button{flex:none;padding:8px 14px;font-weight:700;font-size:13px;background:var(--success);color:#06241B;border-radius:8px}
   /* Analíticas */
   .st-funnel{display:flex;flex-direction:column;gap:7px;margin:6px 0 16px}
   .st-step{display:flex;align-items:center;gap:10px}
@@ -144,8 +147,8 @@
   .pm-nrow button{padding:11px 22px;border-radius:10px;font-weight:700;font-size:13.5px;white-space:nowrap;flex:none}
   .pm-nhint{color:var(--muted);font-size:11.5px;margin-top:7px;line-height:1.4}
   .pm-hr{border:none;border-top:1px solid var(--stroke);margin:14px 0 4px}
-  #pmText,#tplText{flex:1;min-height:320px;resize:vertical;width:100%;padding:13px 14px;border-radius:12px;border:1px solid var(--stroke);background:var(--bg);color:#fff;font-family:ui-monospace,Consolas,monospace;font-size:13px;line-height:1.5}
-  #tplText{min-height:240px}
+  #pmText,#tplText,#wtplText{flex:1;min-height:320px;resize:vertical;width:100%;padding:13px 14px;border-radius:12px;border:1px solid var(--stroke);background:var(--bg);color:#fff;font-family:ui-monospace,Consolas,monospace;font-size:13px;line-height:1.5}
+  #tplText,#wtplText{min-height:200px}
   .pm-foot{display:flex;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap}
   .pm-foot button{padding:10px 16px;font-weight:700;font-size:13.5px}
   .pm-reset{background:var(--surface2);color:var(--muted);border:1px solid var(--stroke)}
@@ -256,6 +259,7 @@
           <button class="ptoggle" onclick="toggleNotes()">📝 Notas</button>
           <button class="ptoggle" onclick="remindMenu()">⏰ Recordar</button>
           <button class="ptoggle" onclick="editTags()">🏷️ Tags</button>
+          <button class="ptoggle" onclick="openWtpl()" title="Enviar una plantilla aprobada por Meta (fuera de las 24 h)">📣 Oficial</button>
           <span id="chTags" class="ctags"></span>
           <span id="chRemind" class="cremind"></span>
         </div>
@@ -305,6 +309,26 @@
       <div style="flex:1"></div>
       <button class="pm-cancel" onclick="closeTpls()">Cancelar</button>
       <button class="pm-save" onclick="saveTpls()">💾 Guardar</button>
+    </div>
+  </div>
+</div>
+
+<div id="wtplModal">
+  <div class="pm-card">
+    <div class="pm-head">
+      <strong>📣 Plantillas oficiales (Meta)</strong>
+      <button class="pm-x" onclick="closeWtpl()" aria-label="Cerrar">✕</button>
+    </div>
+    <p class="pm-hint">Mensajes <strong>aprobados por Meta</strong> para escribir FUERA de las 24 h. Envía SOLO a quien te dio permiso. <a href="#" onclick="toggleWtplEdit();return false;" style="color:var(--gold)">✎ Editar lista</a></p>
+    <div id="wtplList"></div>
+    <div id="wtplEdit" style="display:none">
+      <p class="pm-hint">Una plantilla por bloque, separadas por una línea con solo <strong>---</strong>.<br>· Línea 1: <strong>Etiqueta | nombre_en_meta | idioma</strong> (ej. <em>Reenganche | reenganche_v1 | es</em>)<br>· Resto: el texto. Usa <strong>{{1}}</strong> donde Meta ponga una variable (ej. el nombre).</p>
+      <textarea id="wtplText" placeholder="Reenganche | reenganche_v1 | es&#10;Hola {{1}} 👋, ¿retomamos lo de WHAPE? Cualquier duda te ayudo.&#10;---"></textarea>
+      <div class="pm-foot">
+        <div style="flex:1"></div>
+        <button class="pm-cancel" onclick="toggleWtplEdit()">Cerrar edición</button>
+        <button class="pm-save" onclick="saveWtpl()">💾 Guardar lista</button>
+      </div>
     </div>
   </div>
 </div>
@@ -776,6 +800,66 @@
       if(!res.ok){ alert(res.d.error||'No se pudo guardar'); return; }
       alert('✅ Plantillas guardadas.');
       closeTpls(); renderTemplates();
+    });
+  }
+
+  // --- Plantillas OFICIALES de Meta (escribir fuera de las 24 h) ---
+  var WTPL = [];
+  function openWtpl(){
+    if(!current){ alert('Abre primero una conversación.'); return; }
+    document.getElementById('wtplModal').classList.add('open');
+    document.getElementById('wtplEdit').style.display='none';
+    renderWtplList();
+  }
+  function closeWtpl(){ document.getElementById('wtplModal').classList.remove('open'); }
+  function renderWtplList(){
+    api('getwtemplates').then(function(res){
+      WTPL = (res.ok && res.d.templates) ? res.d.templates : [];
+      var el = document.getElementById('wtplList');
+      if(!WTPL.length){ el.innerHTML = '<div class="st-empty">Aún no registras plantillas oficiales. Crea y aprueba una en Meta (WhatsApp Manager) y luego agrégala con ✎ Editar lista.</div>'; return; }
+      el.innerHTML = WTPL.map(function(t,i){
+        return '<div class="wrow"><div><strong>'+esc(t.label)+'</strong><div class="wbody">'+esc(t.body||'')+'</div></div>'
+          + '<button onclick="sendOfficial('+i+')">📤 Enviar</button></div>';
+      }).join('');
+    });
+  }
+  function toggleWtplEdit(){
+    var e = document.getElementById('wtplEdit');
+    var show = e.style.display === 'none';
+    e.style.display = show ? 'block' : 'none';
+    if(show){ document.getElementById('wtplText').value = WTPL.map(function(t){ return t.label+' | '+t.name+' | '+(t.lang||'es')+'\n'+(t.body||''); }).join('\n---\n'); }
+  }
+  function saveWtpl(){
+    var raw = document.getElementById('wtplText').value;
+    var t = raw.split(/\n-{3,}\n/).map(function(b){
+      var lines = b.split('\n');
+      var head = (lines.shift()||'').split('|');
+      return { label:(head[0]||'').trim(), name:(head[1]||'').trim(), lang:((head[2]||'es').trim()||'es'), body:lines.join('\n').trim() };
+    }).filter(function(x){ return x.label && x.name; });
+    api('setwtemplates', { templates: t }).then(function(res){
+      if(!res.ok){ alert(res.d.error||'No se pudo guardar'); return; }
+      alert('✅ Lista guardada.');
+      document.getElementById('wtplEdit').style.display='none';
+      renderWtplList();
+    });
+  }
+  function sendOfficial(i){
+    var t = WTPL[i]; if(!t || !current) return;
+    var nums = (t.body||'').match(/\{\{(\d+)\}\}/g) || [];
+    var count = nums.length ? Math.max.apply(null, nums.map(function(x){ return parseInt(x.replace(/\D/g,''),10); })) : 0;
+    var params = [], preview = t.body || '';
+    for(var n=1; n<=count; n++){
+      var def = (n===1 && curLead && curLead.name) ? curLead.name : '';
+      var v = prompt('Valor para {{'+n+'}}'+(n===1?' (suele ser el nombre)':'')+':', def);
+      if(v===null) return;
+      params.push(v);
+      preview = preview.replace(new RegExp('\\{\\{'+n+'\\}\\}','g'), v);
+    }
+    if(!confirm('Vas a enviar una PLANTILLA OFICIAL a este contacto:\n\n"'+preview+'"\n\n⚠️ Solo si te dio permiso de escribirle. ¿Enviar?')) return;
+    api('sendtemplate', { phone: current, template: t.name, lang: t.lang||'es', params: params, preview: preview }).then(function(res){
+      if(!res.ok){ alert('❌ '+(res.d.error||'No se pudo enviar')); return; }
+      alert('✅ Plantilla enviada.');
+      closeWtpl(); refreshConv(); loadLeads();
     });
   }
   function clearChat(){

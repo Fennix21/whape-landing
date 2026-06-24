@@ -211,6 +211,47 @@ module.exports = async (req, res) => {
       return res.status(200).json({ ok: true, templates: tpl });
     }
 
+    // --- Plantillas OFICIALES de Meta (aprobadas), para escribir fuera de las 24 h ---
+    if (b.action === 'getwtemplates') {
+      const raw = await redis(['GET', 'config:wtemplates']);
+      let t = [];
+      if (raw) { try { t = JSON.parse(raw); } catch (e) {} }
+      return res.status(200).json({ templates: t });
+    }
+    if (b.action === 'setwtemplates') {
+      const t = (Array.isArray(b.templates) ? b.templates : [])
+        .map((x) => ({
+          label: (x.label || '').toString().slice(0, 40),
+          name: (x.name || '').toString().slice(0, 80),
+          lang: (x.lang || 'es').toString().slice(0, 10),
+          body: (x.body || '').toString().slice(0, 1000),
+        }))
+        .filter((x) => x.label && x.name).slice(0, 20);
+      await redis(['SET', 'config:wtemplates', JSON.stringify(t)]);
+      return res.status(200).json({ ok: true, templates: t });
+    }
+    if (b.action === 'sendtemplate') {
+      if (!b.phone || !b.template) return res.status(400).json({ error: 'Falta número o nombre de plantilla.' });
+      const lang = (b.lang || 'es').toString();
+      const params = Array.isArray(b.params) ? b.params : [];
+      const payload = {
+        messaging_product: 'whatsapp', to: b.phone, type: 'template',
+        template: { name: b.template, language: { code: lang } },
+      };
+      if (params.length) payload.template.components = [{ type: 'body', parameters: params.map((p) => ({ type: 'text', text: String(p) })) }];
+      const r = await fetch(`${GRAPH}/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}` },
+        body: JSON.stringify(payload),
+      });
+      const data = await r.json();
+      if (!r.ok) return res.status(400).json({ error: (data.error && data.error.message) || 'Meta rechazó el envío (¿plantilla aprobada y nombre/idioma correctos?).' });
+      const l = await loadLead(b.phone);
+      l.messages.push({ role: 'assistant', text: (b.preview || ('[plantilla oficial: ' + b.template + ']')), ts: Date.now(), human: true });
+      await persist(l);
+      return res.status(200).json({ ok: true });
+    }
+
     if (b.action === 'pause') {
       const l = await loadLead(b.phone);
       l.paused = !!b.paused;
