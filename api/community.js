@@ -192,6 +192,14 @@ module.exports = async (req, res) => {
         const members = Number((await redis(['SCARD', 'members'])) || 0);
         return res.status(200).json({ ok: true, modules: mods, members });
       }
+      if (sub === 'upload') {
+        const dataUrl = (b.dataUrl || '').toString();
+        if (!/^data:image\/(png|jpe?g|webp|gif);base64,/.test(dataUrl)) return res.status(400).json({ error: 'Formato de imagen no válido.' });
+        if (dataUrl.length > 1200000) return res.status(400).json({ error: 'La imagen pesa demasiado. Usa una más liviana.' });
+        const id = newId('img');
+        await redis(['SET', 'img:' + id, dataUrl]);
+        return res.status(200).json({ ok: true, url: '/api/img?id=' + id });
+      }
       if (sub === 'savemod') {
         const incoming = b.mod || {};
         if (incoming.id) {
