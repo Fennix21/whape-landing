@@ -56,8 +56,9 @@ async function upsertLead(phone, name) {
     let l = null;
     if (raw) { try { l = JSON.parse(raw); } catch (e) {} }
     if (!l) {
+      // role 'system' (NO 'user'): registrarse en la web NO abre una ventana de 24h de WhatsApp.
       l = { phone, name: name || '', status: 'interesado', paused: false, source: 'comunidad',
-        messages: [{ role: 'user', text: '(se registró en la Comunidad WHAPE 🎉)', ts: Date.now() }], tags: ['comunidad'] };
+        messages: [{ role: 'system', text: '🎉 Se registró en la Comunidad WHAPE (desde la web, no por WhatsApp).', ts: Date.now() }], tags: ['comunidad'] };
     } else {
       if (name && !l.name) l.name = name;
       if (!l.tags) l.tags = [];

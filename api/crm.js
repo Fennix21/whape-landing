@@ -112,7 +112,16 @@ module.exports = async (req, res) => {
 
     if (b.action === 'send') {
       if (!b.text || !b.phone) return res.status(400).json({ error: 'Falta texto o número.' });
-      await sendWhatsApp(b.phone, b.text);
+      try {
+        await sendWhatsApp(b.phone, b.text);
+      } catch (e) {
+        const msg = String((e && e.message) || e || '');
+        // 131047 = fuera de la ventana de 24h (la persona no te escribió en 24h o nunca lo hizo)
+        if (/131047|24\s*hours|re-?engagement|outside.*window|message.*not.*sent/i.test(msg)) {
+          return res.status(400).json({ error: 'No se entregó: este contacto está FUERA de las 24h (o nunca te escribió por WhatsApp, p. ej. si solo se registró en la comunidad). Para escribirle usa 📣 Oficial con una plantilla aprobada.' });
+        }
+        return res.status(400).json({ error: 'WhatsApp rechazó el envío.' });
+      }
       const l = await loadLead(b.phone);
       l.messages.push({ role: 'assistant', text: b.text, ts: Date.now(), human: true });
       l.paused = true; // tomaste el control
