@@ -142,6 +142,8 @@
   .cm-stat .l{font-size:11.5px;color:var(--muted);margin-top:4px}
   .cm-new{width:100%;padding:13px;border:0;border-radius:12px;font-family:inherit;font-size:14.5px;font-weight:800;cursor:pointer;color:#fff;background:linear-gradient(90deg,var(--accent),var(--accent2));margin-bottom:16px}
   .cm-new:active{transform:translateY(1px)}
+  .cm-back{background:transparent;border:1px solid var(--stroke);color:var(--muted);font-family:inherit;font-size:13px;font-weight:700;padding:9px 14px;border-radius:10px;cursor:pointer;margin-bottom:12px;display:inline-block}
+  .cm-back:hover{border-color:var(--accent);color:#fff}
   .cm-form{border:1px solid var(--stroke);border-radius:14px;padding:16px;margin-bottom:16px;background:var(--surface2)}
   .cm-formtitle{font-weight:800;font-size:15px;margin-bottom:10px}
   .cm-lbl{display:block;font-size:12px;color:var(--muted);font-weight:700;margin:11px 0 5px}
@@ -347,30 +349,45 @@
 <div id="communityModal">
   <div class="pm-card" style="max-width:680px">
     <div class="pm-head">
-      <strong>📚 Comunidad — Contenido</strong>
+      <strong id="cmHead">🎓 Academia · Contenido</strong>
       <button class="pm-x" onclick="closeCommunity()" aria-label="Cerrar">✕</button>
     </div>
     <div style="overflow-y:auto;max-height:74vh;padding:2px 2px 4px">
       <div class="cm-stats" id="cmMeta"></div>
-      <button class="cm-new" id="cmNewBtn" onclick="newPost()">➕ Nueva publicación</button>
-      <div id="cmForm" class="cm-form" style="display:none">
-        <div class="cm-formtitle" id="cmFormTitle">➕ Nueva publicación</div>
-        <input type="hidden" id="cmId" />
-        <label class="cm-lbl">Título</label>
-        <input id="cmTitle" class="cmin" placeholder="Ej. 3 trucos para que no te metan un yapeo falso" />
-        <label class="cm-lbl">Contenido</label>
-        <textarea id="cmBody" class="cmin" placeholder="Escribe aquí tu contenido de valor… (puedes pegar enlaces y se vuelven clicables)" style="min-height:130px;resize:vertical"></textarea>
-        <label class="cm-lbl">🎬 Video de YouTube <span class="cm-opt">· opcional</span></label>
-        <input id="cmVideo" class="cmin" placeholder="Pega el link del video" />
-        <label class="cm-lbl">🖼️ Imagen <span class="cm-opt">· opcional</span></label>
-        <input id="cmImage" class="cmin" placeholder="Pega el link de una imagen" />
-        <label class="cm-pin"><input type="checkbox" id="cmPin" /> 📌 Destacar (fijar arriba de todo)</label>
+
+      <div id="cmModForm" class="cm-form" style="display:none">
+        <div class="cm-formtitle" id="cmModFormTitle">➕ Nuevo módulo</div>
+        <input type="hidden" id="cmModId" />
+        <label class="cm-lbl">Título del módulo</label>
+        <input id="cmModTitle" class="cmin" placeholder="Ej. Empieza aquí" />
+        <label class="cm-lbl">Descripción <span class="cm-opt">· opcional</span></label>
+        <input id="cmModDesc" class="cmin" placeholder="Una línea de qué trata el módulo" />
+        <label class="cm-lbl">🖼️ Imagen de portada <span class="cm-opt">· opcional (link)</span></label>
+        <input id="cmModImg" class="cmin" placeholder="Pega el link de una imagen" />
         <div class="cm-formbtns">
-          <button class="cm-save" onclick="savePost()">💾 Publicar</button>
-          <button class="cm-cancel" onclick="cancelPost()">Cancelar</button>
+          <button class="cm-save" onclick="saveModule()">💾 Guardar módulo</button>
+          <button class="cm-cancel" onclick="cancelModForm()">Cancelar</button>
         </div>
       </div>
-      <div id="cmList"></div>
+
+      <div id="cmLesForm" class="cm-form" style="display:none">
+        <div class="cm-formtitle" id="cmLesFormTitle">➕ Nueva clase</div>
+        <input type="hidden" id="cmLesId" />
+        <label class="cm-lbl">Título de la clase</label>
+        <input id="cmLesTitle" class="cmin" placeholder="Ej. 1.1 Bienvenida" />
+        <label class="cm-lbl">🎬 Video de YouTube <span class="cm-opt">· recomendado</span></label>
+        <input id="cmLesVideo" class="cmin" placeholder="Pega el link del video" />
+        <label class="cm-lbl">Contenido / notas <span class="cm-opt">· opcional</span></label>
+        <textarea id="cmLesBody" class="cmin" placeholder="Texto, enlaces, recursos…" style="min-height:110px;resize:vertical"></textarea>
+        <label class="cm-lbl">🖼️ Imagen <span class="cm-opt">· opcional (si no hay video)</span></label>
+        <input id="cmLesImg" class="cmin" placeholder="Pega el link de una imagen" />
+        <div class="cm-formbtns">
+          <button class="cm-save" onclick="saveLesson()">💾 Guardar clase</button>
+          <button class="cm-cancel" onclick="cancelLesForm()">Cancelar</button>
+        </div>
+      </div>
+
+      <div id="cmBody"></div>
     </div>
   </div>
 </div>
@@ -707,71 +724,100 @@
     });
   }
   function closeStats(){ document.getElementById('statsModal').classList.remove('open'); }
-  // --- Comunidad (gestión de contenido de valor) ---
-  var CM_POSTS=[];
+  // --- Academia (gestión de módulos → clases) ---
+  var CM_TREE=[], CM_MEMBERS=0, CM_CUR=null;
   function capi(sub, extra){
     return fetch('/api/community', { method:'POST', headers:{'content-type':'application/json'},
       body: JSON.stringify(Object.assign({ action:'admin', pass:PASS, sub:sub }, extra||{})) })
       .then(function(r){ return r.json().then(function(d){ return { ok:r.ok, d:d }; }); });
   }
-  function openCommunity(){ document.getElementById('communityModal').classList.add('open'); cancelPost(); loadPosts(); }
+  function openCommunity(){ document.getElementById('communityModal').classList.add('open'); CM_CUR=null; cancelModForm(); cancelLesForm(); loadTree(); }
   function closeCommunity(){ document.getElementById('communityModal').classList.remove('open'); }
-  function loadPosts(){
-    var list=document.getElementById('cmList'); list.innerHTML='<div class="cm-empty">Cargando…</div>';
-    capi('list').then(function(res){
-      if(!res.ok){ list.innerHTML='<div class="cm-empty" style="color:#ff8aa0">'+(res.d.error||'Error')+'</div>'; return; }
-      var nm=res.d.members||0, np=(res.d.posts||[]).length;
-      document.getElementById('cmMeta').innerHTML=
-        '<div class="cm-stat"><div class="n">'+nm+'</div><div class="l">👥 '+(nm===1?'miembro':'miembros')+'</div></div>'+
-        '<div class="cm-stat"><div class="n">'+np+'</div><div class="l">📝 '+(np===1?'publicación':'publicaciones')+'</div></div>';
-      renderPostsAdmin(res.d.posts||[]);
+  function loadTree(){
+    document.getElementById('cmBody').innerHTML='<div class="cm-empty">Cargando…</div>';
+    capi('tree').then(function(res){
+      if(!res.ok){ document.getElementById('cmBody').innerHTML='<div class="cm-empty" style="color:#ff8aa0">'+(res.d.error||'Error')+'</div>'; return; }
+      CM_TREE=res.d.modules||[]; CM_MEMBERS=res.d.members||0; renderTree();
     });
   }
-  function renderPostsAdmin(posts){
-    CM_POSTS=posts;
-    var list=document.getElementById('cmList');
-    if(!posts.length){ list.innerHTML='<div class="cm-empty"><span class="big">📭</span>Aún no hay publicaciones.<br>Crea la primera y aparecerá al instante para tus miembros. ✨</div>'; return; }
-    list.innerHTML=posts.map(function(p,i){
-      var tag=p.pinned?'📌 ':''; var media=p.video?' 🎬':(p.image?' 🖼️':'');
-      return '<div class="cm-row"><div class="ic"><div class="rt">'+tag+esc(p.title||'(sin título)')+media+'</div>'
-        +'<div class="rs">'+(esc((p.body||'').slice(0,90))||'—')+'</div></div>'
-        +'<button class="ib" onclick="editPost('+i+')" title="Editar">✏️</button>'
-        +'<button class="ib" onclick="delPost(\''+p.id+'\')" title="Eliminar" style="color:#ff8aa0">🗑️</button></div>';
-    }).join('');
+  function curModule(){ return CM_TREE.find(function(m){return m.id===CM_CUR;}); }
+  function renderTree(){
+    var totalLessons=0; CM_TREE.forEach(function(m){ totalLessons+=(m.lessons||[]).length; });
+    document.getElementById('cmMeta').innerHTML=
+      '<div class="cm-stat"><div class="n">'+CM_MEMBERS+'</div><div class="l">👥 '+(CM_MEMBERS===1?'miembro':'miembros')+'</div></div>'+
+      '<div class="cm-stat"><div class="n">'+CM_TREE.length+'</div><div class="l">📂 '+(CM_TREE.length===1?'módulo':'módulos')+'</div></div>'+
+      '<div class="cm-stat"><div class="n">'+totalLessons+'</div><div class="l">🎬 '+(totalLessons===1?'clase':'clases')+'</div></div>';
+    var body=document.getElementById('cmBody'); var m=curModule();
+    if(CM_CUR && m){
+      document.getElementById('cmHead').textContent='🎓 '+(m.title||'Módulo');
+      var ls=m.lessons||[];
+      var h='<button class="cm-back" onclick="cmBack()">← Volver a módulos</button>'
+        +'<button class="cm-new" onclick="newLesson()">➕ Nueva clase</button>';
+      if(!ls.length){ h+='<div class="cm-empty"><span class="big">🎬</span>Este módulo aún no tiene clases.<br>Agrega la primera.</div>'; }
+      else { h+=ls.map(function(l){
+        var media=l.video?'🎬':(l.image?'🖼️':'📝');
+        return '<div class="cm-row"><div class="ic"><div class="rt">'+media+' '+esc(l.title||'(sin título)')+'</div></div>'
+          +'<button class="ib" onclick="editLesson(\''+l.id+'\')" title="Editar">✏️</button>'
+          +'<button class="ib" onclick="delLesson(\''+l.id+'\')" title="Eliminar" style="color:#ff8aa0">🗑️</button></div>';
+      }).join(''); }
+      body.innerHTML=h;
+    } else {
+      document.getElementById('cmHead').textContent='🎓 Academia · Contenido';
+      var hh='<button class="cm-new" onclick="newModule()">➕ Nuevo módulo</button>';
+      if(!CM_TREE.length){ hh+='<div class="cm-empty"><span class="big">📂</span>Aún no hay módulos.<br>Crea el primero para empezar tu academia. ✨</div>'; }
+      else { hh+=CM_TREE.map(function(mm){
+        var n=(mm.lessons||[]).length;
+        return '<div class="cm-row"><div class="ic" onclick="openCmModule(\''+mm.id+'\')" style="cursor:pointer"><div class="rt">📂 '+esc(mm.title||'Módulo')+'</div><div class="rs">'+n+' clase'+(n===1?'':'s')+' · toca para abrir</div></div>'
+          +'<button class="ib" onclick="editModule(\''+mm.id+'\')" title="Editar módulo">✏️</button>'
+          +'<button class="ib" onclick="delModule(\''+mm.id+'\')" title="Eliminar módulo" style="color:#ff8aa0">🗑️</button></div>';
+      }).join(''); }
+      body.innerHTML=hh;
+    }
   }
-  function newPost(){ fillForm({}); }
-  function editPost(i){ fillForm(CM_POSTS[i]||{}); }
-  function fillForm(p){
-    p=p||{};
-    document.getElementById('cmFormTitle').textContent = p.id ? '✏️ Editar publicación' : '➕ Nueva publicación';
-    document.getElementById('cmId').value=p.id||'';
-    document.getElementById('cmTitle').value=p.title||'';
-    document.getElementById('cmBody').value=p.body||'';
-    document.getElementById('cmVideo').value=p.video||'';
-    document.getElementById('cmImage').value=p.image||'';
-    document.getElementById('cmPin').checked=!!p.pinned;
-    document.getElementById('cmForm').style.display='block';
-    var nb=document.getElementById('cmNewBtn'); if(nb) nb.style.display='none';
-    document.getElementById('cmTitle').focus();
+  function openCmModule(id){ CM_CUR=id; cancelLesForm(); cancelModForm(); renderTree(); }
+  function cmBack(){ CM_CUR=null; cancelLesForm(); cancelModForm(); renderTree(); }
+  // Módulo
+  function newModule(){ fillModForm({}); }
+  function editModule(id){ fillModForm(CM_TREE.find(function(x){return x.id===id;})||{}); }
+  function fillModForm(m){
+    m=m||{};
+    document.getElementById('cmModFormTitle').textContent = m.id?'✏️ Editar módulo':'➕ Nuevo módulo';
+    document.getElementById('cmModId').value=m.id||'';
+    document.getElementById('cmModTitle').value=m.title||'';
+    document.getElementById('cmModDesc').value=m.desc||'';
+    document.getElementById('cmModImg').value=m.image||'';
+    document.getElementById('cmModForm').style.display='block';
+    document.getElementById('cmModTitle').focus();
   }
-  function cancelPost(){ document.getElementById('cmForm').style.display='none'; var nb=document.getElementById('cmNewBtn'); if(nb) nb.style.display='block'; }
-  function savePost(){
-    var post={ id:document.getElementById('cmId').value||undefined,
-      title:document.getElementById('cmTitle').value.trim(),
-      body:document.getElementById('cmBody').value.trim(),
-      video:document.getElementById('cmVideo').value.trim(),
-      image:document.getElementById('cmImage').value.trim(),
-      pinned:document.getElementById('cmPin').checked };
-    if(!post.title && !post.body){ alert('Pon al menos un título o algo de texto.'); return; }
-    capi('save',{post:post}).then(function(res){
-      if(!res.ok){ alert(res.d.error||'No se pudo guardar'); return; }
-      cancelPost(); loadPosts();
-    });
+  function cancelModForm(){ var f=document.getElementById('cmModForm'); if(f) f.style.display='none'; }
+  function saveModule(){
+    var mod={ id:document.getElementById('cmModId').value||undefined, title:document.getElementById('cmModTitle').value.trim(), desc:document.getElementById('cmModDesc').value.trim(), image:document.getElementById('cmModImg').value.trim() };
+    if(!mod.title){ alert('Ponle un título al módulo.'); return; }
+    capi('savemod',{mod:mod}).then(function(res){ if(!res.ok){ alert(res.d.error||'Error'); return; } CM_TREE=res.d.modules||[]; cancelModForm(); renderTree(); });
   }
-  function delPost(id){
-    if(!confirm('¿Eliminar esta publicación? No se puede deshacer.')) return;
-    capi('del',{id:id}).then(function(res){ if(!res.ok){ alert(res.d.error||'Error'); return; } loadPosts(); });
+  function delModule(id){ if(!confirm('¿Eliminar este módulo y TODAS sus clases? No se puede deshacer.')) return; capi('delmod',{id:id}).then(function(res){ if(!res.ok){ alert(res.d.error||'Error'); return; } CM_TREE=res.d.modules||[]; if(CM_CUR===id) CM_CUR=null; renderTree(); }); }
+  // Clase
+  function newLesson(){ fillLesForm({}); }
+  function editLesson(id){ var m=curModule(); fillLesForm((m&&(m.lessons||[]).find(function(x){return x.id===id;}))||{}); }
+  function fillLesForm(l){
+    l=l||{};
+    document.getElementById('cmLesFormTitle').textContent = l.id?'✏️ Editar clase':'➕ Nueva clase';
+    document.getElementById('cmLesId').value=l.id||'';
+    document.getElementById('cmLesTitle').value=l.title||'';
+    document.getElementById('cmLesVideo').value=l.video||'';
+    document.getElementById('cmLesBody').value=l.body||'';
+    document.getElementById('cmLesImg').value=l.image||'';
+    document.getElementById('cmLesForm').style.display='block';
+    document.getElementById('cmLesTitle').focus();
   }
+  function cancelLesForm(){ var f=document.getElementById('cmLesForm'); if(f) f.style.display='none'; }
+  function saveLesson(){
+    if(!CM_CUR){ alert('Abre un módulo primero.'); return; }
+    var lesson={ id:document.getElementById('cmLesId').value||undefined, title:document.getElementById('cmLesTitle').value.trim(), video:document.getElementById('cmLesVideo').value.trim(), body:document.getElementById('cmLesBody').value.trim(), image:document.getElementById('cmLesImg').value.trim() };
+    if(!lesson.title && !lesson.video){ alert('La clase necesita al menos un título o un video.'); return; }
+    capi('savelesson',{moduleId:CM_CUR, lesson:lesson}).then(function(res){ if(!res.ok){ alert(res.d.error||'Error'); return; } CM_TREE=res.d.modules||[]; cancelLesForm(); renderTree(); });
+  }
+  function delLesson(id){ if(!confirm('¿Eliminar esta clase? No se puede deshacer.')) return; capi('dellesson',{moduleId:CM_CUR, lessonId:id}).then(function(res){ if(!res.ok){ alert(res.d.error||'Error'); return; } CM_TREE=res.d.modules||[]; renderTree(); }); }
   function renderStats(d){
     var ev = d.events || {};
     var visitas = ev.pageview || 0;

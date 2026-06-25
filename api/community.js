@@ -1,12 +1,19 @@
-// Comunidad WHAPE: registro/login de miembros + feed de contenido de valor.
-// Stack: función serverless de Vercel + Upstash Redis (sin servicios nuevos).
+// Academia/Comunidad WHAPE: miembros + estructura de curso (módulos → clases) + progreso.
+// Stack: función serverless de Vercel + Upstash Redis.
+//
+// Datos en Redis:
+//   member:<phone>     -> {name, phone, salt, hash, createdAt}
+//   members            -> SET de phones
+//   academy:modules    -> [{id,title,desc,image, lessons:[{id,title,body,video,image}]}]
+//   progress:<phone>   -> {done:{lessonId:true}, last:lessonId, updatedAt}
+//
 // Acciones (POST { action }):
-//   signup {name, phone, password}  -> crea miembro + lo mete como lead al CRM
-//   login  {phone, password}        -> devuelve token
-//   me     {token}                  -> datos del miembro
-//   feed   {token}                  -> lista de publicaciones
-//   admin  {pass, sub}              -> gestión de contenido desde el panel (WHAPE_ADMIN_PASS)
-//          sub: list | save {post} | del {id}
+//   signup / login / me                 (miembro)
+//   academy {token}                     -> módulos + progreso del miembro
+//   complete {token, lessonId, done}    -> marca/desmarca clase completada
+//   seen {token, lessonId}              -> recuerda la última clase vista
+//   admin {pass, sub}                   -> gestión (WHAPE_ADMIN_PASS)
+//       sub: tree | savemod{mod} | delmod{id} | savelesson{moduleId,lesson} | dellesson{moduleId,lessonId}
 
 const crypto = require('crypto');
 
@@ -25,17 +32,14 @@ async function redis(cmd) {
   return data.result;
 }
 
-// Normaliza el número: solo dígitos; si es un celular peruano de 9 dígitos, antepone 51.
 function normPhone(p) {
   let d = (p || '').replace(/\D/g, '');
   if (d.length === 9 && d[0] === '9') d = '51' + d;
   return d;
 }
-function hashPw(pw, salt) {
-  return crypto.pbkdf2Sync(pw, salt, 100000, 32, 'sha256').toString('hex');
-}
+function hashPw(pw, salt) { return crypto.pbkdf2Sync(pw, salt, 100000, 32, 'sha256').toString('hex'); }
 function makeToken(phone) {
-  const exp = Date.now() + 30 * 24 * 3600 * 1000; // 30 días
+  const exp = Date.now() + 30 * 24 * 3600 * 1000;
   const sig = crypto.createHmac('sha256', SECRET).update('tok:' + phone + ':' + exp).digest('hex').slice(0, 32);
   return phone + '.' + exp + '.' + sig;
 }
@@ -48,15 +52,26 @@ function verifyToken(token) {
   const good = crypto.createHmac('sha256', SECRET).update('tok:' + phone + ':' + exp).digest('hex').slice(0, 32);
   return good === sig ? phone : null;
 }
+function newId(prefix) { return prefix + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 
-// Sinergia con el CRM: cada miembro nuevo entra como lead "interesado" con tag comunidad.
+async function getModules() {
+  const raw = await redis(['GET', 'academy:modules']);
+  if (raw) { try { return JSON.parse(raw); } catch (e) {} }
+  return [];
+}
+async function saveModules(mods) { await redis(['SET', 'academy:modules', JSON.stringify(mods)]); }
+async function getProgress(phone) {
+  const raw = await redis(['GET', 'progress:' + phone]);
+  if (raw) { try { return JSON.parse(raw); } catch (e) {} }
+  return { done: {}, last: '' };
+}
+
 async function upsertLead(phone, name) {
   try {
     const raw = await redis(['GET', 'lead:' + phone]);
     let l = null;
     if (raw) { try { l = JSON.parse(raw); } catch (e) {} }
     if (!l) {
-      // role 'system' (NO 'user'): registrarse en la web NO abre una ventana de 24h de WhatsApp.
       l = { phone, name: name || '', status: 'interesado', paused: false, source: 'comunidad',
         messages: [{ role: 'system', text: '🎉 Se registró en la Comunidad WHAPE (desde la web, no por WhatsApp).', ts: Date.now() }], tags: ['comunidad'] };
     } else {
@@ -70,6 +85,26 @@ async function upsertLead(phone, name) {
   } catch (e) { console.error('upsertLead', e); }
 }
 
+// Limpia un módulo/clase recibidos del panel (evita basura).
+function cleanLesson(p) {
+  return {
+    id: p.id || newId('l'),
+    title: (p.title || '').toString().slice(0, 160),
+    body: (p.body || '').toString().slice(0, 8000),
+    video: (p.video || '').toString().slice(0, 300),
+    image: (p.image || '').toString().slice(0, 300),
+  };
+}
+function cleanModule(p) {
+  return {
+    id: p.id || newId('m'),
+    title: (p.title || '').toString().slice(0, 120),
+    desc: (p.desc || '').toString().slice(0, 400),
+    image: (p.image || '').toString().slice(0, 300),
+    lessons: Array.isArray(p.lessons) ? p.lessons.map(cleanLesson) : [],
+  };
+}
+
 module.exports = async (req, res) => {
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
   if (!HAS_REDIS) return res.status(500).json({ error: 'Falta configurar la base de datos (Redis).' });
@@ -78,6 +113,7 @@ module.exports = async (req, res) => {
   if (typeof b === 'string') { try { b = JSON.parse(b); } catch (e) { b = {}; } }
 
   try {
+    // ---------- AUTH ----------
     if (b.action === 'signup') {
       const name = (b.name || '').toString().trim().slice(0, 60);
       const phone = normPhone(b.phone);
@@ -87,8 +123,7 @@ module.exports = async (req, res) => {
       if (pw.length < 4) return res.status(400).json({ error: 'La contraseña debe tener al menos 4 caracteres.' });
       if (await redis(['GET', 'member:' + phone])) return res.status(400).json({ error: 'Ese número ya está registrado. Inicia sesión. 🙂' });
       const salt = crypto.randomBytes(12).toString('hex');
-      const member = { name, phone, salt, hash: hashPw(pw, salt), createdAt: Date.now() };
-      await redis(['SET', 'member:' + phone, JSON.stringify(member)]);
+      await redis(['SET', 'member:' + phone, JSON.stringify({ name, phone, salt, hash: hashPw(pw, salt), createdAt: Date.now() })]);
       await redis(['SADD', 'members', phone]);
       await upsertLead(phone, name);
       return res.status(200).json({ ok: true, token: makeToken(phone), name });
@@ -104,52 +139,95 @@ module.exports = async (req, res) => {
       return res.status(200).json({ ok: true, token: makeToken(phone), name: m.name });
     }
 
-    if (b.action === 'me' || b.action === 'feed') {
+    if (b.action === 'me') {
       const phone = verifyToken(b.token);
       if (!phone) return res.status(401).json({ error: 'Tu sesión venció. Entra de nuevo. 🙏' });
-      if (b.action === 'me') {
-        const raw = await redis(['GET', 'member:' + phone]);
-        let m = null; if (raw) { try { m = JSON.parse(raw); } catch (e) {} }
-        return res.status(200).json({ ok: true, name: m ? m.name : '', phone });
-      }
-      const raw = await redis(['GET', 'community:posts']);
-      let posts = []; if (raw) { try { posts = JSON.parse(raw); } catch (e) {} }
-      posts.sort((a, b2) => (b2.pinned ? 1 : 0) - (a.pinned ? 1 : 0) || (b2.ts || 0) - (a.ts || 0));
-      return res.status(200).json({ ok: true, posts });
+      const raw = await redis(['GET', 'member:' + phone]);
+      let m = null; if (raw) { try { m = JSON.parse(raw); } catch (e) {} }
+      return res.status(200).json({ ok: true, name: m ? m.name : '', phone });
     }
 
-    // --- Gestión de contenido desde el panel (admin) ---
+    // ---------- MIEMBRO: academia + progreso ----------
+    if (b.action === 'academy') {
+      const phone = verifyToken(b.token);
+      if (!phone) return res.status(401).json({ error: 'Tu sesión venció. Entra de nuevo. 🙏' });
+      const modules = await getModules();
+      const progress = await getProgress(phone);
+      const mraw = await redis(['GET', 'member:' + phone]);
+      let name = ''; if (mraw) { try { name = JSON.parse(mraw).name || ''; } catch (e) {} }
+      return res.status(200).json({ ok: true, modules, progress, name });
+    }
+
+    if (b.action === 'complete') {
+      const phone = verifyToken(b.token);
+      if (!phone) return res.status(401).json({ error: 'Tu sesión venció. Entra de nuevo.' });
+      const lessonId = (b.lessonId || '').toString();
+      if (!lessonId) return res.status(400).json({ error: 'Falta la clase.' });
+      const p = await getProgress(phone);
+      if (!p.done) p.done = {};
+      if (b.done === false) delete p.done[lessonId]; else p.done[lessonId] = true;
+      p.last = lessonId;
+      p.updatedAt = Date.now();
+      await redis(['SET', 'progress:' + phone, JSON.stringify(p)]);
+      return res.status(200).json({ ok: true, progress: p });
+    }
+
+    if (b.action === 'seen') {
+      const phone = verifyToken(b.token);
+      if (!phone) return res.status(401).json({ error: 'Tu sesión venció.' });
+      const lessonId = (b.lessonId || '').toString();
+      const p = await getProgress(phone);
+      p.last = lessonId; p.updatedAt = Date.now();
+      await redis(['SET', 'progress:' + phone, JSON.stringify(p)]);
+      return res.status(200).json({ ok: true });
+    }
+
+    // ---------- ADMIN ----------
     if (b.action === 'admin') {
       if ((b.pass || '') !== process.env.WHAPE_ADMIN_PASS) return res.status(401).json({ error: 'Contraseña incorrecta.' });
       const sub = b.sub;
-      const raw = await redis(['GET', 'community:posts']);
-      let posts = []; if (raw) { try { posts = JSON.parse(raw); } catch (e) {} }
+      let mods = await getModules();
 
-      if (sub === 'list') {
-        const members = (await redis(['SCARD', 'members'])) || 0;
-        return res.status(200).json({ ok: true, posts, members: Number(members) });
+      if (sub === 'tree') {
+        const members = Number((await redis(['SCARD', 'members'])) || 0);
+        return res.status(200).json({ ok: true, modules: mods, members });
       }
-      if (sub === 'save') {
-        const p = b.post || {};
-        const post = {
-          id: p.id || ('p' + Date.now()),
-          title: (p.title || '').toString().slice(0, 140),
-          body: (p.body || '').toString().slice(0, 6000),
-          video: (p.video || '').toString().slice(0, 300),
-          image: (p.image || '').toString().slice(0, 300),
-          pinned: !!p.pinned,
-          ts: p.ts || Date.now(),
-        };
-        if (!post.title && !post.body) return res.status(400).json({ error: 'La publicación necesita título o texto.' });
-        const idx = posts.findIndex((x) => x.id === post.id);
-        if (idx >= 0) posts[idx] = post; else posts.unshift(post);
-        await redis(['SET', 'community:posts', JSON.stringify(posts.slice(0, 200))]);
-        return res.status(200).json({ ok: true, posts });
+      if (sub === 'savemod') {
+        const incoming = b.mod || {};
+        if (incoming.id) {
+          const idx = mods.findIndex((m) => m.id === incoming.id);
+          if (idx >= 0) { // editar (conserva las clases existentes)
+            mods[idx].title = (incoming.title || '').toString().slice(0, 120);
+            mods[idx].desc = (incoming.desc || '').toString().slice(0, 400);
+            mods[idx].image = (incoming.image || '').toString().slice(0, 300);
+          }
+        } else {
+          mods.push(cleanModule(incoming));
+        }
+        await saveModules(mods);
+        return res.status(200).json({ ok: true, modules: mods });
       }
-      if (sub === 'del') {
-        posts = posts.filter((x) => x.id !== b.id);
-        await redis(['SET', 'community:posts', JSON.stringify(posts)]);
-        return res.status(200).json({ ok: true, posts });
+      if (sub === 'delmod') {
+        mods = mods.filter((m) => m.id !== b.id);
+        await saveModules(mods);
+        return res.status(200).json({ ok: true, modules: mods });
+      }
+      if (sub === 'savelesson') {
+        const mod = mods.find((m) => m.id === b.moduleId);
+        if (!mod) return res.status(400).json({ error: 'Módulo no encontrado.' });
+        if (!Array.isArray(mod.lessons)) mod.lessons = [];
+        const lesson = cleanLesson(b.lesson || {});
+        if (!lesson.title && !lesson.video && !lesson.body) return res.status(400).json({ error: 'La clase necesita al menos título o video.' });
+        const idx = mod.lessons.findIndex((l) => l.id === lesson.id);
+        if (idx >= 0) mod.lessons[idx] = lesson; else mod.lessons.push(lesson);
+        await saveModules(mods);
+        return res.status(200).json({ ok: true, modules: mods });
+      }
+      if (sub === 'dellesson') {
+        const mod = mods.find((m) => m.id === b.moduleId);
+        if (mod && Array.isArray(mod.lessons)) mod.lessons = mod.lessons.filter((l) => l.id !== b.lessonId);
+        await saveModules(mods);
+        return res.status(200).json({ ok: true, modules: mods });
       }
       return res.status(400).json({ error: 'Sub-acción no válida.' });
     }

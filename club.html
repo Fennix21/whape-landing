@@ -4,7 +4,7 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Comunidad WHAPE</title>
-<meta name="description" content="Comunidad WHAPE: contenido de valor para vender más y cobrar seguro." />
+<meta name="description" content="Comunidad WHAPE: clases y contenido de valor para vender más y cobrar seguro." />
 <link rel="icon" href="logo.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -14,7 +14,7 @@
   *{box-sizing:border-box}
   body{margin:0;font-family:'Sora',system-ui,Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
   a{color:var(--gold)}
-  .wrap{max-width:720px;margin:0 auto;padding:18px 16px 60px}
+  .wrap{max-width:880px;margin:0 auto;padding:18px 16px 70px}
 
   /* --- Login / registro --- */
   #auth{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
@@ -33,27 +33,68 @@
   .err{color:#ff8aa0;font-size:13px;margin-top:12px;text-align:center;min-height:18px}
   .hint{color:var(--muted);font-size:11.5px;margin-top:14px;text-align:center;line-height:1.5}
 
-  /* --- App (miembro dentro) --- */
+  /* --- App --- */
   #app{display:none}
   .top{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--stroke);background:var(--surface);position:sticky;top:0;z-index:5}
   .top img{width:34px;height:34px;border-radius:9px}
   .top .ti{font-weight:800;font-size:15px}
   .top .me{margin-left:auto;color:var(--muted);font-size:12.5px}
   .top .out{background:var(--surface2);border:1px solid var(--stroke);color:var(--muted);font-family:inherit;font-size:12.5px;font-weight:700;padding:7px 12px;border-radius:9px;cursor:pointer}
-  .hello{font-size:15px;color:var(--muted);margin:18px 2px 6px}
+  .hello{font-size:16px;color:var(--muted);margin:18px 2px 10px}
   .hello b{color:var(--text)}
 
-  .post{background:var(--surface);border:1px solid var(--stroke);border-radius:16px;padding:18px 18px 16px;margin-bottom:16px}
-  .post.pin{border-color:rgba(255,210,74,.45)}
-  .pinbadge{display:inline-block;font-size:10.5px;font-weight:800;color:var(--gold);background:rgba(255,210,74,.14);border-radius:6px;padding:2px 8px;margin-bottom:8px}
-  .post h2{font-size:18px;margin:0 0 8px;line-height:1.3}
-  .post .body{color:#E7E3F4;font-size:14.5px;line-height:1.65;white-space:pre-wrap;word-break:break-word}
-  .post .body a{word-break:break-all}
-  .post img.cover{width:100%;border-radius:11px;margin:12px 0 2px;display:block}
-  .vwrap{position:relative;width:100%;padding-bottom:56.25%;margin:12px 0 2px;border-radius:11px;overflow:hidden}
+  /* progreso general */
+  .ovbar{height:9px;background:var(--surface);border:1px solid var(--stroke);border-radius:999px;overflow:hidden;margin:4px 2px 6px}
+  .ovbar-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--success));transition:width .3s}
+  .ovtext{color:var(--muted);font-size:12.5px;margin:0 2px 16px}
+  .resume{width:100%;padding:13px;border:0;border-radius:12px;font-family:inherit;font-weight:800;font-size:14.5px;color:#fff;background:linear-gradient(90deg,var(--accent),var(--accent2));cursor:pointer;margin-bottom:20px}
+
+  /* módulos */
+  .modcard{display:flex;gap:14px;background:var(--surface);border:1px solid var(--stroke);border-radius:16px;padding:14px;margin-bottom:12px;cursor:pointer;align-items:center;transition:border-color .15s}
+  .modcard:hover{border-color:var(--accent)}
+  .mod-cover{width:84px;height:84px;border-radius:12px;flex:none;object-fit:cover;background:var(--surface2);display:flex;align-items:center;justify-content:center;font-size:30px}
+  .mod-info{flex:1;min-width:0}
+  .mod-t{font-weight:800;font-size:15.5px}
+  .mod-d{color:var(--muted);font-size:12.5px;margin:3px 0 8px;line-height:1.4}
+  .mod-bar{height:7px;background:var(--bg);border-radius:999px;overflow:hidden;margin-bottom:5px}
+  .mod-bar-fill{height:100%;background:var(--success);transition:width .3s}
+  .mod-meta{color:var(--muted);font-size:11.5px}
+
+  /* módulo → clases */
+  .back2{background:var(--surface);border:1px solid var(--stroke);color:var(--muted);font-family:inherit;font-size:13px;font-weight:700;padding:8px 14px;border-radius:10px;cursor:pointer;margin:4px 0 16px}
+  #viewModule h2,#viewLesson h2{font-size:21px;margin:0 0 6px;line-height:1.3}
+  .moddesc{color:var(--muted);font-size:14px;margin:0 0 18px;line-height:1.5}
+  .lrow{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--stroke);border-radius:12px;padding:13px 14px;margin-bottom:9px;cursor:pointer;transition:border-color .15s}
+  .lrow:hover{border-color:var(--accent)}
+  .lrow .ck{width:24px;height:24px;border-radius:50%;border:2px solid var(--stroke);flex:none;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#06241B}
+  .lrow .ck.on{background:var(--success);border-color:var(--success)}
+  .lrow .lt{flex:1;min-width:0;font-weight:600;font-size:14px}
+  .lrow .ar{color:var(--muted);font-size:14px}
+
+  /* clase (reproductor) */
+  .lesson-grid{display:grid;grid-template-columns:1fr;gap:20px}
+  @media(min-width:840px){.lesson-grid{grid-template-columns:1fr 290px}}
+  .vwrap{position:relative;width:100%;padding-bottom:56.25%;border-radius:12px;overflow:hidden;background:#000}
   .vwrap iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
-  .post .when{color:var(--muted);font-size:11.5px;margin-top:12px}
-  .empty{text-align:center;color:var(--muted);padding:50px 20px;font-size:14.5px;line-height:1.6}
+  .cover-img{width:100%;border-radius:12px;display:block}
+  .lesson-head{display:flex;align-items:flex-start;gap:12px;margin-top:16px}
+  .lesson-head h2{flex:1}
+  .done-btn{flex:none;border:1px solid var(--success);background:transparent;color:var(--success);font-family:inherit;font-weight:800;font-size:13px;padding:9px 13px;border-radius:10px;cursor:pointer;white-space:nowrap}
+  .done-btn.on{background:var(--success);color:#06241B}
+  .lesson-body{color:#E7E3F4;font-size:14.5px;line-height:1.7;white-space:pre-wrap;word-break:break-word;margin-top:14px}
+  .lesson-body a{word-break:break-all}
+  .lesson-nav{display:flex;gap:10px;margin-top:22px}
+  .lesson-nav button{flex:1;background:var(--surface);border:1px solid var(--stroke);color:var(--text);font-family:inherit;font-weight:700;font-size:13.5px;padding:11px;border-radius:11px;cursor:pointer}
+  .lesson-nav button:disabled{opacity:.4;cursor:default}
+  .lesson-side{align-self:start}
+  .side-title{font-size:11px;color:var(--muted);font-weight:700;margin-bottom:9px;text-transform:uppercase;letter-spacing:.05em}
+  .pl-item{display:flex;align-items:center;gap:9px;padding:9px 11px;border:1px solid var(--stroke);border-radius:10px;margin-bottom:7px;cursor:pointer;font-size:13px}
+  .pl-item:hover{border-color:var(--accent)}
+  .pl-item.cur{border-color:var(--accent);background:var(--surface)}
+  .pl-item .pck{width:18px;height:18px;border-radius:50%;border:2px solid var(--stroke);flex:none;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#06241B}
+  .pl-item .pck.on{background:var(--success);border-color:var(--success)}
+  .pl-item .pt{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .empty2{text-align:center;color:var(--muted);padding:50px 20px;font-size:14.5px;line-height:1.6}
 </style>
 </head>
 <body>
@@ -63,12 +104,11 @@
   <div class="card">
     <img src="logo.png" class="logo" alt="WHAPE" />
     <h1>Comunidad WHAPE</h1>
-    <p class="sub">Contenido de valor para vender más y cobrar seguro. 🔊</p>
+    <p class="sub">Clases y contenido de valor para vender más y cobrar seguro. 🔊</p>
     <div class="tabs">
       <button id="tabSignup" class="on" onclick="setTab('signup')">Registrarme</button>
       <button id="tabLogin" onclick="setTab('login')">Entrar</button>
     </div>
-
     <div id="formSignup">
       <label>Tu nombre</label>
       <input id="suName" placeholder="Ej. Juan Pérez" autocomplete="name" />
@@ -80,7 +120,6 @@
       <div class="err" id="suErr"></div>
       <p class="hint">Es gratis. Usamos tu WhatsApp solo para avisarte de novedades. Al registrarte aceptas recibir contenido de la comunidad.</p>
     </div>
-
     <div id="formLogin" style="display:none">
       <label>Tu WhatsApp</label>
       <input id="liPhone" placeholder="Ej. 983427614" inputmode="numeric" autocomplete="tel" />
@@ -92,7 +131,7 @@
   </div>
 </div>
 
-<!-- ===== APP (DENTRO) ===== -->
+<!-- ===== APP (LMS) ===== -->
 <div id="app">
   <div class="top">
     <img src="logo.png" alt="WHAPE" />
@@ -101,22 +140,61 @@
     <button class="out" onclick="logout()">Salir</button>
   </div>
   <div class="wrap">
-    <div class="hello" id="hello"></div>
-    <div id="feed"></div>
+    <!-- INICIO -->
+    <div id="viewHome">
+      <div class="hello" id="hello"></div>
+      <div class="ovbar"><div class="ovbar-fill" id="ovFill" style="width:0%"></div></div>
+      <div class="ovtext" id="ovText"></div>
+      <button class="resume" id="resumeBtn" style="display:none" onclick="resumeLast()">▶ Continuar desde donde lo dejé</button>
+      <div id="modules"></div>
+    </div>
+    <!-- MÓDULO -->
+    <div id="viewModule" style="display:none">
+      <button class="back2" onclick="goHome()">← Volver al inicio</button>
+      <h2 id="modTitle"></h2>
+      <p class="moddesc" id="modDesc"></p>
+      <div id="modLessons"></div>
+    </div>
+    <!-- CLASE -->
+    <div id="viewLesson" style="display:none">
+      <button class="back2" onclick="backToModule()">← <span id="lsBackName"></span></button>
+      <div class="lesson-grid">
+        <div class="lesson-main">
+          <div id="lsMedia"></div>
+          <div class="lesson-head">
+            <h2 id="lsTitle"></h2>
+            <button class="done-btn" id="doneBtn" onclick="toggleComplete()"></button>
+          </div>
+          <div class="lesson-body" id="lsBody"></div>
+          <div class="lesson-nav">
+            <button id="prevBtn" onclick="prevLesson()">← Anterior</button>
+            <button id="nextBtn" onclick="nextLesson()">Siguiente →</button>
+          </div>
+        </div>
+        <div class="lesson-side">
+          <div class="side-title">Clases de este módulo</div>
+          <div id="lsPlaylist"></div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
 <script>
   var TOKEN = localStorage.getItem('whape_club') || '';
   var NAME = localStorage.getItem('whape_club_name') || '';
+  var ACADEMY = { modules:[], progress:{done:{},last:''}, name:'' };
+  var curMod = null, curLesson = null;
 
   function setTab(t){
     document.getElementById('tabSignup').classList.toggle('on', t==='signup');
     document.getElementById('tabLogin').classList.toggle('on', t==='login');
-    document.getElementById('formSignup').style.display = t==='signup' ? 'block' : 'none';
-    document.getElementById('formLogin').style.display = t==='login' ? 'block' : 'none';
+    document.getElementById('formSignup').style.display = t==='signup' ? 'block':'none';
+    document.getElementById('formLogin').style.display = t==='login' ? 'block':'none';
   }
   function esc(t){ var e=document.createElement('div'); e.textContent=t==null?'':t; return e.innerHTML; }
+  function ytId(u){ if(!u) return ''; var m=u.match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/); if(m) return m[1]; if(/^[\w-]{11}$/.test(u.trim())) return u.trim(); return ''; }
+  function linkify(t){ return esc(t).replace(/(https?:\/\/[^\s]+)/g, function(u){ return '<a href="'+u+'" target="_blank" rel="noopener">'+u+'</a>'; }); }
 
   async function api(action, data){
     try{
@@ -127,19 +205,14 @@
   }
 
   async function signup(){
-    var name=document.getElementById('suName').value.trim();
-    var phone=document.getElementById('suPhone').value.trim();
-    var pass=document.getElementById('suPass').value;
     var err=document.getElementById('suErr'); err.textContent='';
-    var res = await api('signup', {name:name, phone:phone, password:pass});
+    var res = await api('signup', { name:document.getElementById('suName').value.trim(), phone:document.getElementById('suPhone').value.trim(), password:document.getElementById('suPass').value });
     if(!res.ok){ err.textContent = res.d.error || 'No se pudo registrar.'; return; }
     enter(res.d.token, res.d.name);
   }
   async function login(){
-    var phone=document.getElementById('liPhone').value.trim();
-    var pass=document.getElementById('liPass').value;
     var err=document.getElementById('liErr'); err.textContent='';
-    var res = await api('login', {phone:phone, password:pass});
+    var res = await api('login', { phone:document.getElementById('liPhone').value.trim(), password:document.getElementById('liPass').value });
     if(!res.ok){ err.textContent = res.d.error || 'No se pudo entrar.'; return; }
     enter(res.d.token, res.d.name);
   }
@@ -155,50 +228,103 @@
     document.getElementById('auth').style.display='flex';
   }
 
-  function ytId(u){
-    if(!u) return '';
-    var m = u.match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/);
-    if(m) return m[1];
-    if(/^[\w-]{11}$/.test(u.trim())) return u.trim();
-    return '';
-  }
-  function linkify(t){
-    return esc(t).replace(/(https?:\/\/[^\s]+)/g, function(u){ return '<a href="'+u+'" target="_blank" rel="noopener">'+u+'</a>'; });
-  }
-  function fmtDate(ts){ if(!ts) return ''; var d=new Date(ts); return d.toLocaleDateString('es-PE',{day:'numeric',month:'long',year:'numeric'}); }
+  // ---- helpers de academia ----
+  function flat(){ var a=[]; (ACADEMY.modules||[]).forEach(function(m){ (m.lessons||[]).forEach(function(l){ a.push({mod:m, lesson:l}); }); }); return a; }
+  function isDone(id){ return !!(ACADEMY.progress && ACADEMY.progress.done && ACADEMY.progress.done[id]); }
+  function stats(){ var f=flat(); var done=f.filter(function(x){return isDone(x.lesson.id);}).length; return { total:f.length, done:done, pct: f.length? Math.round(done/f.length*100):0 }; }
+  function findFlatIndex(id){ var f=flat(); for(var i=0;i<f.length;i++){ if(f[i].lesson.id===id) return i; } return -1; }
 
-  function renderFeed(posts){
-    var f=document.getElementById('feed');
-    if(!posts || !posts.length){
-      f.innerHTML='<div class="empty">📚 Aún no hay publicaciones.<br>Muy pronto subiremos contenido de valor para ti. ¡Quédate atento!</div>';
-      return;
-    }
-    f.innerHTML = posts.map(function(p){
-      var vid = ytId(p.video);
-      var video = vid ? '<div class="vwrap"><iframe src="https://www.youtube.com/embed/'+vid+'" allowfullscreen loading="lazy"></iframe></div>' : '';
-      var img = (!vid && p.image) ? '<img class="cover" src="'+esc(p.image)+'" alt="" loading="lazy" />' : '';
-      var title = p.title ? '<h2>'+esc(p.title)+'</h2>' : '';
-      var body = p.body ? '<div class="body">'+linkify(p.body)+'</div>' : '';
-      var pin = p.pinned ? '<span class="pinbadge">📌 Destacado</span>' : '';
-      return '<div class="post'+(p.pinned?' pin':'')+'">'+pin+title+video+img+body+'<div class="when">'+fmtDate(p.ts)+'</div></div>';
-    }).join('');
-  }
+  function show(view){ ['viewHome','viewModule','viewLesson'].forEach(function(v){ document.getElementById(v).style.display = (v===view?'block':'none'); }); window.scrollTo(0,0); }
 
   async function showApp(){
     document.getElementById('auth').style.display='none';
     document.getElementById('app').style.display='block';
     document.getElementById('meName').textContent = NAME ? ('👋 '+NAME) : '';
-    document.getElementById('hello').innerHTML = NAME ? ('Hola <b>'+esc(NAME)+'</b>, bienvenido a tu comunidad 🎉') : 'Bienvenido a tu comunidad 🎉';
-    var res = await api('feed', {token:TOKEN});
-    if(!res.ok){ // token vencido
-      if(res.d && /sesión/i.test(res.d.error||'')){ logout(); return; }
-      document.getElementById('feed').innerHTML='<div class="empty">No pudimos cargar el contenido. Recarga la página.</div>';
-      return;
-    }
-    renderFeed(res.d.posts);
+    await loadAcademy();
+  }
+  async function loadAcademy(){
+    var res = await api('academy', { token:TOKEN });
+    if(!res.ok){ if(res.d && /sesión/i.test(res.d.error||'')){ logout(); return; } ACADEMY={modules:[],progress:{done:{},last:''}}; goHome(); return; }
+    ACADEMY = res.d; if(!ACADEMY.progress) ACADEMY.progress={done:{},last:''};
+    if(res.d.name){ NAME=res.d.name; document.getElementById('meName').textContent='👋 '+NAME; }
+    goHome();
   }
 
-  // Arranque: si ya hay sesión, entra directo.
+  function goHome(){ renderHome(); show('viewHome'); }
+  function renderHome(){
+    document.getElementById('hello').innerHTML = NAME ? ('Hola <b>'+esc(NAME)+'</b>, esta es tu academia 🎓') : 'Bienvenido a tu academia 🎓';
+    var s=stats();
+    document.getElementById('ovFill').style.width=s.pct+'%';
+    document.getElementById('ovText').textContent = s.total ? (s.done+' de '+s.total+' clases · '+s.pct+'% completado') : 'Aún no hay clases publicadas.';
+    var rb=document.getElementById('resumeBtn');
+    rb.style.display = (ACADEMY.progress.last && findFlatIndex(ACADEMY.progress.last)>=0) ? 'block':'none';
+    var mc=document.getElementById('modules');
+    if(!ACADEMY.modules || !ACADEMY.modules.length){ mc.innerHTML='<div class="empty2">📚 Pronto subiremos las clases. ¡Quédate atento!</div>'; return; }
+    mc.innerHTML = ACADEMY.modules.map(function(m){
+      var ls=m.lessons||[]; var d=ls.filter(function(l){return isDone(l.id);}).length;
+      var pct = ls.length? Math.round(d/ls.length*100):0;
+      var cover = m.image ? '<img class="mod-cover" src="'+esc(m.image)+'" alt="" />' : '<div class="mod-cover">📚</div>';
+      return '<div class="modcard" onclick="openModule(\''+m.id+'\')">'+cover+
+        '<div class="mod-info"><div class="mod-t">'+esc(m.title||'Módulo')+'</div>'+
+        (m.desc?'<div class="mod-d">'+esc(m.desc)+'</div>':'')+
+        '<div class="mod-bar"><div class="mod-bar-fill" style="width:'+pct+'%"></div></div>'+
+        '<div class="mod-meta">'+d+'/'+ls.length+' clases · '+pct+'%</div></div></div>';
+    }).join('');
+  }
+
+  function openModule(id){ curMod = (ACADEMY.modules||[]).find(function(m){return m.id===id;}); if(!curMod) return; renderModule(); show('viewModule'); }
+  function renderModule(){
+    var m=curMod;
+    document.getElementById('modTitle').textContent=m.title||'';
+    var dd=document.getElementById('modDesc'); dd.textContent=m.desc||''; dd.style.display=m.desc?'block':'none';
+    var ml=document.getElementById('modLessons'); var ls=m.lessons||[];
+    if(!ls.length){ ml.innerHTML='<div class="empty2">Este módulo aún no tiene clases.</div>'; return; }
+    ml.innerHTML=ls.map(function(l){
+      var d=isDone(l.id);
+      return '<div class="lrow" onclick="openLesson(\''+m.id+'\',\''+l.id+'\')"><span class="ck'+(d?' on':'')+'">'+(d?'✓':'')+'</span><span class="lt">'+esc(l.title||'(sin título)')+'</span><span class="ar">▶</span></div>';
+    }).join('');
+  }
+  function backToModule(){ if(curMod){ renderModule(); show('viewModule'); } else { goHome(); } }
+
+  function openLesson(modId, lessonId){
+    var m=(ACADEMY.modules||[]).find(function(x){return x.id===modId;}); if(!m) return;
+    var l=(m.lessons||[]).find(function(x){return x.id===lessonId;}); if(!l) return;
+    curMod=m; curLesson=l;
+    ACADEMY.progress.last=lessonId;
+    api('seen', { token:TOKEN, lessonId:lessonId });
+    renderLesson(); show('viewLesson');
+  }
+  function renderLesson(){
+    var l=curLesson, m=curMod;
+    document.getElementById('lsBackName').textContent = m.title||'Volver';
+    var vid=ytId(l.video);
+    var media = vid ? '<div class="vwrap"><iframe src="https://www.youtube.com/embed/'+vid+'" allowfullscreen></iframe></div>'
+      : (l.image ? '<img class="cover-img" src="'+esc(l.image)+'" alt="" />' : '');
+    document.getElementById('lsMedia').innerHTML=media;
+    document.getElementById('lsTitle').textContent=l.title||'';
+    document.getElementById('lsBody').innerHTML = l.body ? linkify(l.body) : '';
+    var done=isDone(l.id);
+    var db=document.getElementById('doneBtn');
+    db.className='done-btn'+(done?' on':''); db.textContent = done ? '✓ Completada' : 'Marcar completada';
+    var f=flat(), i=findFlatIndex(l.id);
+    document.getElementById('prevBtn').disabled = i<=0;
+    document.getElementById('nextBtn').disabled = i>=f.length-1;
+    document.getElementById('lsPlaylist').innerHTML=(m.lessons||[]).map(function(x){
+      var d=isDone(x.id);
+      return '<div class="pl-item'+(x.id===l.id?' cur':'')+'" onclick="openLesson(\''+m.id+'\',\''+x.id+'\')"><span class="pck'+(d?' on':'')+'">'+(d?'✓':'')+'</span><span class="pt">'+esc(x.title||'(sin título)')+'</span></div>';
+    }).join('');
+  }
+  function toggleComplete(){
+    var l=curLesson; var nd=!isDone(l.id);
+    if(!ACADEMY.progress.done) ACADEMY.progress.done={};
+    if(nd) ACADEMY.progress.done[l.id]=true; else delete ACADEMY.progress.done[l.id];
+    renderLesson();
+    api('complete', { token:TOKEN, lessonId:l.id, done:nd });
+  }
+  function nextLesson(){ var f=flat(), i=findFlatIndex(curLesson.id); if(i>=0 && i<f.length-1){ openLesson(f[i+1].mod.id, f[i+1].lesson.id); } }
+  function prevLesson(){ var f=flat(), i=findFlatIndex(curLesson.id); if(i>0){ openLesson(f[i-1].mod.id, f[i-1].lesson.id); } }
+  function resumeLast(){ var f=flat(); var x=f.find(function(y){return y.lesson.id===ACADEMY.progress.last;}) || f[0]; if(x) openLesson(x.mod.id, x.lesson.id); }
+
   if(TOKEN){ showApp(); } else { setTab('signup'); }
 </script>
 </body>
