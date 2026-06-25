@@ -89,6 +89,9 @@
   .winchip{font-size:10px;font-weight:800;padding:1px 6px;border-radius:6px;margin-left:6px;white-space:nowrap}
   .winchip.in{background:rgba(52,211,153,.16);color:#34d399}
   .winchip.out{background:rgba(248,113,113,.16);color:#f87171}
+  .reactbar{display:none}
+  .reactbar.show{display:block;cursor:pointer;background:rgba(255,210,74,.12);border:1px solid rgba(255,210,74,.4);color:var(--gold);font-size:12.5px;font-weight:800;padding:8px 12px;border-radius:10px;margin:0 0 8px}
+  .reactbar.show:hover{background:rgba(255,210,74,.22)}
   .win24{display:none}
   .win24.show{display:block;background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.34);color:#fca5a5;font-size:12.5px;line-height:1.4;padding:8px 12px;border-radius:10px;margin:0 6px 8px}
   #notesPanel{display:none;padding:10px 16px;border-bottom:1px solid var(--stroke);background:var(--surface);gap:8px;flex-direction:column}
@@ -240,9 +243,11 @@
             <option value="note">📝 Con nota</option>
             <option value="out24">🔴 Fuera de 24h</option>
             <option value="in24">🟢 Dentro de 24h</option>
+            <option value="reactivable">🔥 Reactivables (fuera 24h + interés)</option>
           </select>
         </div>
       </div>
+      <div id="reactBar" class="reactbar" onclick="showReactivables()"></div>
       <div class="list" id="list"></div>
     </div>
     <div class="conv">
@@ -481,6 +486,10 @@
   function fmtDur(ms){ var m=Math.floor(ms/60000), h=Math.floor(m/60), d=Math.floor(h/24); if(d>0) return d+'d '+(h%24)+'h'; if(h>0) return h+'h '+(m%60)+'m'; return Math.max(0,m)+'m'; }
   function lastUserTsOf(l){ if(!l) return 0; if(l.lastUserTs) return l.lastUserTs; var ms=l.messages||[]; for(var i=ms.length-1;i>=0;i--){ if(ms[i].role==='user') return ms[i].ts||0; } return 0; }
   function windowInfo(l){ var ts=lastUserTsOf(l); if(!ts) return {has:false,inside:false}; var ms=Date.now()-ts; return {has:true, inside: ms < 86400000, ms:ms, ts:ts}; }
+  function isReactivable(l){ var w=windowInfo(l); var st=l.status||'nuevo'; return w.has && !w.inside && (st==='interesado'||st==='pago_pendiente'); }
+  function reactCount(){ return (LEADS||[]).filter(isReactivable).length; }
+  function updateReactBar(){ var rb=document.getElementById('reactBar'); if(!rb) return; var rc=reactCount(); if(rc>0){ rb.className='reactbar show'; rb.innerHTML='🔥 <b>'+rc+'</b> reactivable'+(rc>1?'s':'')+' (fuera de 24h con interés) · clic para verlos'; } else { rb.className='reactbar'; rb.innerHTML=''; } }
+  function showReactivables(){ var sp=document.getElementById('lfspecial'); if(sp) sp.value='reactivable'; var st=document.getElementById('lfstatus'); if(st) st.value=''; var s=document.getElementById('lsearch'); if(s) s.value=''; renderLeads(); }
 
   function val(id){ var e=document.getElementById(id); return e ? e.value : ''; }
   function leadMatches(l){
@@ -495,11 +504,13 @@
     if(sp==='note' && !l.hasNote) return false;
     if(sp==='out24'){ var wo=windowInfo(l); if(!(wo.has && !wo.inside)) return false; }
     if(sp==='in24'){ var wn=windowInfo(l); if(!(wn.has && wn.inside)) return false; }
+    if(sp==='reactivable' && !isReactivable(l)) return false;
     return true;
   }
   function renderLeads(){
     var el = document.getElementById('list');
     var leads = (LEADS||[]).filter(leadMatches);
+    updateReactBar();
     if(!leads.length){
       el.innerHTML = '<div class="empty" style="height:auto;padding:30px">'+((LEADS&&LEADS.length)?'Ningún lead coincide con el filtro. 🔍':'Aún no hay clientes. Cuando alguien escriba al bot, aparecerá aquí. 📲')+'</div>';
       return;
