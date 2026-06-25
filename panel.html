@@ -132,8 +132,9 @@
   #lbClose{position:fixed;top:16px;right:16px;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.25)}
   #lbClose:hover{background:rgba(255,255,255,.26)}
   /* Editor del prompt del bot */
-  #promptModal,#statsModal,#tplModal,#wtplModal{display:none;position:fixed;inset:0;z-index:120;background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:18px}
-  #promptModal.open,#statsModal.open,#tplModal.open,#wtplModal.open{display:flex}
+  #promptModal,#statsModal,#tplModal,#wtplModal,#communityModal{display:none;position:fixed;inset:0;z-index:120;background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:18px}
+  #promptModal.open,#statsModal.open,#tplModal.open,#wtplModal.open,#communityModal.open{display:flex}
+  .cmin{width:100%;padding:10px 12px;margin-bottom:8px;border-radius:9px;border:1px solid var(--stroke);background:var(--bg);color:#fff;font-family:inherit;font-size:14px}
   .wrow{display:flex;align-items:center;gap:10px;justify-content:space-between;border:1px solid var(--stroke);border-radius:10px;padding:10px 12px;margin-bottom:8px}
   .wrow .wbody{color:var(--muted);font-size:12px;margin-top:4px;line-height:1.4}
   .wrow button{flex:none;padding:8px 14px;font-weight:700;font-size:13px;background:var(--success);color:#06241B;border-radius:8px}
@@ -229,6 +230,7 @@
     <div class="sp"></div>
     <button class="ref" id="viewToggle" onclick="toggleView()" style="margin-right:8px">🗂️ Embudo</button>
     <button class="ref" onclick="openStats()" style="margin-right:8px">📊 Analíticas</button>
+    <button class="ref" onclick="openCommunity()" style="margin-right:8px">📚 Comunidad</button>
     <button class="ref" onclick="openPrompt()" style="margin-right:8px">⚙️ Bot</button>
     <button class="ref" onclick="loadLeads()">↻ Actualizar</button>
   </div>
@@ -314,6 +316,32 @@
 <div id="lightbox" onclick="closeZoom(event)">
   <button id="lbClose" onclick="closeZoom(event)" aria-label="Cerrar">✕</button>
   <img id="lbImg" src="" alt="comprobante" onclick="event.stopPropagation()" />
+</div>
+
+<div id="communityModal">
+  <div class="pm-card" style="max-width:680px">
+    <div class="pm-head">
+      <strong>📚 Comunidad — Contenido</strong>
+      <button class="pm-x" onclick="closeCommunity()" aria-label="Cerrar">✕</button>
+    </div>
+    <div style="overflow-y:auto;max-height:72vh;padding:2px">
+      <div id="cmMeta" style="color:var(--muted);font-size:12.5px;margin-bottom:10px"></div>
+      <button class="ref" onclick="newPost()" style="margin-bottom:12px">➕ Nueva publicación</button>
+      <div id="cmForm" style="display:none;border:1px solid var(--stroke);border-radius:12px;padding:14px;margin-bottom:14px;background:var(--surface)">
+        <input type="hidden" id="cmId" />
+        <input id="cmTitle" class="cmin" placeholder="Título" />
+        <textarea id="cmBody" class="cmin" placeholder="Escribe aquí tu contenido de valor… (puedes pegar enlaces)" style="min-height:120px;resize:vertical"></textarea>
+        <input id="cmVideo" class="cmin" placeholder="Link de YouTube (opcional)" />
+        <input id="cmImage" class="cmin" placeholder="Link de imagen (opcional)" />
+        <label style="display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;margin:4px 0 10px"><input type="checkbox" id="cmPin" style="width:auto" /> 📌 Destacar (fijar arriba)</label>
+        <div style="display:flex;gap:8px">
+          <button class="ref" onclick="savePost()" style="background:var(--success);color:#06241B;font-weight:800">💾 Guardar</button>
+          <button class="ref" onclick="cancelPost()">Cancelar</button>
+        </div>
+      </div>
+      <div id="cmList"></div>
+    </div>
+  </div>
 </div>
 
 <div id="statsModal">
@@ -647,6 +675,66 @@
     });
   }
   function closeStats(){ document.getElementById('statsModal').classList.remove('open'); }
+  // --- Comunidad (gestión de contenido de valor) ---
+  var CM_POSTS=[];
+  function capi(sub, extra){
+    return fetch('/api/community', { method:'POST', headers:{'content-type':'application/json'},
+      body: JSON.stringify(Object.assign({ action:'admin', pass:PASS, sub:sub }, extra||{})) })
+      .then(function(r){ return r.json().then(function(d){ return { ok:r.ok, d:d }; }); });
+  }
+  function openCommunity(){ document.getElementById('communityModal').classList.add('open'); cancelPost(); loadPosts(); }
+  function closeCommunity(){ document.getElementById('communityModal').classList.remove('open'); }
+  function loadPosts(){
+    var list=document.getElementById('cmList'); list.innerHTML='<div style="color:var(--muted);padding:14px">Cargando…</div>';
+    capi('list').then(function(res){
+      if(!res.ok){ list.innerHTML='<div style="color:#ff8aa0;padding:14px">'+(res.d.error||'Error')+'</div>'; return; }
+      document.getElementById('cmMeta').innerHTML='👥 <b>'+(res.d.members||0)+'</b> miembros · 📝 <b>'+((res.d.posts||[]).length)+'</b> publicaciones';
+      renderPostsAdmin(res.d.posts||[]);
+    });
+  }
+  function renderPostsAdmin(posts){
+    CM_POSTS=posts;
+    var list=document.getElementById('cmList');
+    if(!posts.length){ list.innerHTML='<div style="color:var(--muted);padding:14px">Aún no hay publicaciones. Crea la primera. ✨</div>'; return; }
+    list.innerHTML=posts.map(function(p,i){
+      var tag=p.pinned?'📌 ':''; var media=p.video?' 🎬':(p.image?' 🖼️':'');
+      return '<div style="border:1px solid var(--stroke);border-radius:10px;padding:11px 12px;margin-bottom:8px;display:flex;align-items:center;gap:10px">'
+        +'<div style="flex:1;min-width:0"><div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+tag+esc(p.title||'(sin título)')+media+'</div>'
+        +'<div style="color:var(--muted);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc((p.body||'').slice(0,90))+'</div></div>'
+        +'<button class="ref" onclick="editPost('+i+')">✏️</button>'
+        +'<button class="ref" onclick="delPost(\''+p.id+'\')" style="color:#ff8aa0">🗑️</button></div>';
+    }).join('');
+  }
+  function newPost(){ fillForm({}); }
+  function editPost(i){ fillForm(CM_POSTS[i]||{}); }
+  function fillForm(p){
+    document.getElementById('cmId').value=p.id||'';
+    document.getElementById('cmTitle').value=p.title||'';
+    document.getElementById('cmBody').value=p.body||'';
+    document.getElementById('cmVideo').value=p.video||'';
+    document.getElementById('cmImage').value=p.image||'';
+    document.getElementById('cmPin').checked=!!p.pinned;
+    document.getElementById('cmForm').style.display='block';
+    document.getElementById('cmTitle').focus();
+  }
+  function cancelPost(){ document.getElementById('cmForm').style.display='none'; }
+  function savePost(){
+    var post={ id:document.getElementById('cmId').value||undefined,
+      title:document.getElementById('cmTitle').value.trim(),
+      body:document.getElementById('cmBody').value.trim(),
+      video:document.getElementById('cmVideo').value.trim(),
+      image:document.getElementById('cmImage').value.trim(),
+      pinned:document.getElementById('cmPin').checked };
+    if(!post.title && !post.body){ alert('Pon al menos un título o algo de texto.'); return; }
+    capi('save',{post:post}).then(function(res){
+      if(!res.ok){ alert(res.d.error||'No se pudo guardar'); return; }
+      cancelPost(); loadPosts();
+    });
+  }
+  function delPost(id){
+    if(!confirm('¿Eliminar esta publicación? No se puede deshacer.')) return;
+    capi('del',{id:id}).then(function(res){ if(!res.ok){ alert(res.d.error||'Error'); return; } loadPosts(); });
+  }
   function renderStats(d){
     var ev = d.events || {};
     var visitas = ev.pageview || 0;

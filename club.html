@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Comunidad WHAPE</title>
+<meta name="description" content="Comunidad WHAPE: contenido de valor para vender más y cobrar seguro." />
+<link rel="icon" href="logo.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root{--bg:#0F0C1C;--surface:#1A1630;--surface2:#241F3D;--stroke:#332C52;--accent:#8E2DE2;--accent2:#4A00E0;--success:#2BD9A6;--gold:#FFD24A;--text:#FFFFFF;--muted:#ABA4C7}
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Sora',system-ui,Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+  a{color:var(--gold)}
+  .wrap{max-width:720px;margin:0 auto;padding:18px 16px 60px}
+
+  /* --- Login / registro --- */
+  #auth{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+  .card{width:100%;max-width:400px;background:var(--surface);border:1px solid var(--stroke);border-radius:18px;padding:26px 22px}
+  .logo{width:64px;height:64px;border-radius:16px;display:block;margin:0 auto 12px}
+  .card h1{font-size:21px;text-align:center;margin:0 0 4px}
+  .card .sub{text-align:center;color:var(--muted);font-size:13.5px;margin:0 0 18px}
+  .tabs{display:flex;gap:6px;background:var(--bg);border:1px solid var(--stroke);border-radius:12px;padding:4px;margin-bottom:16px}
+  .tabs button{flex:1;background:transparent;border:0;color:var(--muted);font-family:inherit;font-size:14px;font-weight:700;padding:9px;border-radius:9px;cursor:pointer}
+  .tabs button.on{background:var(--accent);color:#fff}
+  label{display:block;font-size:12.5px;color:var(--muted);margin:10px 0 5px}
+  input{width:100%;padding:12px 14px;font-size:15px;border-radius:11px;border:1px solid var(--stroke);background:var(--bg);color:#fff;font-family:inherit}
+  input:focus{outline:none;border-color:var(--accent)}
+  .btn{width:100%;margin-top:16px;padding:13px;font-size:15px;font-weight:800;border:0;border-radius:12px;cursor:pointer;background:linear-gradient(90deg,var(--accent),var(--accent2));color:#fff;font-family:inherit}
+  .btn:active{transform:translateY(1px)}
+  .err{color:#ff8aa0;font-size:13px;margin-top:12px;text-align:center;min-height:18px}
+  .hint{color:var(--muted);font-size:11.5px;margin-top:14px;text-align:center;line-height:1.5}
+
+  /* --- App (miembro dentro) --- */
+  #app{display:none}
+  .top{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--stroke);background:var(--surface);position:sticky;top:0;z-index:5}
+  .top img{width:34px;height:34px;border-radius:9px}
+  .top .ti{font-weight:800;font-size:15px}
+  .top .me{margin-left:auto;color:var(--muted);font-size:12.5px}
+  .top .out{background:var(--surface2);border:1px solid var(--stroke);color:var(--muted);font-family:inherit;font-size:12.5px;font-weight:700;padding:7px 12px;border-radius:9px;cursor:pointer}
+  .hello{font-size:15px;color:var(--muted);margin:18px 2px 6px}
+  .hello b{color:var(--text)}
+
+  .post{background:var(--surface);border:1px solid var(--stroke);border-radius:16px;padding:18px 18px 16px;margin-bottom:16px}
+  .post.pin{border-color:rgba(255,210,74,.45)}
+  .pinbadge{display:inline-block;font-size:10.5px;font-weight:800;color:var(--gold);background:rgba(255,210,74,.14);border-radius:6px;padding:2px 8px;margin-bottom:8px}
+  .post h2{font-size:18px;margin:0 0 8px;line-height:1.3}
+  .post .body{color:#E7E3F4;font-size:14.5px;line-height:1.65;white-space:pre-wrap;word-break:break-word}
+  .post .body a{word-break:break-all}
+  .post img.cover{width:100%;border-radius:11px;margin:12px 0 2px;display:block}
+  .vwrap{position:relative;width:100%;padding-bottom:56.25%;margin:12px 0 2px;border-radius:11px;overflow:hidden}
+  .vwrap iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+  .post .when{color:var(--muted);font-size:11.5px;margin-top:12px}
+  .empty{text-align:center;color:var(--muted);padding:50px 20px;font-size:14.5px;line-height:1.6}
+</style>
+</head>
+<body>
+
+<!-- ===== LOGIN / REGISTRO ===== -->
+<div id="auth">
+  <div class="card">
+    <img src="logo.png" class="logo" alt="WHAPE" />
+    <h1>Comunidad WHAPE</h1>
+    <p class="sub">Contenido de valor para vender más y cobrar seguro. 🔊</p>
+    <div class="tabs">
+      <button id="tabSignup" class="on" onclick="setTab('signup')">Registrarme</button>
+      <button id="tabLogin" onclick="setTab('login')">Entrar</button>
+    </div>
+
+    <div id="formSignup">
+      <label>Tu nombre</label>
+      <input id="suName" placeholder="Ej. Juan Pérez" autocomplete="name" />
+      <label>Tu WhatsApp</label>
+      <input id="suPhone" placeholder="Ej. 983427614" inputmode="numeric" autocomplete="tel" />
+      <label>Crea una contraseña</label>
+      <input id="suPass" type="password" placeholder="Mínimo 4 caracteres" autocomplete="new-password" />
+      <button class="btn" onclick="signup()">Crear mi cuenta gratis 🚀</button>
+      <div class="err" id="suErr"></div>
+      <p class="hint">Es gratis. Usamos tu WhatsApp solo para avisarte de novedades. Al registrarte aceptas recibir contenido de la comunidad.</p>
+    </div>
+
+    <div id="formLogin" style="display:none">
+      <label>Tu WhatsApp</label>
+      <input id="liPhone" placeholder="Ej. 983427614" inputmode="numeric" autocomplete="tel" />
+      <label>Tu contraseña</label>
+      <input id="liPass" type="password" placeholder="Tu contraseña" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()" />
+      <button class="btn" onclick="login()">Entrar</button>
+      <div class="err" id="liErr"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== APP (DENTRO) ===== -->
+<div id="app">
+  <div class="top">
+    <img src="logo.png" alt="WHAPE" />
+    <span class="ti">Comunidad WHAPE</span>
+    <span class="me" id="meName"></span>
+    <button class="out" onclick="logout()">Salir</button>
+  </div>
+  <div class="wrap">
+    <div class="hello" id="hello"></div>
+    <div id="feed"></div>
+  </div>
+</div>
+
+<script>
+  var TOKEN = localStorage.getItem('whape_club') || '';
+  var NAME = localStorage.getItem('whape_club_name') || '';
+
+  function setTab(t){
+    document.getElementById('tabSignup').classList.toggle('on', t==='signup');
+    document.getElementById('tabLogin').classList.toggle('on', t==='login');
+    document.getElementById('formSignup').style.display = t==='signup' ? 'block' : 'none';
+    document.getElementById('formLogin').style.display = t==='login' ? 'block' : 'none';
+  }
+  function esc(t){ var e=document.createElement('div'); e.textContent=t==null?'':t; return e.innerHTML; }
+
+  async function api(action, data){
+    try{
+      var r = await fetch('/api/community', { method:'POST', headers:{'content-type':'application/json'}, body: JSON.stringify(Object.assign({action:action}, data||{})) });
+      var d = await r.json();
+      return { ok:r.ok, d:d };
+    }catch(e){ return { ok:false, d:{error:'Sin conexión. Revisa tu internet.'} }; }
+  }
+
+  async function signup(){
+    var name=document.getElementById('suName').value.trim();
+    var phone=document.getElementById('suPhone').value.trim();
+    var pass=document.getElementById('suPass').value;
+    var err=document.getElementById('suErr'); err.textContent='';
+    var res = await api('signup', {name:name, phone:phone, password:pass});
+    if(!res.ok){ err.textContent = res.d.error || 'No se pudo registrar.'; return; }
+    enter(res.d.token, res.d.name);
+  }
+  async function login(){
+    var phone=document.getElementById('liPhone').value.trim();
+    var pass=document.getElementById('liPass').value;
+    var err=document.getElementById('liErr'); err.textContent='';
+    var res = await api('login', {phone:phone, password:pass});
+    if(!res.ok){ err.textContent = res.d.error || 'No se pudo entrar.'; return; }
+    enter(res.d.token, res.d.name);
+  }
+  function enter(token, name){
+    TOKEN=token; NAME=name||'';
+    localStorage.setItem('whape_club', token);
+    localStorage.setItem('whape_club_name', NAME);
+    showApp();
+  }
+  function logout(){
+    TOKEN=''; localStorage.removeItem('whape_club'); localStorage.removeItem('whape_club_name');
+    document.getElementById('app').style.display='none';
+    document.getElementById('auth').style.display='flex';
+  }
+
+  function ytId(u){
+    if(!u) return '';
+    var m = u.match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/);
+    if(m) return m[1];
+    if(/^[\w-]{11}$/.test(u.trim())) return u.trim();
+    return '';
+  }
+  function linkify(t){
+    return esc(t).replace(/(https?:\/\/[^\s]+)/g, function(u){ return '<a href="'+u+'" target="_blank" rel="noopener">'+u+'</a>'; });
+  }
+  function fmtDate(ts){ if(!ts) return ''; var d=new Date(ts); return d.toLocaleDateString('es-PE',{day:'numeric',month:'long',year:'numeric'}); }
+
+  function renderFeed(posts){
+    var f=document.getElementById('feed');
+    if(!posts || !posts.length){
+      f.innerHTML='<div class="empty">📚 Aún no hay publicaciones.<br>Muy pronto subiremos contenido de valor para ti. ¡Quédate atento!</div>';
+      return;
+    }
+    f.innerHTML = posts.map(function(p){
+      var vid = ytId(p.video);
+      var video = vid ? '<div class="vwrap"><iframe src="https://www.youtube.com/embed/'+vid+'" allowfullscreen loading="lazy"></iframe></div>' : '';
+      var img = (!vid && p.image) ? '<img class="cover" src="'+esc(p.image)+'" alt="" loading="lazy" />' : '';
+      var title = p.title ? '<h2>'+esc(p.title)+'</h2>' : '';
+      var body = p.body ? '<div class="body">'+linkify(p.body)+'</div>' : '';
+      var pin = p.pinned ? '<span class="pinbadge">📌 Destacado</span>' : '';
+      return '<div class="post'+(p.pinned?' pin':'')+'">'+pin+title+video+img+body+'<div class="when">'+fmtDate(p.ts)+'</div></div>';
+    }).join('');
+  }
+
+  async function showApp(){
+    document.getElementById('auth').style.display='none';
+    document.getElementById('app').style.display='block';
+    document.getElementById('meName').textContent = NAME ? ('👋 '+NAME) : '';
+    document.getElementById('hello').innerHTML = NAME ? ('Hola <b>'+esc(NAME)+'</b>, bienvenido a tu comunidad 🎉') : 'Bienvenido a tu comunidad 🎉';
+    var res = await api('feed', {token:TOKEN});
+    if(!res.ok){ // token vencido
+      if(res.d && /sesión/i.test(res.d.error||'')){ logout(); return; }
+      document.getElementById('feed').innerHTML='<div class="empty">No pudimos cargar el contenido. Recarga la página.</div>';
+      return;
+    }
+    renderFeed(res.d.posts);
+  }
+
+  // Arranque: si ya hay sesión, entra directo.
+  if(TOKEN){ showApp(); } else { setTab('signup'); }
+</script>
+</body>
+</html>
