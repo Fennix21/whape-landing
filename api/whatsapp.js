@@ -70,6 +70,7 @@ function detectSource(text) {
   if (t.indexOf('(facebook)') >= 0) return 'facebook';
   if (t.indexOf('(tiktok)') >= 0) return 'tiktok';
   if (t.indexOf('(web)') >= 0) return 'web';
+  if (t.indexOf('(academia)') >= 0) return 'academia';
   return 'directo';
 }
 
@@ -161,6 +162,10 @@ module.exports = async (req, res) => {
       lead.messages.push(entry);
       lead.status = autoStatus(lead.status, text, text === null); // clasifica solo (solo avanza)
       if (deviceCode) lead.deviceCode = deviceCode; // guarda el código de equipo si lo mandó
+      if (text && text.toLowerCase().indexOf('(academia)') >= 0) { // vino desde la academia: etiqueta
+        if (!lead.tags) lead.tags = [];
+        if (lead.tags.indexOf('academia') < 0) lead.tags.push('academia');
+      }
 
       // Avisos a tu WhatsApp personal
       const who = lead.name || ('+' + from);

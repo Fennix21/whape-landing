@@ -21,6 +21,7 @@ const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_
 const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
 const HAS_REDIS = !!(REDIS_URL && REDIS_TOKEN);
 const SECRET = process.env.WHAPE_SECRET || 'whape-dev-secret';
+const DEFAULT_WA_TEXT = '¡Hola! 🎓 Vengo de la Comunidad WHAPE y quiero recibir novedades y soporte por aquí. (academia)';
 
 async function redis(cmd) {
   const r = await fetch(REDIS_URL, {
@@ -155,7 +156,9 @@ module.exports = async (req, res) => {
       const progress = await getProgress(phone);
       const mraw = await redis(['GET', 'member:' + phone]);
       let name = ''; if (mraw) { try { name = JSON.parse(mraw).name || ''; } catch (e) {} }
-      return res.status(200).json({ ok: true, modules, progress, name });
+      const groupLink = (await redis(['GET', 'config:club_grouplink'])) || '';
+      const waText = (await redis(['GET', 'config:club_watext'])) || DEFAULT_WA_TEXT;
+      return res.status(200).json({ ok: true, modules, progress, name, club: { groupLink, waText, waNumber: '51983427614' } });
     }
 
     if (b.action === 'complete') {
@@ -190,7 +193,16 @@ module.exports = async (req, res) => {
 
       if (sub === 'tree') {
         const members = Number((await redis(['SCARD', 'members'])) || 0);
-        return res.status(200).json({ ok: true, modules: mods, members });
+        const groupLink = (await redis(['GET', 'config:club_grouplink'])) || '';
+        const waText = (await redis(['GET', 'config:club_watext'])) || DEFAULT_WA_TEXT;
+        return res.status(200).json({ ok: true, modules: mods, members, groupLink, waText });
+      }
+      if (sub === 'setcfg') {
+        const gl = (b.groupLink || '').toString().slice(0, 300);
+        const wt = (b.waText || '').toString().slice(0, 600);
+        await redis(['SET', 'config:club_grouplink', gl]);
+        await redis(['SET', 'config:club_watext', wt || DEFAULT_WA_TEXT]);
+        return res.status(200).json({ ok: true, groupLink: gl, waText: wt || DEFAULT_WA_TEXT });
       }
       if (sub === 'upload') {
         const dataUrl = (b.dataUrl || '').toString();

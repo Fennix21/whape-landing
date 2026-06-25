@@ -361,6 +361,18 @@
     <div style="overflow-y:auto;max-height:74vh;padding:2px 2px 4px">
       <div class="cm-stats" id="cmMeta"></div>
       <input type="file" id="cmFileInput" accept="image/*" style="display:none" />
+      <button type="button" class="cm-back" onclick="toggleCfg()" style="margin-bottom:12px">⚙️ Botones de WhatsApp del club</button>
+      <div id="cmCfgForm" class="cm-form" style="display:none">
+        <div class="cm-formtitle">⚙️ Botones de WhatsApp del club</div>
+        <label class="cm-lbl">Mensaje del botón "Escríbenos" <span class="cm-opt">· abre la venta de 24h + etiqueta academia</span></label>
+        <textarea id="cmCfgWa" class="cmin" style="min-height:72px;resize:vertical"></textarea>
+        <label class="cm-lbl">👥 Enlace del grupo de WhatsApp <span class="cm-opt">· vacío = oculta el botón</span></label>
+        <input id="cmCfgGroup" class="cmin" placeholder="https://chat.whatsapp.com/..." />
+        <div class="cm-formbtns">
+          <button class="cm-save" onclick="saveCfg()">💾 Guardar</button>
+          <button class="cm-cancel" onclick="toggleCfg()">Cerrar</button>
+        </div>
+      </div>
 
       <div id="cmModForm" class="cm-form" style="display:none">
         <div class="cm-formtitle" id="cmModFormTitle">➕ Nuevo módulo</div>
@@ -740,7 +752,7 @@
   }
   function closeStats(){ document.getElementById('statsModal').classList.remove('open'); }
   // --- Academia (gestión de módulos → clases) ---
-  var CM_TREE=[], CM_MEMBERS=0, CM_CUR=null;
+  var CM_TREE=[], CM_MEMBERS=0, CM_CUR=null, CM_CFG={groupLink:'',waText:''};
   function capi(sub, extra){
     return fetch('/api/community', { method:'POST', headers:{'content-type':'application/json'},
       body: JSON.stringify(Object.assign({ action:'admin', pass:PASS, sub:sub }, extra||{})) })
@@ -748,11 +760,27 @@
   }
   function openCommunity(){ document.getElementById('communityModal').classList.add('open'); CM_CUR=null; cancelModForm(); cancelLesForm(); loadTree(); }
   function closeCommunity(){ document.getElementById('communityModal').classList.remove('open'); }
+  function toggleCfg(){
+    var f=document.getElementById('cmCfgForm');
+    if(f.style.display==='block'){ f.style.display='none'; return; }
+    document.getElementById('cmCfgWa').value=CM_CFG.waText||'';
+    document.getElementById('cmCfgGroup').value=CM_CFG.groupLink||'';
+    f.style.display='block';
+  }
+  function saveCfg(){
+    var wt=document.getElementById('cmCfgWa').value.trim();
+    var gl=document.getElementById('cmCfgGroup').value.trim();
+    capi('setcfg',{waText:wt, groupLink:gl}).then(function(res){
+      if(!res.ok){ alert(res.d.error||'Error'); return; }
+      CM_CFG={groupLink:res.d.groupLink||'', waText:res.d.waText||''};
+      document.getElementById('cmCfgForm').style.display='none';
+    });
+  }
   function loadTree(){
     document.getElementById('cmBody').innerHTML='<div class="cm-empty">Cargando…</div>';
     capi('tree').then(function(res){
       if(!res.ok){ document.getElementById('cmBody').innerHTML='<div class="cm-empty" style="color:#ff8aa0">'+(res.d.error||'Error')+'</div>'; return; }
-      CM_TREE=res.d.modules||[]; CM_MEMBERS=res.d.members||0; renderTree();
+      CM_TREE=res.d.modules||[]; CM_MEMBERS=res.d.members||0; CM_CFG={groupLink:res.d.groupLink||'', waText:res.d.waText||''}; renderTree();
     });
   }
   function curModule(){ return CM_TREE.find(function(m){return m.id===CM_CUR;}); }

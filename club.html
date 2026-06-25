@@ -95,6 +95,12 @@
   .pl-item .pck.on{background:var(--success);border-color:var(--success)}
   .pl-item .pt{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .empty2{text-align:center;color:var(--muted);padding:50px 20px;font-size:14.5px;line-height:1.6}
+  .club-cta{background:var(--surface);border:1px solid var(--stroke);border-radius:16px;padding:16px;margin:2px 0 18px}
+  .cta-title{font-weight:800;font-size:14px;margin-bottom:10px}
+  .cta-btns{display:flex;gap:10px;flex-wrap:wrap}
+  .cta-btn{flex:1;min-width:190px;text-align:center;text-decoration:none;font-weight:800;font-size:14px;padding:13px;border-radius:12px;color:#fff}
+  .cta-btn.wa{background:var(--success);color:#06241B}
+  .cta-btn.gr{background:linear-gradient(90deg,var(--accent),var(--accent2));color:#fff}
 </style>
 </head>
 <body>
@@ -143,6 +149,7 @@
     <!-- INICIO -->
     <div id="viewHome">
       <div class="hello" id="hello"></div>
+      <div id="clubCta" class="club-cta" style="display:none"></div>
       <div class="ovbar"><div class="ovbar-fill" id="ovFill" style="width:0%"></div></div>
       <div class="ovtext" id="ovText"></div>
       <button class="resume" id="resumeBtn" style="display:none" onclick="resumeLast()">▶ Continuar desde donde lo dejé</button>
@@ -250,9 +257,19 @@
     goHome();
   }
 
+  function renderCta(){
+    var cta=document.getElementById('clubCta'); var club=ACADEMY.club||{};
+    var num=club.waNumber||'51983427614';
+    var txt=club.waText||'Hola, vengo de la Comunidad WHAPE (academia)';
+    var b1='<a class="cta-btn wa" href="https://wa.me/'+num+'?text='+encodeURIComponent(txt)+'" target="_blank" rel="noopener">💬 Escríbenos por WhatsApp</a>';
+    var b2= club.groupLink ? '<a class="cta-btn gr" href="'+esc(club.groupLink)+'" target="_blank" rel="noopener">👥 Unirme al grupo</a>' : '';
+    cta.innerHTML='<div class="cta-title">📲 Mantente conectado</div><div class="cta-btns">'+b1+b2+'</div>';
+    cta.style.display='block';
+  }
   function goHome(){ renderHome(); show('viewHome'); }
   function renderHome(){
     document.getElementById('hello').innerHTML = NAME ? ('Hola <b>'+esc(NAME)+'</b>, esta es tu academia 🎓') : 'Bienvenido a tu academia 🎓';
+    renderCta();
     var s=stats();
     document.getElementById('ovFill').style.width=s.pct+'%';
     document.getElementById('ovText').textContent = s.total ? (s.done+' de '+s.total+' clases · '+s.pct+'% completado') : 'Aún no hay clases publicadas.';
