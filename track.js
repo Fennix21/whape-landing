@@ -1,4 +1,4 @@
-// Mini-analítica de OYE. Envía pageview y clics clave a /api/track.
+// Mini-analítica de WHAPE. Envía pageview y clics clave a /api/track.
 // Sin cookies, sin datos personales: solo conteos.
 (function () {
   function send(ev, extra) {

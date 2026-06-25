@@ -1,4 +1,4 @@
-// Función serverless de Vercel: genera la clave de activación de OYE.
+// Función serverless de Vercel: genera la clave de activación de WHAPE.
 // El SECRETO vive en variables de entorno (NUNCA en el navegador):
 //   WHAPE_SECRET      -> el mismo secreto del app (LicenseManager.kt)
 //   WHAPE_ADMIN_PASS  -> contraseña que solo tú conoces

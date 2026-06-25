@@ -1,4 +1,4 @@
-// Analítica propia de OYE (sin cookies, solo conteos agregados).
+// Analítica propia de WHAPE (sin cookies, solo conteos agregados).
 // Recibe eventos desde /track.js y los suma en Upstash.
 //   POST { ev, p, r }  ev=evento, p=ruta de la página, r=referrer
 // No usa contraseña: solo INCREMENTA contadores (no expone datos).
