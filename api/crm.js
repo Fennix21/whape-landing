@@ -91,10 +91,12 @@ module.exports = async (req, res) => {
         let l; try { l = JSON.parse(raw); } catch (e) { continue; }
         const msgs = l.messages || [];
         const last = msgs.length ? msgs[msgs.length - 1] : null;
+        let lastUserTs = 0; // último mensaje DEL CLIENTE (define la ventana de 24h)
+        for (let i = msgs.length - 1; i >= 0; i--) { if (msgs[i].role === 'user') { lastUserTs = msgs[i].ts || 0; break; } }
         leads.push({
           phone: l.phone, name: l.name || '', status: l.status || 'nuevo', paused: !!l.paused,
           updatedAt: l.updatedAt || 0, lastText: last ? last.text : '', count: msgs.length,
-          lastRole: last ? (last.human ? 'human' : last.role) : '',
+          lastRole: last ? (last.human ? 'human' : last.role) : '', lastUserTs: lastUserTs,
           hasMedia: msgs.some((m) => m.media && m.media.id),
           hasNote: !!(l.note && l.note.trim()),
           tags: l.tags || [], source: l.source || '', remindAt: l.remindAt || 0,

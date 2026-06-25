@@ -83,6 +83,14 @@
   .ctags{display:flex;gap:5px;flex-wrap:wrap}
   .ctags .tag{font-size:11px}
   .cremind{font-size:11.5px;color:var(--gold);font-weight:700}
+  .cwin{font-size:11.5px;font-weight:800}
+  .cwin.in{color:#34d399}
+  .cwin.out{color:#f87171}
+  .winchip{font-size:10px;font-weight:800;padding:1px 6px;border-radius:6px;margin-left:6px;white-space:nowrap}
+  .winchip.in{background:rgba(52,211,153,.16);color:#34d399}
+  .winchip.out{background:rgba(248,113,113,.16);color:#f87171}
+  .win24{display:none}
+  .win24.show{display:block;background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.34);color:#fca5a5;font-size:12.5px;line-height:1.4;padding:8px 12px;border-radius:10px;margin:0 6px 8px}
   #notesPanel{display:none;padding:10px 16px;border-bottom:1px solid var(--stroke);background:var(--surface);gap:8px;flex-direction:column}
   #notesPanel.open{display:flex}
   #notesText{width:100%;height:64px;resize:vertical;padding:10px 12px;border-radius:10px;border:1px solid var(--stroke);background:var(--bg);color:#fff;font-family:inherit;font-size:13px}
@@ -230,6 +238,8 @@
             <option value="comprobante">📎 Con comprobante</option>
             <option value="reminder">⏰ Con recordatorio</option>
             <option value="note">📝 Con nota</option>
+            <option value="out24">🔴 Fuera de 24h</option>
+            <option value="in24">🟢 Dentro de 24h</option>
           </select>
         </div>
       </div>
@@ -262,6 +272,7 @@
           <button class="ptoggle" onclick="openWtpl()" title="Enviar una plantilla aprobada por Meta (fuera de las 24 h)">📣 Oficial</button>
           <span id="chTags" class="ctags"></span>
           <span id="chRemind" class="cremind"></span>
+          <span id="chWindow" class="cwin"></span>
         </div>
         <div id="notesPanel">
           <textarea id="notesText" placeholder="Notas privadas (el cliente NO las ve)… ej. 'Bodega Av. Brasil, pidió descuento, llamar mañana'"></textarea>
@@ -269,6 +280,7 @@
         </div>
         <div class="msgs" id="msgs"></div>
         <div class="tpls" id="tpls"></div>
+        <div id="win24" class="win24"></div>
         <div class="send">
           <div class="composer">
             <textarea id="reply" placeholder="Escribe tú (esto pausa el bot)…" oninput="onComposerInput()" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg();}"></textarea>
@@ -465,6 +477,10 @@
 
   function fmtTime(ts){ if(!ts) return ''; var d=new Date(ts); return d.toLocaleString('es-PE',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}); }
   function esc(t){ var e=document.createElement('div'); e.textContent=t; return e.innerHTML; }
+  // --- Ventana de 24h (se mide desde el ÚLTIMO mensaje del cliente) ---
+  function fmtDur(ms){ var m=Math.floor(ms/60000), h=Math.floor(m/60), d=Math.floor(h/24); if(d>0) return d+'d '+(h%24)+'h'; if(h>0) return h+'h '+(m%60)+'m'; return Math.max(0,m)+'m'; }
+  function lastUserTsOf(l){ if(!l) return 0; if(l.lastUserTs) return l.lastUserTs; var ms=l.messages||[]; for(var i=ms.length-1;i>=0;i--){ if(ms[i].role==='user') return ms[i].ts||0; } return 0; }
+  function windowInfo(l){ var ts=lastUserTsOf(l); if(!ts) return {has:false,inside:false}; var ms=Date.now()-ts; return {has:true, inside: ms < 86400000, ms:ms, ts:ts}; }
 
   function val(id){ var e=document.getElementById(id); return e ? e.value : ''; }
   function leadMatches(l){
@@ -477,6 +493,8 @@
     if(sp==='comprobante' && !l.hasMedia) return false;
     if(sp==='reminder' && !(l.remindAt && l.remindAt>Date.now())) return false;
     if(sp==='note' && !l.hasNote) return false;
+    if(sp==='out24'){ var wo=windowInfo(l); if(!(wo.has && !wo.inside)) return false; }
+    if(sp==='in24'){ var wn=windowInfo(l); if(!(wn.has && wn.inside)) return false; }
     return true;
   }
   function renderLeads(){
@@ -491,10 +509,12 @@
       var unread = l.lastRole==='user' ? '<span class="unread">● responder</span>' : '';
       var icons = (l.hasMedia?'<span class="ico">📎</span>':'') + (l.hasNote?'<span class="ico">📝</span>':'') + ((l.remindAt&&l.remindAt>Date.now())?'<span class="ico">⏰</span>':'');
       var tags = (l.tags&&l.tags.length) ? '<div class="ltags">'+l.tags.map(function(t){return '<span class="tag">'+esc(t)+'</span>';}).join('')+'</div>' : '';
+      var wi = windowInfo(l);
+      var winchip = wi.has ? '<span class="winchip '+(wi.inside?'in':'out')+'" title="'+(wi.inside?'Dentro de las 24h: puedes escribir gratis':'Fuera de las 24h: usa plantilla oficial')+'">'+(wi.inside?'🟢':'🔴')+' '+fmtDur(wi.ms)+'</span>' : '';
       return '<div class="lead '+(current===l.phone?'active':'')+'" onclick="openLead(\''+l.phone+'\')">'
         + '<div class="r1"><span class="nm">'+esc(name)+'</span>'+unread
         + '<span class="bot">'+(l.paused?'✋':'🤖')+'</span>'
-        + '<span class="badge b-'+l.status+'">'+l.status.replace('_',' ')+'</span></div>'
+        + '<span class="badge b-'+l.status+'">'+l.status.replace('_',' ')+'</span>'+winchip+'</div>'
         + '<div class="last">'+icons+' '+esc(l.lastText||'')+'</div>'+tags+'</div>';
     }).join('');
   }
@@ -527,6 +547,13 @@
       // Recordatorio
       var rm = document.getElementById('chRemind');
       rm.textContent = (l.remindAt && l.remindAt>Date.now()) ? ('⏰ '+fmtTime(l.remindAt)) : '';
+      // Ventana de 24h: cabecera + aviso sobre el cuadro de escribir
+      var wi = windowInfo(l);
+      var cw = document.getElementById('chWindow');
+      var w24 = document.getElementById('win24');
+      if(!wi.has){ cw.textContent=''; cw.className='cwin'; w24.className='win24'; w24.innerHTML=''; }
+      else if(wi.inside){ cw.textContent='🟢 Dentro de 24h · quedan '+fmtDur(86400000-wi.ms); cw.className='cwin in'; w24.className='win24'; w24.innerHTML=''; }
+      else { cw.textContent='🔴 Fuera de 24h ('+fmtDur(wi.ms)+')'; cw.className='cwin out'; w24.className='win24 show'; w24.innerHTML='⚠️ Este cliente está <b>fuera de las 24h</b> ('+fmtDur(wi.ms)+' sin escribirte). Un mensaje libre puede <b>no llegarle</b> — usa <b>📣 Oficial</b> para reengancharlo.'; }
       // Nota (no pisar si la estás escribiendo)
       var nt = document.getElementById('notesText');
       if(document.activeElement !== nt) nt.value = l.note || '';
