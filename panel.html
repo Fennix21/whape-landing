@@ -134,7 +134,32 @@
   /* Editor del prompt del bot */
   #promptModal,#statsModal,#tplModal,#wtplModal,#communityModal{display:none;position:fixed;inset:0;z-index:120;background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:18px}
   #promptModal.open,#statsModal.open,#tplModal.open,#wtplModal.open,#communityModal.open{display:flex}
-  .cmin{width:100%;padding:10px 12px;margin-bottom:8px;border-radius:9px;border:1px solid var(--stroke);background:var(--bg);color:#fff;font-family:inherit;font-size:14px}
+  .cmin{width:100%;padding:10px 12px;margin-bottom:0;border-radius:9px;border:1px solid var(--stroke);background:var(--bg);color:#fff;font-family:inherit;font-size:14px}
+  .cmin:focus{outline:none;border-color:var(--accent)}
+  .cm-stats{display:flex;gap:10px;margin-bottom:14px}
+  .cm-stat{flex:1;background:var(--bg);border:1px solid var(--stroke);border-radius:12px;padding:12px 14px}
+  .cm-stat .n{font-size:22px;font-weight:800;line-height:1}
+  .cm-stat .l{font-size:11.5px;color:var(--muted);margin-top:4px}
+  .cm-new{width:100%;padding:13px;border:0;border-radius:12px;font-family:inherit;font-size:14.5px;font-weight:800;cursor:pointer;color:#fff;background:linear-gradient(90deg,var(--accent),var(--accent2));margin-bottom:16px}
+  .cm-new:active{transform:translateY(1px)}
+  .cm-form{border:1px solid var(--stroke);border-radius:14px;padding:16px;margin-bottom:16px;background:var(--surface2)}
+  .cm-formtitle{font-weight:800;font-size:15px;margin-bottom:10px}
+  .cm-lbl{display:block;font-size:12px;color:var(--muted);font-weight:700;margin:11px 0 5px}
+  .cm-opt{color:var(--muted);font-weight:400}
+  .cm-pin{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;margin:13px 0 2px;cursor:pointer}
+  .cm-pin input{width:auto}
+  .cm-formbtns{display:flex;gap:8px;margin-top:15px}
+  .cm-save{flex:1;padding:12px;border:0;border-radius:10px;font-family:inherit;font-weight:800;font-size:14px;cursor:pointer;background:var(--success);color:#06241B}
+  .cm-cancel{padding:12px 18px;border:1px solid var(--stroke);border-radius:10px;font-family:inherit;font-weight:700;font-size:14px;cursor:pointer;background:transparent;color:var(--muted)}
+  .cm-empty{text-align:center;color:var(--muted);padding:34px 20px;border:1px dashed var(--stroke);border-radius:14px;font-size:14px;line-height:1.6}
+  .cm-empty .big{font-size:34px;display:block;margin-bottom:10px}
+  .cm-row{border:1px solid var(--stroke);border-radius:12px;padding:12px 14px;margin-bottom:9px;display:flex;align-items:center;gap:10px;background:var(--bg)}
+  .cm-row:hover{border-color:var(--accent)}
+  .cm-row .ic{flex:1;min-width:0}
+  .cm-row .rt{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cm-row .rs{color:var(--muted);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+  .cm-row .ib{background:var(--surface2);border:1px solid var(--stroke);color:var(--muted);border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;flex:none}
+  .cm-row .ib:hover{border-color:var(--accent);color:#fff}
   .wrow{display:flex;align-items:center;gap:10px;justify-content:space-between;border:1px solid var(--stroke);border-radius:10px;padding:10px 12px;margin-bottom:8px}
   .wrow .wbody{color:var(--muted);font-size:12px;margin-top:4px;line-height:1.4}
   .wrow button{flex:none;padding:8px 14px;font-weight:700;font-size:13px;background:var(--success);color:#06241B;border-radius:8px}
@@ -324,19 +349,24 @@
       <strong>📚 Comunidad — Contenido</strong>
       <button class="pm-x" onclick="closeCommunity()" aria-label="Cerrar">✕</button>
     </div>
-    <div style="overflow-y:auto;max-height:72vh;padding:2px">
-      <div id="cmMeta" style="color:var(--muted);font-size:12.5px;margin-bottom:10px"></div>
-      <button class="ref" onclick="newPost()" style="margin-bottom:12px">➕ Nueva publicación</button>
-      <div id="cmForm" style="display:none;border:1px solid var(--stroke);border-radius:12px;padding:14px;margin-bottom:14px;background:var(--surface)">
+    <div style="overflow-y:auto;max-height:74vh;padding:2px 2px 4px">
+      <div class="cm-stats" id="cmMeta"></div>
+      <button class="cm-new" id="cmNewBtn" onclick="newPost()">➕ Nueva publicación</button>
+      <div id="cmForm" class="cm-form" style="display:none">
+        <div class="cm-formtitle" id="cmFormTitle">➕ Nueva publicación</div>
         <input type="hidden" id="cmId" />
-        <input id="cmTitle" class="cmin" placeholder="Título" />
-        <textarea id="cmBody" class="cmin" placeholder="Escribe aquí tu contenido de valor… (puedes pegar enlaces)" style="min-height:120px;resize:vertical"></textarea>
-        <input id="cmVideo" class="cmin" placeholder="Link de YouTube (opcional)" />
-        <input id="cmImage" class="cmin" placeholder="Link de imagen (opcional)" />
-        <label style="display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px;margin:4px 0 10px"><input type="checkbox" id="cmPin" style="width:auto" /> 📌 Destacar (fijar arriba)</label>
-        <div style="display:flex;gap:8px">
-          <button class="ref" onclick="savePost()" style="background:var(--success);color:#06241B;font-weight:800">💾 Guardar</button>
-          <button class="ref" onclick="cancelPost()">Cancelar</button>
+        <label class="cm-lbl">Título</label>
+        <input id="cmTitle" class="cmin" placeholder="Ej. 3 trucos para que no te metan un yapeo falso" />
+        <label class="cm-lbl">Contenido</label>
+        <textarea id="cmBody" class="cmin" placeholder="Escribe aquí tu contenido de valor… (puedes pegar enlaces y se vuelven clicables)" style="min-height:130px;resize:vertical"></textarea>
+        <label class="cm-lbl">🎬 Video de YouTube <span class="cm-opt">· opcional</span></label>
+        <input id="cmVideo" class="cmin" placeholder="Pega el link del video" />
+        <label class="cm-lbl">🖼️ Imagen <span class="cm-opt">· opcional</span></label>
+        <input id="cmImage" class="cmin" placeholder="Pega el link de una imagen" />
+        <label class="cm-pin"><input type="checkbox" id="cmPin" /> 📌 Destacar (fijar arriba de todo)</label>
+        <div class="cm-formbtns">
+          <button class="cm-save" onclick="savePost()">💾 Publicar</button>
+          <button class="cm-cancel" onclick="cancelPost()">Cancelar</button>
         </div>
       </div>
       <div id="cmList"></div>
@@ -685,29 +715,33 @@
   function openCommunity(){ document.getElementById('communityModal').classList.add('open'); cancelPost(); loadPosts(); }
   function closeCommunity(){ document.getElementById('communityModal').classList.remove('open'); }
   function loadPosts(){
-    var list=document.getElementById('cmList'); list.innerHTML='<div style="color:var(--muted);padding:14px">Cargando…</div>';
+    var list=document.getElementById('cmList'); list.innerHTML='<div class="cm-empty">Cargando…</div>';
     capi('list').then(function(res){
-      if(!res.ok){ list.innerHTML='<div style="color:#ff8aa0;padding:14px">'+(res.d.error||'Error')+'</div>'; return; }
-      document.getElementById('cmMeta').innerHTML='👥 <b>'+(res.d.members||0)+'</b> miembros · 📝 <b>'+((res.d.posts||[]).length)+'</b> publicaciones';
+      if(!res.ok){ list.innerHTML='<div class="cm-empty" style="color:#ff8aa0">'+(res.d.error||'Error')+'</div>'; return; }
+      var nm=res.d.members||0, np=(res.d.posts||[]).length;
+      document.getElementById('cmMeta').innerHTML=
+        '<div class="cm-stat"><div class="n">'+nm+'</div><div class="l">👥 '+(nm===1?'miembro':'miembros')+'</div></div>'+
+        '<div class="cm-stat"><div class="n">'+np+'</div><div class="l">📝 '+(np===1?'publicación':'publicaciones')+'</div></div>';
       renderPostsAdmin(res.d.posts||[]);
     });
   }
   function renderPostsAdmin(posts){
     CM_POSTS=posts;
     var list=document.getElementById('cmList');
-    if(!posts.length){ list.innerHTML='<div style="color:var(--muted);padding:14px">Aún no hay publicaciones. Crea la primera. ✨</div>'; return; }
+    if(!posts.length){ list.innerHTML='<div class="cm-empty"><span class="big">📭</span>Aún no hay publicaciones.<br>Crea la primera y aparecerá al instante para tus miembros. ✨</div>'; return; }
     list.innerHTML=posts.map(function(p,i){
       var tag=p.pinned?'📌 ':''; var media=p.video?' 🎬':(p.image?' 🖼️':'');
-      return '<div style="border:1px solid var(--stroke);border-radius:10px;padding:11px 12px;margin-bottom:8px;display:flex;align-items:center;gap:10px">'
-        +'<div style="flex:1;min-width:0"><div style="font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+tag+esc(p.title||'(sin título)')+media+'</div>'
-        +'<div style="color:var(--muted);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc((p.body||'').slice(0,90))+'</div></div>'
-        +'<button class="ref" onclick="editPost('+i+')">✏️</button>'
-        +'<button class="ref" onclick="delPost(\''+p.id+'\')" style="color:#ff8aa0">🗑️</button></div>';
+      return '<div class="cm-row"><div class="ic"><div class="rt">'+tag+esc(p.title||'(sin título)')+media+'</div>'
+        +'<div class="rs">'+(esc((p.body||'').slice(0,90))||'—')+'</div></div>'
+        +'<button class="ib" onclick="editPost('+i+')" title="Editar">✏️</button>'
+        +'<button class="ib" onclick="delPost(\''+p.id+'\')" title="Eliminar" style="color:#ff8aa0">🗑️</button></div>';
     }).join('');
   }
   function newPost(){ fillForm({}); }
   function editPost(i){ fillForm(CM_POSTS[i]||{}); }
   function fillForm(p){
+    p=p||{};
+    document.getElementById('cmFormTitle').textContent = p.id ? '✏️ Editar publicación' : '➕ Nueva publicación';
     document.getElementById('cmId').value=p.id||'';
     document.getElementById('cmTitle').value=p.title||'';
     document.getElementById('cmBody').value=p.body||'';
@@ -715,9 +749,10 @@
     document.getElementById('cmImage').value=p.image||'';
     document.getElementById('cmPin').checked=!!p.pinned;
     document.getElementById('cmForm').style.display='block';
+    var nb=document.getElementById('cmNewBtn'); if(nb) nb.style.display='none';
     document.getElementById('cmTitle').focus();
   }
-  function cancelPost(){ document.getElementById('cmForm').style.display='none'; }
+  function cancelPost(){ document.getElementById('cmForm').style.display='none'; var nb=document.getElementById('cmNewBtn'); if(nb) nb.style.display='block'; }
   function savePost(){
     var post={ id:document.getElementById('cmId').value||undefined,
       title:document.getElementById('cmTitle').value.trim(),
