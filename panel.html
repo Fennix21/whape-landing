@@ -92,10 +92,14 @@
   .reactbar{display:none}
   .reactbar.show{display:block;cursor:pointer;background:rgba(255,210,74,.12);border:1px solid rgba(255,210,74,.4);color:var(--gold);font-size:12.5px;font-weight:800;padding:8px 12px;border-radius:10px;margin:0 0 8px}
   .reactbar.show:hover{background:rgba(255,210,74,.22)}
-  .chips{display:flex;flex-wrap:wrap;gap:6px}
-  .chip{font-family:inherit;font-size:11.5px;font-weight:700;padding:5px 11px;border-radius:999px;border:1px solid var(--stroke);background:var(--surface);color:var(--muted);cursor:pointer;white-space:nowrap;transition:background .12s,border-color .12s,color .12s}
+  .chips{display:none;flex-wrap:wrap;gap:6px;margin-top:2px}
+  .chips.open{display:flex}
+  .chip{font-family:inherit;font-size:11.5px;font-weight:600;padding:5px 10px;border-radius:999px;border:1px solid var(--stroke);background:transparent;color:var(--muted);cursor:pointer;white-space:nowrap;transition:.12s}
   .chip:hover{border-color:var(--gold);color:var(--text)}
   .chip.active{background:var(--gold);border-color:var(--gold);color:#1a1205;font-weight:800}
+  .filtbtn{font-family:inherit;font-size:12.5px;font-weight:700;padding:8px 12px;border-radius:8px;border:1px solid var(--stroke);background:var(--bg);color:var(--muted);cursor:pointer;white-space:nowrap}
+  .filtbtn:hover{border-color:var(--gold);color:var(--text)}
+  .filtbtn.on{background:var(--gold);border-color:var(--gold);color:#1a1205}
   .win24{display:none}
   .win24.show{display:block;background:rgba(248,113,113,.12);border:1px solid rgba(248,113,113,.34);color:#fca5a5;font-size:12.5px;line-height:1.4;padding:8px 12px;border-radius:10px;margin:0 6px 8px}
   #notesPanel{display:none;padding:10px 16px;border-bottom:1px solid var(--stroke);background:var(--surface);gap:8px;flex-direction:column}
@@ -239,6 +243,7 @@
             <option value="activado">Activado</option>
             <option value="descartado">Descartado</option>
           </select>
+          <button id="filtBtn" class="filtbtn" onclick="toggleFilters()">Filtros ▾</button>
         </div>
         <div class="chips" id="chips">
           <button class="chip active" data-sp="" onclick="setQuick('')">Todos</button>
@@ -495,8 +500,10 @@
   function updateReactBar(){ var rb=document.getElementById('reactBar'); if(!rb) return; var rc=reactCount(); if(rc>0){ rb.className='reactbar show'; rb.innerHTML='🔥 <b>'+rc+'</b> reactivable'+(rc>1?'s':'')+' (fuera de 24h con interés) · clic para verlos'; } else { rb.className='reactbar'; rb.innerHTML=''; } }
   function showReactivables(){ var st=document.getElementById('lfstatus'); if(st) st.value=''; var s=document.getElementById('lsearch'); if(s) s.value=''; setQuick('reactivable'); }
   var quickFilter = '';
-  function setQuick(v){ quickFilter = v; updateChips(); renderLeads(); }
+  function setQuick(v){ quickFilter = v; updateChips(); updateFiltBtn(); renderLeads(); }
   function updateChips(){ var cs=document.querySelectorAll('#chips .chip'); for(var i=0;i<cs.length;i++){ cs[i].classList.toggle('active', cs[i].getAttribute('data-sp')===quickFilter); } }
+  function toggleFilters(){ document.getElementById('chips').classList.toggle('open'); }
+  function updateFiltBtn(){ var b=document.getElementById('filtBtn'); if(!b) return; if(quickFilter){ b.classList.add('on'); var c=document.querySelector('#chips .chip[data-sp="'+quickFilter+'"]'); b.textContent=c?c.textContent:'Filtro'; } else { b.classList.remove('on'); b.textContent='Filtros ▾'; } }
 
   function val(id){ var e=document.getElementById(id); return e ? e.value : ''; }
   function leadMatches(l){
