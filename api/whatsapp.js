@@ -219,6 +219,42 @@ module.exports = async (req, res) => {
       return res.status(200).send('ok');
     }
 
+    // ¿Pidió desbloquear "a mano" (texto libre, sin el botón)? Identificamos el módulo y lo desbloqueamos solos.
+    if (HAS_REDIS && text && /desbloqu|abrir el (nivel|m[oó]dulo)|acceso al (nivel|m[oó]dulo)|ver el (nivel|m[oó]dulo)/i.test(text)) {
+      try {
+        const raw = await redis(['GET', 'academy:modules']);
+        let mods = []; if (raw) { try { mods = JSON.parse(raw); } catch (e) {} }
+        const norm = (s) => (s || '').toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+        const escRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const nmsg = norm(text);
+        const numAsked = (nmsg.match(/(?:nivel|modulo)\s*(\d{1,2})/) || [])[1];
+        const matches = (mods || []).filter((m) => m && m.lockWa).filter((m) => {
+          const t = norm(m.title).trim();
+          if (!t) return false;
+          if (new RegExp('(^|[^a-z0-9])' + escRe(t) + '([^a-z0-9]|$)').test(nmsg)) return true;
+          if (numAsked && new RegExp('(nivel|modulo)\\s*' + numAsked + '(\\D|$)').test(t)) return true;
+          return false;
+        });
+        let ack;
+        if (matches.length === 1) {
+          const mod = matches[0];
+          const has = Number((await redis(['SISMEMBER', 'unlocked:' + from, mod.id])) || 0);
+          if (!has) await redis(['SADD', 'unlocked:' + from, mod.id]);
+          if (!lead.tags) lead.tags = [];
+          if (lead.tags.indexOf('academia') < 0) lead.tags.push('academia');
+          ack = has
+            ? '¡Ese módulo ya lo tienes desbloqueado! 🙂 Ábrelo en tu academia: whape.club/club'
+            : ('¡Listo! 🔓 Desbloqueé *' + (mod.title || 'el módulo') + '* en tu academia. Ábrela y ya lo verás: whape.club/club 🎓');
+        } else {
+          ack = 'Para desbloquear un módulo, entra a tu academia 👉 whape.club/club, abre el que quieres y toca el botón verde *"🔓 Desbloquear por WhatsApp"*. Eso me avisa y lo activo al toque. 🙌';
+        }
+        await sendWhatsApp(from, ack);
+        lead.messages.push({ role: 'assistant', text: ack, ts: Date.now() });
+        await saveLead(lead);
+        return res.status(200).send('ok');
+      } catch (e) { console.error('unlock freetext', e); }
+    }
+
     // Memoria: últimas ~12 entradas de la conversación
     let history;
     if (HAS_REDIS) {
