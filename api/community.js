@@ -297,6 +297,35 @@ module.exports = async (req, res) => {
         await redis(['SET', 'comments:' + lessonId, JSON.stringify(comments)]);
         return res.status(200).json({ ok: true, comments });
       }
+      if (sub === 'academystats') {
+        const phones = (await redis(['SMEMBERS', 'members'])) || [];
+        const allLessons = [];
+        mods.forEach((m) => (m.lessons || []).forEach((l) => allLessons.push(l.id)));
+        const totalLessons = allLessons.length;
+        const lessonCounts = {};
+        const members = [];
+        if (phones.length) {
+          const memberRaws = (await redis(['MGET', ...phones.map((p) => 'member:' + p)])) || [];
+          const progRaws = (await redis(['MGET', ...phones.map((p) => 'progress:' + p)])) || [];
+          phones.forEach((phone, i) => {
+            let mo = {}; try { mo = JSON.parse(memberRaws[i] || '{}') || {}; } catch (e) {}
+            let prog = { done: {}, updatedAt: 0 }; try { prog = JSON.parse(progRaws[i] || 'null') || prog; } catch (e) {}
+            const doneSet = prog.done || {};
+            let doneCount = 0;
+            allLessons.forEach((lid) => { if (doneSet[lid]) { doneCount++; lessonCounts[lid] = (lessonCounts[lid] || 0) + 1; } });
+            members.push({ phone, name: mo.name || '', createdAt: mo.createdAt || 0, done: doneCount, total: totalLessons, pct: totalLessons ? Math.round(doneCount / totalLessons * 100) : 0, lastTs: prog.updatedAt || 0 });
+          });
+        }
+        members.sort((a, b2) => b2.pct - a.pct || b2.lastTs - a.lastTs);
+        const avgPct = members.length ? Math.round(members.reduce((s, m) => s + m.pct, 0) / members.length) : 0;
+        return res.status(200).json({ ok: true, members, lessonCounts, totalMembers: members.length, totalLessons, avgPct, modules: mods });
+      }
+      if (sub === 'memberprogress') {
+        const phone = (b.phone || '').toString();
+        const praw = await redis(['GET', 'progress:' + phone]);
+        let prog = { done: {}, last: '', updatedAt: 0 }; if (praw) { try { prog = JSON.parse(praw); } catch (e) {} }
+        return res.status(200).json({ ok: true, done: prog.done || {}, last: prog.last || '', updatedAt: prog.updatedAt || 0 });
+      }
       if (sub === 'savemod') {
         const incoming = b.mod || {};
         if (incoming.id) {

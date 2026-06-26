@@ -132,8 +132,8 @@
   #lbClose{position:fixed;top:16px;right:16px;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.25)}
   #lbClose:hover{background:rgba(255,255,255,.26)}
   /* Editor del prompt del bot */
-  #promptModal,#statsModal,#tplModal,#wtplModal,#communityModal{display:none;position:fixed;inset:0;z-index:120;background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:18px}
-  #promptModal.open,#statsModal.open,#tplModal.open,#wtplModal.open,#communityModal.open{display:flex}
+  #promptModal,#statsModal,#tplModal,#wtplModal,#communityModal,#progressModal{display:none;position:fixed;inset:0;z-index:120;background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:18px}
+  #promptModal.open,#statsModal.open,#tplModal.open,#wtplModal.open,#communityModal.open,#progressModal.open{display:flex}
   .cmin{width:100%;padding:10px 12px;margin-bottom:0;border-radius:9px;border:1px solid var(--stroke);background:var(--bg);color:#fff;font-family:inherit;font-size:14px}
   .cmin:focus{outline:none;border-color:var(--accent)}
   .cm-stats{display:flex;gap:10px;margin-bottom:14px}
@@ -169,6 +169,22 @@
   .cm-row .ib{background:var(--surface2);border:1px solid var(--stroke);color:var(--muted);border-radius:8px;padding:6px 10px;font-size:13px;cursor:pointer;flex:none}
   .cm-row .ib:hover{border-color:var(--accent);color:#fff}
   .msys{align-self:center;text-align:center;color:var(--muted);font-size:11px;background:var(--surface2);border:1px solid var(--stroke);border-radius:999px;padding:5px 13px;margin:8px auto;max-width:85%}
+  .pg-h{font-weight:800;font-size:15px;margin:16px 0 10px}
+  .pg-mod{font-weight:700;font-size:13px;color:var(--gold);margin:12px 0 6px}
+  .pg-row{display:flex;align-items:center;gap:10px;margin-bottom:6px;font-size:12.5px}
+  .pg-name{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--muted)}
+  .pg-bar{height:8px;background:var(--bg);border:1px solid var(--stroke);border-radius:999px;overflow:hidden}
+  .pg-row .pg-bar{width:120px;flex:none}
+  .pg-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--success))}
+  .pg-pct{flex:none;width:92px;text-align:right;color:var(--muted);font-size:11.5px}
+  .pg-member{background:var(--bg);border:1px solid var(--stroke);border-radius:12px;padding:12px 14px;margin-bottom:9px;cursor:pointer}
+  .pg-member:hover{border-color:var(--accent)}
+  .pg-mtop{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+  .pg-mname{font-weight:700;font-size:14px}
+  .pg-mpct{font-weight:800;color:var(--success)}
+  .pg-mmeta{color:var(--muted);font-size:11.5px;margin-top:7px}
+  .pg-dmod{font-weight:700;font-size:12px;color:var(--gold);margin:10px 0 4px}
+  .pg-dles{font-size:12.5px;color:#cfc9e0;padding:2px 0}
   .wrow{display:flex;align-items:center;gap:10px;justify-content:space-between;border:1px solid var(--stroke);border-radius:10px;padding:10px 12px;margin-bottom:8px}
   .wrow .wbody{color:var(--muted);font-size:12px;margin-top:4px;line-height:1.4}
   .wrow button{flex:none;padding:8px 14px;font-weight:700;font-size:13px;background:var(--success);color:#06241B;border-radius:8px}
@@ -265,6 +281,7 @@
     <button class="ref" id="viewToggle" onclick="toggleView()" style="margin-right:8px">🗂️ Embudo</button>
     <button class="ref" onclick="openStats()" style="margin-right:8px">📊 Analíticas</button>
     <button class="ref" onclick="openCommunity()" style="margin-right:8px">📚 Comunidad</button>
+    <button class="ref" onclick="openProgress()" style="margin-right:8px">📈 Progreso</button>
     <button class="ref" onclick="openPrompt()" style="margin-right:8px">⚙️ Bot</button>
     <button class="ref" onclick="loadLeads()">↻ Actualizar</button>
   </div>
@@ -350,6 +367,16 @@
 <div id="lightbox" onclick="closeZoom(event)">
   <button id="lbClose" onclick="closeZoom(event)" aria-label="Cerrar">✕</button>
   <img id="lbImg" src="" alt="comprobante" onclick="event.stopPropagation()" />
+</div>
+
+<div id="progressModal">
+  <div class="pm-card" style="max-width:760px">
+    <div class="pm-head">
+      <strong>📈 Progreso de la academia</strong>
+      <button class="pm-x" onclick="closeProgress()" aria-label="Cerrar">✕</button>
+    </div>
+    <div id="progBody" style="overflow-y:auto;max-height:76vh;padding:2px"></div>
+  </div>
 </div>
 
 <div id="communityModal">
@@ -845,6 +872,60 @@
     }).join('');
   }
   function modDelComment(id){ if(!confirm('¿Eliminar este comentario? (moderación del dueño)')) return; capi('delcomment',{lessonId:CM_CURLES, commentId:id}).then(function(res){ if(res.ok) renderCommentList(res.d.comments||[]); }); }
+  // --- Progreso de la academia ---
+  var PROG_MODULES=[];
+  function openProgress(){
+    document.getElementById('progressModal').classList.add('open');
+    document.getElementById('progBody').innerHTML='<div class="cm-empty">Cargando…</div>';
+    capi('academystats').then(function(res){
+      if(!res.ok){ document.getElementById('progBody').innerHTML='<div class="cm-empty" style="color:#ff8aa0">'+(res.d.error||'Error')+'</div>'; return; }
+      PROG_MODULES=res.d.modules||[]; renderProgress(res.d);
+    });
+  }
+  function closeProgress(){ document.getElementById('progressModal').classList.remove('open'); }
+  function renderProgress(d){
+    var tm=d.totalMembers||0; var lc=d.lessonCounts||{}; var h='';
+    h+='<div class="cm-stats">'
+      +'<div class="cm-stat"><div class="n">'+tm+'</div><div class="l">👥 '+(tm===1?'miembro':'miembros')+'</div></div>'
+      +'<div class="cm-stat"><div class="n">'+(d.avgPct||0)+'%</div><div class="l">📊 completion prom.</div></div>'
+      +'<div class="cm-stat"><div class="n">'+(d.totalLessons||0)+'</div><div class="l">🎬 clases</div></div></div>';
+    h+='<div class="pg-h">🎯 Completion por clase <span style="color:var(--muted);font-weight:400;font-size:12px">(dónde se traban)</span></div>';
+    var anyL=false;
+    (d.modules||[]).forEach(function(m){
+      var ls=m.lessons||[]; if(!ls.length) return; anyL=true;
+      h+='<div class="pg-mod">📂 '+esc(m.title||'Módulo')+'</div>';
+      ls.forEach(function(l){
+        var cnt=lc[l.id]||0; var pct= tm? Math.round(cnt/tm*100):0;
+        h+='<div class="pg-row"><div class="pg-name">'+esc(l.title||'(sin título)')+'</div><div class="pg-bar"><div class="pg-fill" style="width:'+pct+'%"></div></div><div class="pg-pct">'+pct+'% ('+cnt+'/'+tm+')</div></div>';
+      });
+    });
+    if(!anyL) h+='<div class="cm-empty">Aún no hay clases.</div>';
+    h+='<div class="pg-h" style="margin-top:20px">👥 Miembros</div>';
+    if(!(d.members||[]).length) h+='<div class="cm-empty">Aún no hay miembros registrados.</div>';
+    h+=(d.members||[]).map(function(mb){
+      return '<div class="pg-member" onclick="memberDetail(\''+mb.phone+'\', this)">'
+        +'<div class="pg-mtop"><span class="pg-mname">'+esc(mb.name||('+'+mb.phone))+'</span><span class="pg-mpct">'+mb.pct+'%</span></div>'
+        +'<div class="pg-bar" style="width:100%"><div class="pg-fill" style="width:'+mb.pct+'%"></div></div>'
+        +'<div class="pg-mmeta">'+mb.done+'/'+mb.total+' clases'+(mb.lastTs?(' · últ. actividad '+fmtTime(mb.lastTs)):' · sin actividad')+'</div>'
+        +'<div class="pg-detail" data-open="0"></div></div>';
+    }).join('');
+    document.getElementById('progBody').innerHTML=h;
+  }
+  function memberDetail(phone, el){
+    var det=el.querySelector('.pg-detail');
+    if(det.getAttribute('data-open')==='1'){ det.innerHTML=''; det.setAttribute('data-open','0'); return; }
+    det.innerHTML='<div class="cm-empty" style="padding:8px 0">Cargando…</div>'; det.setAttribute('data-open','1');
+    capi('memberprogress',{phone:phone}).then(function(res){
+      if(!res.ok){ det.innerHTML=''; det.setAttribute('data-open','0'); return; }
+      var done=res.d.done||{}; var h='';
+      PROG_MODULES.forEach(function(m){
+        var ls=m.lessons||[]; if(!ls.length) return;
+        h+='<div class="pg-dmod">'+esc(m.title||'Módulo')+'</div>';
+        ls.forEach(function(l){ h+='<div class="pg-dles">'+(done[l.id]?'✅':'⚪')+' '+esc(l.title||'(sin título)')+'</div>'; });
+      });
+      det.innerHTML = h || '<div class="cm-empty" style="padding:8px 0">Aún no hay clases.</div>';
+    });
+  }
   // Módulo
   function newModule(){ fillModForm({}); }
   function editModule(id){ fillModForm(CM_TREE.find(function(x){return x.id===id;})||{}); }
