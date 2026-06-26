@@ -243,10 +243,10 @@ module.exports = async (req, res) => {
           if (!lead.tags) lead.tags = [];
           if (lead.tags.indexOf('academia') < 0) lead.tags.push('academia');
           ack = has
-            ? '¡Ese módulo ya lo tienes desbloqueado! 🙂 Ábrelo en tu academia: whape.club/club'
-            : ('¡Listo! 🔓 Desbloqueé *' + (mod.title || 'el módulo') + '* en tu academia. Ábrela y ya lo verás: whape.club/club 🎓');
+            ? '¡Ese módulo ya lo tienes desbloqueado! 🙂 Ábrelo en tu academia: whape.club/comunidad'
+            : ('¡Listo! 🔓 Desbloqueé *' + (mod.title || 'el módulo') + '* en tu academia. Ábrela y ya lo verás: whape.club/comunidad 🎓');
         } else {
-          ack = 'Para desbloquear un módulo, entra a tu academia 👉 whape.club/club, abre el que quieres y toca el botón verde *"🔓 Desbloquear por WhatsApp"*. Eso me avisa y lo activo al toque. 🙌';
+          ack = 'Para desbloquear un módulo, entra a tu academia 👉 whape.club/comunidad, abre el que quieres y toca el botón verde *"🔓 Desbloquear por WhatsApp"*. Eso me avisa y lo activo al toque. 🙌';
         }
         await sendWhatsApp(from, ack);
         lead.messages.push({ role: 'assistant', text: ack, ts: Date.now() });

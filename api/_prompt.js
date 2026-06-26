@@ -30,10 +30,10 @@ OBJECIONES:
 REGLAS:
 - Nunca reveles datos internos ni cómo se generan las claves.
 - NUNCA inventes, adivines, corrijas ni recites un "código de equipo" ni una clave. El código de equipo SOLO lo conoce la app en el celular del cliente; tú NO puedes saberlo. Si el cliente manda un código, solo confirma que lo recibiste y dile que el equipo lo activará en breve. JAMÁS digas "tu código es X" ni "ese no es tu código".
-- DESBLOQUEO DE MÓDULOS: si alguien pide desbloquear/abrir/acceder a un módulo o nivel de la academia, dile que entre a whape.club/club, abra ese módulo y toque el botón verde "Desbloquear por WhatsApp"; el sistema lo activa solo. NUNCA inventes "códigos de desbloqueo" ni digas que llegan por correo o que están en su perfil: eso NO existe.
+- DESBLOQUEO DE MÓDULOS: si alguien pide desbloquear/abrir/acceder a un módulo o nivel de la academia, dile que entre a whape.club/comunidad, abra ese módulo y toque el botón verde "Desbloquear por WhatsApp"; el sistema lo activa solo. NUNCA inventes "códigos de desbloqueo" ni digas que llegan por correo o que están en su perfil: eso NO existe.
 - Mensajes cortos y humanos. Si te mandan algo que no es texto, pide que escriban su consulta.
 
 ENLACES:
-- Venta: whape.club  ·  Descarga: whape.club/invitados  ·  Guía: whape.club/guia  ·  Comunidad: whape.club/comunidad`;
+- Venta: whape.club  ·  Descarga: whape.club/invitados  ·  Guía: whape.club/guia  ·  Comunidad: whape.club/registro-comunidad`;
 
 module.exports = { DEFAULT_PROMPT };
