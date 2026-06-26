@@ -752,13 +752,13 @@
   }
   function closeStats(){ document.getElementById('statsModal').classList.remove('open'); }
   // --- Academia (gestión de módulos → clases) ---
-  var CM_TREE=[], CM_MEMBERS=0, CM_CUR=null, CM_CFG={groupLink:'',waText:''};
+  var CM_TREE=[], CM_MEMBERS=0, CM_CUR=null, CM_CFG={groupLink:'',waText:''}, CM_CURLES=null;
   function capi(sub, extra){
     return fetch('/api/community', { method:'POST', headers:{'content-type':'application/json'},
       body: JSON.stringify(Object.assign({ action:'admin', pass:PASS, sub:sub }, extra||{})) })
       .then(function(r){ return r.json().then(function(d){ return { ok:r.ok, d:d }; }); });
   }
-  function openCommunity(){ document.getElementById('communityModal').classList.add('open'); CM_CUR=null; cancelModForm(); cancelLesForm(); loadTree(); }
+  function openCommunity(){ document.getElementById('communityModal').classList.add('open'); CM_CUR=null; CM_CURLES=null; cancelModForm(); cancelLesForm(); loadTree(); }
   function closeCommunity(){ document.getElementById('communityModal').classList.remove('open'); }
   function toggleCfg(){
     var f=document.getElementById('cmCfgForm');
@@ -791,6 +791,15 @@
       '<div class="cm-stat"><div class="n">'+CM_TREE.length+'</div><div class="l">📂 '+(CM_TREE.length===1?'módulo':'módulos')+'</div></div>'+
       '<div class="cm-stat"><div class="n">'+totalLessons+'</div><div class="l">🎬 '+(totalLessons===1?'clase':'clases')+'</div></div>';
     var body=document.getElementById('cmBody'); var m=curModule();
+    if(CM_CURLES && m){
+      var les=(m.lessons||[]).find(function(x){return x.id===CM_CURLES;});
+      document.getElementById('cmHead').textContent='💬 Comentarios';
+      body.innerHTML='<button class="cm-back" onclick="closeComments()">← Volver a clases</button>'
+        +'<div style="font-weight:700;font-size:14px;margin:2px 0 14px">'+esc(les?les.title:'')+'</div>'
+        +'<div id="cmCommentList"><div class="cm-empty">Cargando…</div></div>';
+      loadComments(CM_CURLES);
+      return;
+    }
     if(CM_CUR && m){
       document.getElementById('cmHead').textContent='🎓 '+(m.title||'Módulo');
       var ls=m.lessons||[];
@@ -800,6 +809,7 @@
       else { h+=ls.map(function(l){
         var media=l.video?'🎬':(l.image?'🖼️':'📝');
         return '<div class="cm-row"><div class="ic"><div class="rt">'+media+' '+esc(l.title||'(sin título)')+'</div></div>'
+          +'<button class="ib" onclick="openComments(\''+l.id+'\')" title="Comentarios">💬</button>'
           +'<button class="ib" onclick="editLesson(\''+l.id+'\')" title="Editar">✏️</button>'
           +'<button class="ib" onclick="delLesson(\''+l.id+'\')" title="Eliminar" style="color:#ff8aa0">🗑️</button></div>';
       }).join(''); }
@@ -817,8 +827,21 @@
       body.innerHTML=hh;
     }
   }
-  function openCmModule(id){ CM_CUR=id; cancelLesForm(); cancelModForm(); renderTree(); }
-  function cmBack(){ CM_CUR=null; cancelLesForm(); cancelModForm(); renderTree(); }
+  function openCmModule(id){ CM_CUR=id; CM_CURLES=null; cancelLesForm(); cancelModForm(); renderTree(); }
+  function cmBack(){ CM_CUR=null; CM_CURLES=null; cancelLesForm(); cancelModForm(); renderTree(); }
+  // Moderación de comentarios (dueño)
+  function openComments(lessonId){ CM_CURLES=lessonId; renderTree(); }
+  function closeComments(){ CM_CURLES=null; renderTree(); }
+  function loadComments(lessonId){ capi('comments',{lessonId:lessonId}).then(function(res){ if(!res.ok){ var el=document.getElementById('cmCommentList'); if(el) el.innerHTML='<div class="cm-empty" style="color:#ff8aa0">'+(res.d.error||'Error')+'</div>'; return; } renderCommentList(res.d.comments||[]); }); }
+  function renderCommentList(comments){
+    var el=document.getElementById('cmCommentList'); if(!el) return;
+    if(!comments.length){ el.innerHTML='<div class="cm-empty">Aún no hay comentarios en esta clase.</div>'; return; }
+    el.innerHTML=comments.slice().reverse().map(function(c){
+      return '<div class="cm-row" style="align-items:flex-start"><div class="ic"><div class="rt">'+esc(c.name||'Miembro')+' <span style="color:var(--muted);font-weight:400;font-size:11px">'+fmtTime(c.ts)+'</span></div><div style="color:#cfc9e0;font-size:12.5px;margin-top:3px;white-space:pre-wrap;word-break:break-word">'+esc(c.text||'')+'</div></div>'
+        +'<button class="ib" onclick="modDelComment(\''+c.id+'\')" title="Eliminar" style="color:#ff8aa0">🗑️</button></div>';
+    }).join('');
+  }
+  function modDelComment(id){ if(!confirm('¿Eliminar este comentario? (moderación del dueño)')) return; capi('delcomment',{lessonId:CM_CURLES, commentId:id}).then(function(res){ if(res.ok) renderCommentList(res.d.comments||[]); }); }
   // Módulo
   function newModule(){ fillModForm({}); }
   function editModule(id){ fillModForm(CM_TREE.find(function(x){return x.id===id;})||{}); }

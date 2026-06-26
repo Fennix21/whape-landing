@@ -274,6 +274,17 @@ module.exports = async (req, res) => {
         await redis(['SET', 'img:' + id, dataUrl]);
         return res.status(200).json({ ok: true, url: '/api/img?id=' + id });
       }
+      if (sub === 'comments') {
+        const comments = await getComments((b.lessonId || '').toString());
+        return res.status(200).json({ ok: true, comments });
+      }
+      if (sub === 'delcomment') {
+        const lessonId = (b.lessonId || '').toString();
+        let comments = await getComments(lessonId);
+        comments = comments.filter((c) => c.id !== b.commentId); // el dueño borra cualquiera
+        await redis(['SET', 'comments:' + lessonId, JSON.stringify(comments)]);
+        return res.status(200).json({ ok: true, comments });
+      }
       if (sub === 'savemod') {
         const incoming = b.mod || {};
         if (incoming.id) {
