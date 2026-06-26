@@ -120,6 +120,7 @@ function cleanModule(p) {
     desc: (p.desc || '').toString().slice(0, 400),
     image: (p.image || '').toString().slice(0, 300),
     lockDays: Math.max(0, parseInt(p.lockDays, 10) || 0),
+    lockWa: !!p.lockWa,
     lessons: Array.isArray(p.lessons) ? p.lessons.map(cleanLesson) : [],
   };
 }
@@ -175,10 +176,13 @@ module.exports = async (req, res) => {
       const mraw = await redis(['GET', 'member:' + phone]);
       let name = '', joinedAt = 0; if (mraw) { try { const mm = JSON.parse(mraw); name = mm.name || ''; joinedAt = mm.createdAt || 0; } catch (e) {} }
       const now = Date.now();
-      const modules = rawmods.map((m) => { // drip: oculta el contenido de los módulos aún bloqueados
+      const unlocked = (await redis(['SMEMBERS', 'unlocked:' + phone])) || [];
+      const unlockedSet = {}; unlocked.forEach((x) => { unlockedSet[x] = true; });
+      const modules = rawmods.map((m) => { // oculta el contenido de los módulos bloqueados (drip o WhatsApp)
         const lockDays = Number(m.lockDays || 0);
         const unlockAt = (lockDays > 0 && joinedAt) ? joinedAt + lockDays * 86400000 : 0;
-        if (unlockAt && now < unlockAt) return { id: m.id, title: m.title, desc: m.desc, image: m.image, locked: true, unlockAt, lessons: [] };
+        if (unlockAt && now < unlockAt) return { id: m.id, title: m.title, desc: m.desc, image: m.image, locked: true, lockType: 'drip', unlockAt, lessons: [] };
+        if (m.lockWa && !unlockedSet[m.id]) return { id: m.id, title: m.title, desc: m.desc, image: m.image, locked: true, lockType: 'wa', unlockAt: 0, lessons: [] };
         return Object.assign({}, m, { locked: false, unlockAt: 0 });
       });
       const groupLink = (await redis(['GET', 'config:club_grouplink'])) || '';
@@ -302,6 +306,7 @@ module.exports = async (req, res) => {
             mods[idx].desc = (incoming.desc || '').toString().slice(0, 400);
             mods[idx].image = (incoming.image || '').toString().slice(0, 300);
             mods[idx].lockDays = Math.max(0, parseInt(incoming.lockDays, 10) || 0);
+            mods[idx].lockWa = !!incoming.lockWa;
           }
         } else {
           mods.push(cleanModule(incoming));

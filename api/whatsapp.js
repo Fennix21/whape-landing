@@ -205,6 +205,20 @@ module.exports = async (req, res) => {
       return res.status(200).send('ok');
     }
 
+    // ¿Pidió desbloquear un módulo de la academia? (botón del club) -> respuesta FIJA y desbloqueo automático.
+    const unlockMatch = text && text.match(/\(unlock:([a-z0-9]+)\)/i);
+    if (unlockMatch) {
+      if (HAS_REDIS) {
+        await redis(['SADD', 'unlocked:' + from, unlockMatch[1]]);
+        if (!lead.tags) lead.tags = [];
+        if (lead.tags.indexOf('academia') < 0) lead.tags.push('academia');
+      }
+      const ack = '¡Listo! 🔓 Desbloqueé ese módulo en tu academia. Vuelve a abrirla y ya lo verás disponible. 🎓\n\nCualquier duda, escríbeme por aquí. 🙌';
+      await sendWhatsApp(from, ack);
+      if (HAS_REDIS) { lead.messages.push({ role: 'assistant', text: ack, ts: Date.now() }); await saveLead(lead); }
+      return res.status(200).send('ok');
+    }
+
     // Memoria: últimas ~12 entradas de la conversación
     let history;
     if (HAS_REDIS) {

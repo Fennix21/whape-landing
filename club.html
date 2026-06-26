@@ -147,6 +147,10 @@
   .modcard.locked:hover{border-color:var(--stroke)}
   .modcard.locked .mod-cover{filter:grayscale(.7)}
   .mod-lock{color:var(--gold);font-size:12.5px;font-weight:700;margin-top:6px}
+  .modcard.locked.wa{opacity:1}
+  .modcard.locked.wa .mod-cover{filter:grayscale(.45)}
+  .unlock-btn{display:inline-block;margin-top:9px;background:var(--success);color:#06241B;text-decoration:none;font-weight:800;font-size:12.5px;padding:9px 13px;border-radius:9px}
+  .unlock-btn:hover{filter:brightness(1.05)}
 </style>
 </head>
 <body>
@@ -341,8 +345,13 @@
     if(!ACADEMY.modules || !ACADEMY.modules.length){ mc.classList.remove('grid'); mc.innerHTML='<div class="empty2">📚 Pronto subiremos las clases. ¡Quédate atento!</div>'; return; }
     mc.innerHTML = ACADEMY.modules.map(function(m){
       if(m.locked){
-        var days=Math.max(1, Math.ceil((m.unlockAt - Date.now())/86400000));
         var lc = m.image ? '<img class="mod-cover" src="'+esc(m.image)+'" alt="" />' : '<div class="mod-cover">🔒</div>';
+        if(m.lockType==='wa'){
+          var club=ACADEMY.club||{}; var num=club.waNumber||'51983427614';
+          var msg='Quiero desbloquear el módulo: '+(m.title||'')+' 🔓 (unlock:'+m.id+')';
+          return '<div class="modcard locked wa">'+lc+'<div class="mod-info"><div class="mod-t">'+esc(m.title||'Módulo')+'</div><div class="mod-lock">🔒 Bloqueado</div><a class="unlock-btn" href="https://wa.me/'+num+'?text='+encodeURIComponent(msg)+'" target="_blank" rel="noopener">🔓 Desbloquear por WhatsApp</a></div></div>';
+        }
+        var days=Math.max(1, Math.ceil((m.unlockAt - Date.now())/86400000));
         return '<div class="modcard locked">'+lc+'<div class="mod-info"><div class="mod-t">'+esc(m.title||'Módulo')+'</div><div class="mod-lock">🔒 Se libera en '+days+' día'+(days===1?'':'s')+'</div></div></div>';
       }
       var ls=m.lessons||[]; var d=ls.filter(function(l){return isDone(l.id);}).length;
@@ -454,6 +463,8 @@
   function setModView(v){ MODVIEW=v; localStorage.setItem('whape_club_modview', v); applyModView(); }
   function applyModView(){ var m=document.getElementById('modules'); if(!m) return; m.classList.toggle('grid', MODVIEW==='grid'); var g=document.getElementById('viewGrid'), l=document.getElementById('viewList'); if(g) g.classList.toggle('on', MODVIEW==='grid'); if(l) l.classList.toggle('on', MODVIEW==='list'); }
   applyTheme(localStorage.getItem('whape_club_theme')||'dark');
+  // Al volver de WhatsApp (desbloqueo), refresca la academia si estás en el inicio
+  window.addEventListener('focus', function(){ if(TOKEN && document.getElementById('app').style.display==='block' && document.getElementById('viewHome').style.display!=='none'){ loadAcademy(); } });
 
   if(TOKEN){ showApp(); } else { setTab('signup'); }
 </script>
