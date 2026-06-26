@@ -26,7 +26,7 @@
   .tabs button{flex:1;background:transparent;border:0;color:var(--muted);font-family:inherit;font-size:14px;font-weight:700;padding:9px;border-radius:9px;cursor:pointer}
   .tabs button.on{background:var(--accent);color:#fff}
   label{display:block;font-size:12.5px;color:var(--muted);margin:10px 0 5px}
-  input{width:100%;padding:12px 14px;font-size:15px;border-radius:11px;border:1px solid var(--stroke);background:var(--bg);color:#fff;font-family:inherit}
+  input{width:100%;padding:12px 14px;font-size:15px;border-radius:11px;border:1px solid var(--stroke);background:var(--bg);color:var(--text);font-family:inherit}
   input:focus{outline:none;border-color:var(--accent)}
   .btn{width:100%;margin-top:16px;padding:13px;font-size:15px;font-weight:800;border:0;border-radius:12px;cursor:pointer;background:linear-gradient(90deg,var(--accent),var(--accent2));color:#fff;font-family:inherit}
   .btn:active{transform:translateY(1px)}
@@ -81,7 +81,7 @@
   .lesson-head h2{flex:1}
   .done-btn{flex:none;border:1px solid var(--success);background:transparent;color:var(--success);font-family:inherit;font-weight:800;font-size:13px;padding:9px 13px;border-radius:10px;cursor:pointer;white-space:nowrap}
   .done-btn.on{background:var(--success);color:#06241B}
-  .lesson-body{color:#E7E3F4;font-size:14.5px;line-height:1.7;white-space:pre-wrap;word-break:break-word;margin-top:14px}
+  .lesson-body{color:var(--text);font-size:14.5px;line-height:1.7;white-space:pre-wrap;word-break:break-word;margin-top:14px}
   .lesson-body a{word-break:break-all}
   .lesson-nav{display:flex;gap:10px;margin-top:22px}
   .lesson-nav button{flex:1;background:var(--surface);border:1px solid var(--stroke);color:var(--text);font-family:inherit;font-weight:700;font-size:13.5px;padding:11px;border-radius:11px;cursor:pointer}
@@ -118,7 +118,7 @@
   .comments{margin-top:22px}
   .cm-h{font-weight:800;font-size:16px;margin-bottom:12px}
   .cmform{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
-  .cmform textarea{width:100%;min-height:60px;resize:vertical;padding:11px 13px;border-radius:11px;border:1px solid var(--stroke);background:var(--bg);color:#fff;font-family:inherit;font-size:14px}
+  .cmform textarea{width:100%;min-height:60px;resize:vertical;padding:11px 13px;border-radius:11px;border:1px solid var(--stroke);background:var(--bg);color:var(--text);font-family:inherit;font-size:14px}
   .cmform textarea:focus{outline:none;border-color:var(--accent)}
   .cmform button{align-self:flex-end;background:var(--accent);color:#fff;border:0;font-family:inherit;font-weight:800;font-size:13.5px;padding:10px 18px;border-radius:10px;cursor:pointer}
   .clist{display:flex;flex-direction:column;gap:12px}
@@ -127,9 +127,22 @@
   .cmeta b{color:var(--text);font-size:13px}
   .cmeta .ago{margin-left:6px}
   .cdel{background:none;border:0;color:#ff8aa0;font-family:inherit;font-size:11.5px;cursor:pointer;margin-left:8px;text-decoration:underline}
-  .ctext{font-size:14px;line-height:1.55;white-space:pre-wrap;word-break:break-word;color:#E7E3F4}
+  .ctext{font-size:14px;line-height:1.55;white-space:pre-wrap;word-break:break-word;color:var(--text)}
   .ctext a{word-break:break-all}
   .cempty{color:var(--muted);font-size:13.5px;padding:6px 0}
+  /* Fase 4: tema claro + toolbar + grilla */
+  body.light{--bg:#F5F3FB;--surface:#FFFFFF;--surface2:#F0ECF9;--stroke:#E4DEF2;--text:#1B1430;--muted:#6E6790}
+  .iconbtn{background:var(--surface2);border:1px solid var(--stroke);color:var(--text);font-size:15px;width:36px;height:34px;border-radius:9px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0}
+  .iconbtn:hover{border-color:var(--accent)}
+  .ls-search{width:100%;padding:11px 14px;font-size:14px;border-radius:11px;border:1px solid var(--stroke);background:var(--surface);color:var(--text);font-family:inherit;margin-bottom:12px}
+  .ls-search:focus{outline:none;border-color:var(--accent)}
+  .lt-mod{color:var(--muted);font-weight:400;font-size:12px}
+  .mod-toolbar{display:flex;gap:6px;justify-content:flex-end;margin-bottom:10px}
+  .vbtn{background:var(--surface);border:1px solid var(--stroke);color:var(--muted);font-size:15px;width:38px;height:33px;border-radius:9px;cursor:pointer;padding:0}
+  .vbtn.on{border-color:var(--accent);color:var(--text);background:var(--surface2)}
+  #modules.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
+  #modules.grid .modcard{flex-direction:column;align-items:stretch}
+  #modules.grid .mod-cover{width:100%;height:120px}
 </style>
 </head>
 <body>
@@ -172,6 +185,7 @@
     <img src="logo.png" alt="WHAPE" />
     <span class="ti">Comunidad WHAPE</span>
     <span class="me" id="meName"></span>
+    <button class="iconbtn" id="themeBtn" onclick="toggleTheme()" title="Cambiar tema">🌙</button>
     <button class="out" onclick="logout()">Salir</button>
   </div>
   <div class="wrap">
@@ -182,6 +196,8 @@
       <div class="ovbar"><div class="ovbar-fill" id="ovFill" style="width:0%"></div></div>
       <div class="ovtext" id="ovText"></div>
       <button class="resume" id="resumeBtn" style="display:none" onclick="resumeLast()">▶ Continuar desde donde lo dejé</button>
+      <input id="lsSearch" class="ls-search" placeholder="🔎 Buscar una clase…" oninput="renderHome()" />
+      <div class="mod-toolbar"><button class="vbtn" id="viewList" onclick="setModView('list')" title="Lista">☰</button><button class="vbtn" id="viewGrid" onclick="setModView('grid')" title="Cuadrícula">▦</button></div>
       <div id="modules"></div>
     </div>
     <!-- MÓDULO -->
@@ -308,7 +324,17 @@
     var rb=document.getElementById('resumeBtn');
     rb.style.display = (ACADEMY.progress.last && findFlatIndex(ACADEMY.progress.last)>=0) ? 'block':'none';
     var mc=document.getElementById('modules');
-    if(!ACADEMY.modules || !ACADEMY.modules.length){ mc.innerHTML='<div class="empty2">📚 Pronto subiremos las clases. ¡Quédate atento!</div>'; return; }
+    var q=((document.getElementById('lsSearch')||{}).value||'').trim().toLowerCase();
+    if(q){
+      mc.classList.remove('grid');
+      var matches=flat().filter(function(x){ return (x.lesson.title||'').toLowerCase().indexOf(q)>=0; });
+      mc.innerHTML = matches.length ? matches.map(function(x){
+        var d=isDone(x.lesson.id);
+        return '<div class="lrow" onclick="openLesson(\''+x.mod.id+'\',\''+x.lesson.id+'\')"><span class="ck'+(d?' on':'')+'">'+(d?'✓':'')+'</span><span class="lt">'+esc(x.lesson.title||'')+' <span class="lt-mod">· '+esc(x.mod.title||'')+'</span></span><span class="ar">▶</span></div>';
+      }).join('') : '<div class="empty2">Sin resultados para esa búsqueda 🔍</div>';
+      return;
+    }
+    if(!ACADEMY.modules || !ACADEMY.modules.length){ mc.classList.remove('grid'); mc.innerHTML='<div class="empty2">📚 Pronto subiremos las clases. ¡Quédate atento!</div>'; return; }
     mc.innerHTML = ACADEMY.modules.map(function(m){
       var ls=m.lessons||[]; var d=ls.filter(function(l){return isDone(l.id);}).length;
       var pct = ls.length? Math.round(d/ls.length*100):0;
@@ -319,6 +345,7 @@
         '<div class="mod-bar"><div class="mod-bar-fill" style="width:'+pct+'%"></div></div>'+
         '<div class="mod-meta">'+d+'/'+ls.length+' clases · '+pct+'%</div></div></div>';
     }).join('');
+    applyModView();
   }
 
   function openModule(id){ curMod = (ACADEMY.modules||[]).find(function(m){return m.id===id;}); if(!curMod) return; renderModule(); show('viewModule'); }
@@ -410,6 +437,14 @@
     api('comment',{token:TOKEN, lessonId:curLesson.id, text:t}).then(function(res){ if(res.ok){ renderComments(res.d.comments); } else { el.disabled=false; alert((res.d&&res.d.error)||'No se pudo comentar'); } });
   }
   function delComment(id){ if(!confirm('¿Eliminar tu comentario?')) return; api('delcomment',{token:TOKEN, lessonId:curLesson.id, commentId:id}).then(function(res){ if(res.ok) renderComments(res.d.comments); }); }
+
+  // ---- tema claro/oscuro + vista de módulos (Fase 4) ----
+  var MODVIEW = localStorage.getItem('whape_club_modview')||'list';
+  function applyTheme(t){ document.body.classList.toggle('light', t==='light'); var b=document.getElementById('themeBtn'); if(b) b.textContent = t==='light'?'☀️':'🌙'; }
+  function toggleTheme(){ var t=document.body.classList.contains('light')?'dark':'light'; localStorage.setItem('whape_club_theme', t); applyTheme(t); }
+  function setModView(v){ MODVIEW=v; localStorage.setItem('whape_club_modview', v); applyModView(); }
+  function applyModView(){ var m=document.getElementById('modules'); if(!m) return; m.classList.toggle('grid', MODVIEW==='grid'); var g=document.getElementById('viewGrid'), l=document.getElementById('viewList'); if(g) g.classList.toggle('on', MODVIEW==='grid'); if(l) l.classList.toggle('on', MODVIEW==='list'); }
+  applyTheme(localStorage.getItem('whape_club_theme')||'dark');
 
   if(TOKEN){ showApp(); } else { setTab('signup'); }
 </script>
