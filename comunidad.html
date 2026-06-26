@@ -130,6 +130,17 @@
   .ctext{font-size:14px;line-height:1.55;white-space:pre-wrap;word-break:break-word;color:var(--text)}
   .ctext a{word-break:break-all}
   .cempty{color:var(--muted);font-size:13.5px;padding:6px 0}
+  .feedback{margin-top:24px;padding:16px;background:var(--surface);border:1px solid var(--stroke);border-radius:14px}
+  .fb-h{font-weight:800;font-size:15px;margin-bottom:3px}
+  .fb-sub{color:var(--muted);font-size:12.5px;margin-bottom:12px}
+  .fb-tags{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px}
+  .fb-tag{font-family:inherit;font-size:12.5px;font-weight:700;padding:7px 11px;border-radius:999px;border:1px solid var(--stroke);background:transparent;color:var(--muted);cursor:pointer;white-space:nowrap}
+  .fb-tag:hover{border-color:var(--accent);color:var(--text)}
+  .fb-tag.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  #fbText{width:100%;min-height:80px;resize:vertical;padding:11px 13px;border-radius:11px;border:1px solid var(--stroke);background:var(--bg);color:var(--text);font-family:inherit;font-size:14px}
+  #fbText:focus{outline:none;border-color:var(--accent)}
+  .fb-send{margin-top:10px;background:linear-gradient(90deg,var(--accent),var(--accent2));color:#fff;border:0;font-family:inherit;font-weight:800;font-size:14px;padding:11px 20px;border-radius:11px;cursor:pointer}
+  .fb-ok{font-size:13px;margin-top:10px;min-height:18px}
   /* Fase 4: tema claro + toolbar + grilla */
   body.light{--bg:#F5F3FB;--surface:#FFFFFF;--surface2:#F0ECF9;--stroke:#E4DEF2;--text:#1B1430;--muted:#6E6790}
   .iconbtn{background:var(--surface2);border:1px solid var(--stroke);color:var(--text);font-size:15px;width:36px;height:34px;border-radius:9px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0}
@@ -231,7 +242,20 @@
             <button id="nextBtn" onclick="nextLesson()">Siguiente →</button>
           </div>
           <div class="rate-box" id="rateBox"></div>
-          <div class="comments" id="commentsBox"></div>
+          <div class="feedback" id="feedbackBox">
+            <div class="fb-h">💬 Comparte con el creador</div>
+            <div class="fb-sub">Tu mensaje le llega en privado y te responde. Elige el tipo:</div>
+            <div class="fb-tags" id="fbTags">
+              <button class="fb-tag" data-t="pregunta" onclick="fbPick('pregunta')">❓ Pregunta</button>
+              <button class="fb-tag" data-t="duda" onclick="fbPick('duda')">🤔 Duda</button>
+              <button class="fb-tag on" data-t="comentario" onclick="fbPick('comentario')">💬 Comentario</button>
+              <button class="fb-tag" data-t="sugerencia" onclick="fbPick('sugerencia')">💡 Sugerencia</button>
+              <button class="fb-tag" data-t="interes" onclick="fbPick('interes')">🛒 Quiero comprar</button>
+            </div>
+            <textarea id="fbText" placeholder="Escribe aquí tu pregunta, duda o comentario…"></textarea>
+            <button class="fb-send" onclick="sendFeedback()">Enviar ➤</button>
+            <div class="fb-ok" id="fbOk"></div>
+          </div>
         </div>
         <div class="lesson-side">
           <div class="side-title">Clases de este módulo</div>
@@ -423,12 +447,11 @@
   function timeAgo(ts){ if(!ts) return ''; var s=Math.floor((Date.now()-ts)/1000); if(s<60) return 'hace un momento'; var m=Math.floor(s/60); if(m<60) return 'hace '+m+' min'; var h=Math.floor(m/60); if(h<24) return 'hace '+h+' h'; var d=Math.floor(h/24); if(d<30) return 'hace '+d+' d'; return new Date(ts).toLocaleDateString('es-PE',{day:'numeric',month:'short'}); }
   function loadLessonExtras(){
     document.getElementById('rateBox').innerHTML='';
-    document.getElementById('commentsBox').innerHTML='<div class="cempty">Cargando comentarios…</div>';
+    resetFeedback();
     var lid=curLesson.id;
     api('lesson',{token:TOKEN, lessonId:lid}).then(function(res){
       if(!res.ok || !curLesson || curLesson.id!==lid) return;
       renderRating(res.d.rating||{mine:0,avg:0,count:0});
-      renderComments(res.d.comments||[]);
     });
   }
   function renderRating(r){
@@ -440,21 +463,18 @@
     document.getElementById('rateBox').innerHTML=h;
   }
   function rateLesson(v){ api('rate',{token:TOKEN, lessonId:curLesson.id, value:v}).then(function(res){ if(res.ok) renderRating(res.d.rating); }); }
-  function renderComments(list){
-    var head='<div class="cm-h">💬 Comentarios ('+list.length+')</div>';
-    var form='<div class="cmform"><textarea id="cInput" placeholder="Escribe un comentario…"></textarea><button onclick="postComment()">Comentar</button></div>';
-    var items = list.length ? list.map(function(x){
-      var mine = MYPHONE && x.phone===MYPHONE;
-      return '<div class="citem"><div class="cmeta"><b>'+esc(x.name||'Miembro')+'</b><span class="ago">'+timeAgo(x.ts)+'</span>'+(mine?'<button class="cdel" onclick="delComment(\''+x.id+'\')">eliminar</button>':'')+'</div><div class="ctext">'+linkify(x.text)+'</div></div>';
-    }).join('') : '<div class="cempty">Sé el primero en comentar 🙌</div>';
-    document.getElementById('commentsBox').innerHTML=head+form+'<div class="clist">'+items+'</div>';
+  var FB_TYPE='comentario';
+  function fbPick(t){ FB_TYPE=t; var cs=document.querySelectorAll('#fbTags .fb-tag'); for(var i=0;i<cs.length;i++){ cs[i].classList.toggle('on', cs[i].getAttribute('data-t')===t); } }
+  function resetFeedback(){ var t=document.getElementById('fbText'); if(t){ t.value=''; t.disabled=false; } var ok=document.getElementById('fbOk'); if(ok) ok.textContent=''; fbPick('comentario'); }
+  function sendFeedback(){
+    var el=document.getElementById('fbText'); var text=el.value.trim(); var ok=document.getElementById('fbOk');
+    if(!text){ ok.style.color='#ff8aa0'; ok.textContent='Escribe tu mensaje 🙂'; return; }
+    el.disabled=true; ok.style.color='var(--muted)'; ok.textContent='Enviando…';
+    api('feedback',{token:TOKEN, lessonId:curLesson.id, type:FB_TYPE, text:text}).then(function(res){
+      if(!res.ok){ el.disabled=false; ok.style.color='#ff8aa0'; ok.textContent=(res.d&&res.d.error)||'No se pudo enviar'; return; }
+      el.value=''; el.disabled=false; ok.style.color='var(--success)'; ok.textContent='¡Enviado! 🙌 Te responderé pronto.';
+    });
   }
-  function postComment(){
-    var el=document.getElementById('cInput'); var t=el.value.trim(); if(!t) return;
-    el.disabled=true;
-    api('comment',{token:TOKEN, lessonId:curLesson.id, text:t}).then(function(res){ if(res.ok){ renderComments(res.d.comments); } else { el.disabled=false; alert((res.d&&res.d.error)||'No se pudo comentar'); } });
-  }
-  function delComment(id){ if(!confirm('¿Eliminar tu comentario?')) return; api('delcomment',{token:TOKEN, lessonId:curLesson.id, commentId:id}).then(function(res){ if(res.ok) renderComments(res.d.comments); }); }
 
   // ---- tema claro/oscuro + vista de módulos (Fase 4) ----
   var MODVIEW = localStorage.getItem('whape_club_modview')||'list';

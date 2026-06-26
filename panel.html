@@ -132,8 +132,8 @@
   #lbClose{position:fixed;top:16px;right:16px;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.25)}
   #lbClose:hover{background:rgba(255,255,255,.26)}
   /* Editor del prompt del bot */
-  #promptModal,#statsModal,#tplModal,#wtplModal,#communityModal,#progressModal{display:none;position:fixed;inset:0;z-index:120;background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:18px}
-  #promptModal.open,#statsModal.open,#tplModal.open,#wtplModal.open,#communityModal.open,#progressModal.open{display:flex}
+  #promptModal,#statsModal,#tplModal,#wtplModal,#communityModal,#progressModal,#inboxModal{display:none;position:fixed;inset:0;z-index:120;background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:18px}
+  #promptModal.open,#statsModal.open,#tplModal.open,#wtplModal.open,#communityModal.open,#progressModal.open,#inboxModal.open{display:flex}
   .cmin{width:100%;padding:10px 12px;margin-bottom:0;border-radius:9px;border:1px solid var(--stroke);background:var(--bg);color:#fff;font-family:inherit;font-size:14px}
   .cmin:focus{outline:none;border-color:var(--accent)}
   .cm-stats{display:flex;gap:10px;margin-bottom:14px}
@@ -185,6 +185,25 @@
   .pg-mmeta{color:var(--muted);font-size:11.5px;margin-top:7px}
   .pg-dmod{font-weight:700;font-size:12px;color:var(--gold);margin:10px 0 4px}
   .pg-dles{font-size:12.5px;color:#cfc9e0;padding:2px 0}
+  .ibx-badge{position:absolute;top:-7px;right:-7px;background:#ff5470;color:#fff;font-size:10px;font-weight:800;min-width:17px;height:17px;border-radius:999px;align-items:center;justify-content:center;padding:0 4px;display:none}
+  .ibx-filters{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px;align-items:center}
+  .ibx-f{font-family:inherit;font-size:11.5px;font-weight:700;padding:6px 10px;border-radius:999px;border:1px solid var(--stroke);background:transparent;color:var(--muted);cursor:pointer}
+  .ibx-f.on{background:var(--gold);border-color:var(--gold);color:#1a1205}
+  .ibx-item{border:1px solid var(--stroke);border-radius:12px;padding:12px 14px;margin-bottom:9px;background:var(--bg)}
+  .ibx-item.unread{border-color:var(--accent);background:var(--surface)}
+  .ibx-top{display:flex;align-items:center;gap:8px;cursor:pointer;flex-wrap:wrap}
+  .ibx-tag{font-size:11px;font-weight:800;padding:2px 8px;border-radius:6px;background:var(--surface2);color:var(--muted)}
+  .ibx-tag.t-interes{background:rgba(43,217,166,.18);color:var(--success)}
+  .ibx-tag.t-pregunta{background:rgba(142,45,226,.22);color:#c89bff}
+  .ibx-name{font-weight:700;font-size:13.5px}
+  .ibx-when{margin-left:auto;color:var(--muted);font-size:11px}
+  .ibx-where{color:var(--muted);font-size:11.5px;margin:6px 0 4px}
+  .ibx-text{font-size:13.5px;line-height:1.5;white-space:pre-wrap;word-break:break-word;color:#E7E3F4}
+  .ibx-acts{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
+  .ibx-reply{background:var(--success);color:#06241B;text-decoration:none;font-weight:800;font-size:12px;padding:7px 11px;border-radius:8px}
+  .ibx-act{background:var(--surface2);border:1px solid var(--stroke);color:var(--muted);font-family:inherit;font-size:12px;padding:7px 10px;border-radius:8px;cursor:pointer}
+  .ibx-act.del{color:#ff8aa0}
+  .ibx-act:hover{border-color:var(--accent)}
   .wrow{display:flex;align-items:center;gap:10px;justify-content:space-between;border:1px solid var(--stroke);border-radius:10px;padding:10px 12px;margin-bottom:8px}
   .wrow .wbody{color:var(--muted);font-size:12px;margin-top:4px;line-height:1.4}
   .wrow button{flex:none;padding:8px 14px;font-weight:700;font-size:13px;background:var(--success);color:#06241B;border-radius:8px}
@@ -282,6 +301,7 @@
     <button class="ref" onclick="openStats()" style="margin-right:8px">📊 Analíticas</button>
     <button class="ref" onclick="openCommunity()" style="margin-right:8px">📚 Comunidad</button>
     <button class="ref" onclick="openProgress()" style="margin-right:8px">📈 Progreso</button>
+    <button class="ref" onclick="openInbox()" style="margin-right:8px;position:relative">📥 Bandeja<span id="inboxBadge" class="ibx-badge">0</span></button>
     <button class="ref" onclick="openPrompt()" style="margin-right:8px">⚙️ Bot</button>
     <button class="ref" onclick="loadLeads()">↻ Actualizar</button>
   </div>
@@ -367,6 +387,19 @@
 <div id="lightbox" onclick="closeZoom(event)">
   <button id="lbClose" onclick="closeZoom(event)" aria-label="Cerrar">✕</button>
   <img id="lbImg" src="" alt="comprobante" onclick="event.stopPropagation()" />
+</div>
+
+<div id="inboxModal">
+  <div class="pm-card" style="max-width:720px">
+    <div class="pm-head">
+      <strong>📥 Bandeja de la academia</strong>
+      <button class="pm-x" onclick="closeInbox()" aria-label="Cerrar">✕</button>
+    </div>
+    <div style="overflow-y:auto;max-height:76vh;padding:2px">
+      <div class="ibx-filters" id="ibxFilters"></div>
+      <div id="ibxList"></div>
+    </div>
+  </div>
 </div>
 
 <div id="progressModal">
@@ -559,6 +592,7 @@
       document.getElementById('app').style.display='flex';
       LEADS = res.d.leads || [];
       renderLeads(LEADS); renderKanban();
+      refreshInboxBadge();
       poll = setInterval(tick, 12000);
     });
   }
@@ -839,7 +873,6 @@
       else { h+=ls.map(function(l){
         var media=l.video?'🎬':(l.image?'🖼️':'📝');
         return '<div class="cm-row"><div class="ic"><div class="rt">'+media+' '+esc(l.title||'(sin título)')+'</div></div>'
-          +'<button class="ib" onclick="openComments(\''+l.id+'\')" title="Comentarios">💬</button>'
           +'<button class="ib" onclick="editLesson(\''+l.id+'\')" title="Editar">✏️</button>'
           +'<button class="ib" onclick="delLesson(\''+l.id+'\')" title="Eliminar" style="color:#ff8aa0">🗑️</button></div>';
       }).join(''); }
@@ -926,6 +959,37 @@
       det.innerHTML = h || '<div class="cm-empty" style="padding:8px 0">Aún no hay clases.</div>';
     });
   }
+  // --- Bandeja de la academia ---
+  var INBOX=[], IBX_FILTER='all';
+  function refreshInboxBadge(){ capi('inbox').then(function(res){ if(res.ok) updateInboxBadge(res.d.unread); }); }
+  function updateInboxBadge(u){ var b=document.getElementById('inboxBadge'); if(!b) return; if(u>0){ b.textContent=u; b.style.display='inline-flex'; } else b.style.display='none'; }
+  function openInbox(){ document.getElementById('inboxModal').classList.add('open'); document.getElementById('ibxList').innerHTML='<div class="cm-empty">Cargando…</div>'; loadInbox(); }
+  function closeInbox(){ document.getElementById('inboxModal').classList.remove('open'); }
+  function loadInbox(){ capi('inbox').then(function(res){ if(!res.ok){ document.getElementById('ibxList').innerHTML='<div class="cm-empty" style="color:#ff8aa0">'+(res.d.error||'Error')+'</div>'; return; } INBOX=res.d.inbox||[]; updateInboxBadge(res.d.unread); renderInbox(); }); }
+  function ibxFilter(f){ IBX_FILTER=f; renderInbox(); }
+  function renderInbox(){
+    var meta={pregunta:['❓','Pregunta'],duda:['🤔','Duda'],comentario:['💬','Comentario'],sugerencia:['💡','Sugerencia'],interes:['🛒','Quiere comprar']};
+    var unread=INBOX.filter(function(x){return !x.read;}).length;
+    var filters=[['all','Todos'],['unread','No leídos ('+unread+')'],['interes','🛒 Compra'],['pregunta','❓ Preguntas'],['duda','🤔 Dudas'],['sugerencia','💡 Sugerencias']];
+    document.getElementById('ibxFilters').innerHTML = filters.map(function(f){ return '<button class="ibx-f'+(IBX_FILTER===f[0]?' on':'')+'" onclick="ibxFilter(\''+f[0]+'\')">'+f[1]+'</button>'; }).join('') + '<button class="ibx-f" onclick="inboxAllRead()" style="margin-left:auto">✓ Todo leído</button>';
+    var items=INBOX.filter(function(x){ if(IBX_FILTER==='all') return true; if(IBX_FILTER==='unread') return !x.read; return x.type===IBX_FILTER; });
+    var list=document.getElementById('ibxList');
+    if(!items.length){ list.innerHTML='<div class="cm-empty">📭 No hay mensajes en este filtro.</div>'; return; }
+    list.innerHTML=items.map(function(x){
+      var m=meta[x.type]||['📥',x.type];
+      var wa='https://wa.me/'+(x.phone||'').replace(/\D/g,'')+'?text='+encodeURIComponent('Hola '+(x.name||'')+' 👋, sobre tu mensaje en la academia: ');
+      return '<div class="ibx-item'+(x.read?'':' unread')+'">'
+        +'<div class="ibx-top" onclick="ibxRead(\''+x.id+'\',true)"><span class="ibx-tag t-'+x.type+'">'+m[0]+' '+m[1]+'</span><span class="ibx-name">'+esc(x.name||('+'+x.phone))+'</span><span class="ibx-when">'+fmtTime(x.ts)+'</span></div>'
+        +'<div class="ibx-where">📚 '+esc(x.lessonTitle||'(clase)')+(x.moduleTitle?(' · '+esc(x.moduleTitle)):'')+'</div>'
+        +'<div class="ibx-text">'+esc(x.text||'')+'</div>'
+        +'<div class="ibx-acts"><a class="ibx-reply" href="'+wa+'" target="_blank" rel="noopener">💬 Responder</a>'
+        +'<button class="ibx-act" onclick="ibxRead(\''+x.id+'\','+(x.read?'false':'true')+')">'+(x.read?'No leído':'Leído')+'</button>'
+        +'<button class="ibx-act del" onclick="ibxDel(\''+x.id+'\')">🗑️</button></div></div>';
+    }).join('');
+  }
+  function ibxRead(id, read){ capi('inboxread',{id:id, read:read}).then(function(res){ if(res.ok){ INBOX=res.d.inbox||[]; updateInboxBadge(res.d.unread); renderInbox(); } }); }
+  function inboxAllRead(){ capi('inboxread',{id:'*'}).then(function(res){ if(res.ok){ INBOX=res.d.inbox||[]; updateInboxBadge(res.d.unread); renderInbox(); } }); }
+  function ibxDel(id){ if(!confirm('¿Eliminar este mensaje de la bandeja?')) return; capi('inboxdel',{id:id}).then(function(res){ if(res.ok){ INBOX=res.d.inbox||[]; updateInboxBadge(res.d.unread); renderInbox(); } }); }
   // Módulo
   function newModule(){ fillModForm({}); }
   function editModule(id){ fillModForm(CM_TREE.find(function(x){return x.id===id;})||{}); }

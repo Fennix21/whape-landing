@@ -22,6 +22,7 @@ const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_
 const HAS_REDIS = !!(REDIS_URL && REDIS_TOKEN);
 const SECRET = process.env.WHAPE_SECRET || 'whape-dev-secret';
 const DEFAULT_WA_TEXT = '¡Hola! 🎓 Vengo de la Comunidad WHAPE y quiero recibir novedades y soporte por aquí. (academia)';
+const GRAPH = 'https://graph.facebook.com/v21.0';
 
 async function redis(cmd) {
   const r = await fetch(REDIS_URL, {
@@ -101,6 +102,21 @@ async function upsertLead(phone, name) {
     await redis(['SET', 'lead:' + phone, JSON.stringify(l)]);
     await redis(['ZADD', 'leads', String(l.updatedAt), phone]);
   } catch (e) { console.error('upsertLead', e); }
+}
+
+// Aviso al WhatsApp personal del dueño (mismo criterio que los avisos de leads).
+async function notifyOwner(text, fromPhone) {
+  try {
+    if ((await redis(['GET', 'config:notify'])) === '0') return;
+    const owner = ((await redis(['GET', 'config:ownerphone'])) || process.env.WHAPE_OWNER_PHONE || '').replace(/\D/g, '');
+    if (!owner) return;
+    if (fromPhone && fromPhone.replace(/\D/g, '') === owner) return;
+    await fetch(`${GRAPH}/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}` },
+      body: JSON.stringify({ messaging_product: 'whatsapp', to: owner, type: 'text', text: { body: text } }),
+    });
+  } catch (e) { console.error('notifyOwner', e); }
 }
 
 // Limpia un módulo/clase recibidos del panel (evita basura).
@@ -259,6 +275,33 @@ module.exports = async (req, res) => {
       return res.status(200).json({ ok: true, rating: ratingSummary(r, phone) });
     }
 
+    if (b.action === 'feedback') {
+      const phone = verifyToken(b.token);
+      if (!phone) return res.status(401).json({ error: 'Tu sesión venció. Entra de nuevo.' });
+      const TYPES = ['pregunta', 'duda', 'comentario', 'sugerencia', 'interes'];
+      const type = TYPES.indexOf((b.type || '').toString()) >= 0 ? b.type : 'comentario';
+      const text = (b.text || '').toString().trim().slice(0, 2000);
+      if (!text) return res.status(400).json({ error: 'Escribe tu mensaje.' });
+      const lessonId = (b.lessonId || '').toString();
+      let lessonTitle = '', moduleTitle = '';
+      const mods = await getModules();
+      for (const m of mods) { const l = (m.lessons || []).find((x) => x.id === lessonId); if (l) { lessonTitle = l.title || ''; moduleTitle = m.title || ''; break; } }
+      const mraw = await redis(['GET', 'member:' + phone]);
+      let name = ''; if (mraw) { try { name = JSON.parse(mraw).name || ''; } catch (e) {} }
+      const raw = await redis(['GET', 'academy:inbox']);
+      let inbox = []; if (raw) { try { inbox = JSON.parse(raw); } catch (e) {} }
+      inbox.unshift({ id: newId('f'), lessonId, lessonTitle, moduleTitle, phone, name, type, text, ts: Date.now(), read: false });
+      if (inbox.length > 500) inbox = inbox.slice(0, 500);
+      await redis(['SET', 'academy:inbox', JSON.stringify(inbox)]);
+      // tag al lead para tu CRM
+      try { const lr = await redis(['GET', 'lead:' + phone]); if (lr) { const ld = JSON.parse(lr); if (!ld.tags) ld.tags = []; if (ld.tags.indexOf('academia') < 0) ld.tags.push('academia'); if (type === 'interes' && ld.tags.indexOf('interés-academia') < 0) ld.tags.push('interés-academia'); await redis(['SET', 'lead:' + phone, JSON.stringify(ld)]); } } catch (e) {}
+      // aviso a tu WhatsApp
+      const emoji = { pregunta: '❓', duda: '🤔', comentario: '💬', sugerencia: '💡', interes: '🛒' }[type] || '📥';
+      const label = type === 'interes' ? 'QUIERE COMPRAR 🛒' : type;
+      await notifyOwner(emoji + ' Nuevo *' + label + '* en tu academia\n👤 ' + (name || ('+' + phone)) + '\n📚 ' + (lessonTitle || '(clase)') + '\n💬 "' + text.slice(0, 250) + '"\n\nMíralo en tu Bandeja 👉 whape.club/panel', phone);
+      return res.status(200).json({ ok: true });
+    }
+
     // ---------- ADMIN ----------
     if (b.action === 'admin') {
       if ((b.pass || '') !== process.env.WHAPE_ADMIN_PASS) return res.status(401).json({ error: 'Contraseña incorrecta.' });
@@ -325,6 +368,26 @@ module.exports = async (req, res) => {
         const praw = await redis(['GET', 'progress:' + phone]);
         let prog = { done: {}, last: '', updatedAt: 0 }; if (praw) { try { prog = JSON.parse(praw); } catch (e) {} }
         return res.status(200).json({ ok: true, done: prog.done || {}, last: prog.last || '', updatedAt: prog.updatedAt || 0 });
+      }
+      if (sub === 'inbox') {
+        const raw = await redis(['GET', 'academy:inbox']);
+        let inbox = []; if (raw) { try { inbox = JSON.parse(raw); } catch (e) {} }
+        return res.status(200).json({ ok: true, inbox, unread: inbox.filter((x) => !x.read).length });
+      }
+      if (sub === 'inboxread') {
+        const raw = await redis(['GET', 'academy:inbox']);
+        let inbox = []; if (raw) { try { inbox = JSON.parse(raw); } catch (e) {} }
+        if (b.id === '*') inbox.forEach((x) => { x.read = true; });
+        else { const it = inbox.find((x) => x.id === b.id); if (it) it.read = b.read !== false; }
+        await redis(['SET', 'academy:inbox', JSON.stringify(inbox)]);
+        return res.status(200).json({ ok: true, inbox, unread: inbox.filter((x) => !x.read).length });
+      }
+      if (sub === 'inboxdel') {
+        const raw = await redis(['GET', 'academy:inbox']);
+        let inbox = []; if (raw) { try { inbox = JSON.parse(raw); } catch (e) {} }
+        inbox = inbox.filter((x) => x.id !== b.id);
+        await redis(['SET', 'academy:inbox', JSON.stringify(inbox)]);
+        return res.status(200).json({ ok: true, inbox, unread: inbox.filter((x) => !x.read).length });
       }
       if (sub === 'savemod') {
         const incoming = b.mod || {};
