@@ -107,6 +107,29 @@
   @keyframes pulseGr{0%,100%{box-shadow:0 0 0 0 rgba(142,45,226,.6)}70%{box-shadow:0 0 0 15px rgba(142,45,226,0)}}
   @keyframes ctaShine{0%,55%{left:-70%}85%,100%{left:130%}}
   @media (prefers-reduced-motion: reduce){.cta-btn,.cta-btn::after{animation:none}}
+  /* Calificación + comentarios */
+  .rate-box{margin-top:24px;padding:16px;background:var(--surface);border:1px solid var(--stroke);border-radius:14px}
+  .rate-q{font-weight:700;font-size:14px;margin-bottom:10px}
+  .rate-faces{display:flex;gap:8px}
+  .rface{font-size:23px;background:transparent;border:1px solid var(--stroke);border-radius:12px;width:48px;height:48px;cursor:pointer;line-height:1;transition:transform .12s,border-color .12s;filter:grayscale(.6);opacity:.65}
+  .rface:hover{transform:scale(1.12);filter:none;opacity:1}
+  .rface.on{border-color:var(--accent);background:var(--surface2);filter:none;opacity:1;transform:scale(1.06)}
+  .rate-avg{color:var(--muted);font-size:12px;margin-top:10px}
+  .comments{margin-top:22px}
+  .cm-h{font-weight:800;font-size:16px;margin-bottom:12px}
+  .cmform{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+  .cmform textarea{width:100%;min-height:60px;resize:vertical;padding:11px 13px;border-radius:11px;border:1px solid var(--stroke);background:var(--bg);color:#fff;font-family:inherit;font-size:14px}
+  .cmform textarea:focus{outline:none;border-color:var(--accent)}
+  .cmform button{align-self:flex-end;background:var(--accent);color:#fff;border:0;font-family:inherit;font-weight:800;font-size:13.5px;padding:10px 18px;border-radius:10px;cursor:pointer}
+  .clist{display:flex;flex-direction:column;gap:12px}
+  .citem{background:var(--surface);border:1px solid var(--stroke);border-radius:12px;padding:12px 14px}
+  .cmeta{font-size:12px;color:var(--muted);margin-bottom:5px}
+  .cmeta b{color:var(--text);font-size:13px}
+  .cmeta .ago{margin-left:6px}
+  .cdel{background:none;border:0;color:#ff8aa0;font-family:inherit;font-size:11.5px;cursor:pointer;margin-left:8px;text-decoration:underline}
+  .ctext{font-size:14px;line-height:1.55;white-space:pre-wrap;word-break:break-word;color:#E7E3F4}
+  .ctext a{word-break:break-all}
+  .cempty{color:var(--muted);font-size:13.5px;padding:6px 0}
 </style>
 </head>
 <body>
@@ -183,6 +206,8 @@
             <button id="prevBtn" onclick="prevLesson()">← Anterior</button>
             <button id="nextBtn" onclick="nextLesson()">Siguiente →</button>
           </div>
+          <div class="rate-box" id="rateBox"></div>
+          <div class="comments" id="commentsBox"></div>
         </div>
         <div class="lesson-side">
           <div class="side-title">Clases de este módulo</div>
@@ -196,6 +221,7 @@
 <script>
   var TOKEN = localStorage.getItem('whape_club') || '';
   var NAME = localStorage.getItem('whape_club_name') || '';
+  var MYPHONE = TOKEN ? TOKEN.split('.')[0] : '';
   var ACADEMY = { modules:[], progress:{done:{},last:''}, name:'' };
   var curMod = null, curLesson = null;
 
@@ -230,7 +256,7 @@
     enter(res.d.token, res.d.name);
   }
   function enter(token, name){
-    TOKEN=token; NAME=name||'';
+    TOKEN=token; MYPHONE=token.split('.')[0]; NAME=name||'';
     localStorage.setItem('whape_club', token);
     localStorage.setItem('whape_club_name', NAME);
     showApp();
@@ -315,7 +341,7 @@
     curMod=m; curLesson=l;
     ACADEMY.progress.last=lessonId;
     api('seen', { token:TOKEN, lessonId:lessonId });
-    renderLesson(); show('viewLesson');
+    renderLesson(); loadLessonExtras(); show('viewLesson');
   }
   function renderLesson(){
     var l=curLesson, m=curMod;
@@ -347,6 +373,43 @@
   function nextLesson(){ var f=flat(), i=findFlatIndex(curLesson.id); if(i>=0 && i<f.length-1){ openLesson(f[i+1].mod.id, f[i+1].lesson.id); } }
   function prevLesson(){ var f=flat(), i=findFlatIndex(curLesson.id); if(i>0){ openLesson(f[i-1].mod.id, f[i-1].lesson.id); } }
   function resumeLast(){ var f=flat(); var x=f.find(function(y){return y.lesson.id===ACADEMY.progress.last;}) || f[0]; if(x) openLesson(x.mod.id, x.lesson.id); }
+
+  // ---- calificación + comentarios ----
+  function timeAgo(ts){ if(!ts) return ''; var s=Math.floor((Date.now()-ts)/1000); if(s<60) return 'hace un momento'; var m=Math.floor(s/60); if(m<60) return 'hace '+m+' min'; var h=Math.floor(m/60); if(h<24) return 'hace '+h+' h'; var d=Math.floor(h/24); if(d<30) return 'hace '+d+' d'; return new Date(ts).toLocaleDateString('es-PE',{day:'numeric',month:'short'}); }
+  function loadLessonExtras(){
+    document.getElementById('rateBox').innerHTML='';
+    document.getElementById('commentsBox').innerHTML='<div class="cempty">Cargando comentarios…</div>';
+    var lid=curLesson.id;
+    api('lesson',{token:TOKEN, lessonId:lid}).then(function(res){
+      if(!res.ok || !curLesson || curLesson.id!==lid) return;
+      renderRating(res.d.rating||{mine:0,avg:0,count:0});
+      renderComments(res.d.comments||[]);
+    });
+  }
+  function renderRating(r){
+    var faces=['😞','😕','🙂','😀','🤩'];
+    var h='<div class="rate-q">¿Cómo calificas esta clase?</div><div class="rate-faces">';
+    for(var i=1;i<=5;i++){ h+='<button class="rface'+(r.mine===i?' on':'')+'" onclick="rateLesson('+i+')" title="'+i+'">'+faces[i-1]+'</button>'; }
+    h+='</div>';
+    if(r.count){ h+='<div class="rate-avg">Promedio ⭐ '+r.avg+' · '+r.count+' valoración'+(r.count===1?'':'es')+'</div>'; }
+    document.getElementById('rateBox').innerHTML=h;
+  }
+  function rateLesson(v){ api('rate',{token:TOKEN, lessonId:curLesson.id, value:v}).then(function(res){ if(res.ok) renderRating(res.d.rating); }); }
+  function renderComments(list){
+    var head='<div class="cm-h">💬 Comentarios ('+list.length+')</div>';
+    var form='<div class="cmform"><textarea id="cInput" placeholder="Escribe un comentario…"></textarea><button onclick="postComment()">Comentar</button></div>';
+    var items = list.length ? list.map(function(x){
+      var mine = MYPHONE && x.phone===MYPHONE;
+      return '<div class="citem"><div class="cmeta"><b>'+esc(x.name||'Miembro')+'</b><span class="ago">'+timeAgo(x.ts)+'</span>'+(mine?'<button class="cdel" onclick="delComment(\''+x.id+'\')">eliminar</button>':'')+'</div><div class="ctext">'+linkify(x.text)+'</div></div>';
+    }).join('') : '<div class="cempty">Sé el primero en comentar 🙌</div>';
+    document.getElementById('commentsBox').innerHTML=head+form+'<div class="clist">'+items+'</div>';
+  }
+  function postComment(){
+    var el=document.getElementById('cInput'); var t=el.value.trim(); if(!t) return;
+    el.disabled=true;
+    api('comment',{token:TOKEN, lessonId:curLesson.id, text:t}).then(function(res){ if(res.ok){ renderComments(res.d.comments); } else { el.disabled=false; alert((res.d&&res.d.error)||'No se pudo comentar'); } });
+  }
+  function delComment(id){ if(!confirm('¿Eliminar tu comentario?')) return; api('delcomment',{token:TOKEN, lessonId:curLesson.id, commentId:id}).then(function(res){ if(res.ok) renderComments(res.d.comments); }); }
 
   if(TOKEN){ showApp(); } else { setTab('signup'); }
 </script>

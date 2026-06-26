@@ -66,6 +66,23 @@ async function getProgress(phone) {
   if (raw) { try { return JSON.parse(raw); } catch (e) {} }
   return { done: {}, last: '' };
 }
+async function getComments(lessonId) {
+  const raw = await redis(['GET', 'comments:' + lessonId]);
+  if (raw) { try { return JSON.parse(raw); } catch (e) {} }
+  return [];
+}
+async function getRating(lessonId) {
+  const raw = await redis(['GET', 'rating:' + lessonId]);
+  if (raw) { try { return JSON.parse(raw); } catch (e) {} }
+  return { votes: {} };
+}
+function ratingSummary(r, phone) {
+  const votes = (r && r.votes) || {};
+  const vals = Object.keys(votes).map((k) => Number(votes[k]));
+  const count = vals.length;
+  const sum = vals.reduce((a, b) => a + b, 0);
+  return { mine: votes[phone] || 0, avg: count ? Math.round((sum / count) * 10) / 10 : 0, count };
+}
 
 async function upsertLead(phone, name) {
   try {
@@ -183,6 +200,51 @@ module.exports = async (req, res) => {
       p.last = lessonId; p.updatedAt = Date.now();
       await redis(['SET', 'progress:' + phone, JSON.stringify(p)]);
       return res.status(200).json({ ok: true });
+    }
+
+    // ---------- MIEMBRO: comentarios + calificación por clase ----------
+    if (b.action === 'lesson') {
+      const phone = verifyToken(b.token);
+      if (!phone) return res.status(401).json({ error: 'Tu sesión venció.' });
+      const lessonId = (b.lessonId || '').toString();
+      const comments = await getComments(lessonId);
+      const r = await getRating(lessonId);
+      return res.status(200).json({ ok: true, comments, rating: ratingSummary(r, phone) });
+    }
+    if (b.action === 'comment') {
+      const phone = verifyToken(b.token);
+      if (!phone) return res.status(401).json({ error: 'Tu sesión venció.' });
+      const lessonId = (b.lessonId || '').toString();
+      const text = (b.text || '').toString().trim().slice(0, 1000);
+      if (!lessonId || !text) return res.status(400).json({ error: 'Escribe tu comentario.' });
+      const mraw = await redis(['GET', 'member:' + phone]);
+      let name = ''; if (mraw) { try { name = JSON.parse(mraw).name || ''; } catch (e) {} }
+      let comments = await getComments(lessonId);
+      comments.push({ id: newId('c'), phone, name, text, ts: Date.now() });
+      if (comments.length > 500) comments = comments.slice(-500);
+      await redis(['SET', 'comments:' + lessonId, JSON.stringify(comments)]);
+      return res.status(200).json({ ok: true, comments });
+    }
+    if (b.action === 'delcomment') {
+      const phone = verifyToken(b.token);
+      if (!phone) return res.status(401).json({ error: 'Tu sesión venció.' });
+      const lessonId = (b.lessonId || '').toString();
+      let comments = await getComments(lessonId);
+      comments = comments.filter((c) => !(c.id === b.commentId && c.phone === phone));
+      await redis(['SET', 'comments:' + lessonId, JSON.stringify(comments)]);
+      return res.status(200).json({ ok: true, comments });
+    }
+    if (b.action === 'rate') {
+      const phone = verifyToken(b.token);
+      if (!phone) return res.status(401).json({ error: 'Tu sesión venció.' });
+      const lessonId = (b.lessonId || '').toString();
+      const value = Math.max(1, Math.min(5, parseInt(b.value, 10) || 0));
+      if (!lessonId || !value) return res.status(400).json({ error: 'Falta la valoración.' });
+      const r = await getRating(lessonId);
+      if (!r.votes) r.votes = {};
+      r.votes[phone] = value;
+      await redis(['SET', 'rating:' + lessonId, JSON.stringify(r)]);
+      return res.status(200).json({ ok: true, rating: ratingSummary(r, phone) });
     }
 
     // ---------- ADMIN ----------
