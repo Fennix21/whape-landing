@@ -143,6 +143,10 @@
   #modules.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:12px}
   #modules.grid .modcard{flex-direction:column;align-items:stretch}
   #modules.grid .mod-cover{width:100%;height:120px}
+  .modcard.locked{cursor:default;opacity:.72}
+  .modcard.locked:hover{border-color:var(--stroke)}
+  .modcard.locked .mod-cover{filter:grayscale(.7)}
+  .mod-lock{color:var(--gold);font-size:12.5px;font-weight:700;margin-top:6px}
 </style>
 </head>
 <body>
@@ -336,6 +340,11 @@
     }
     if(!ACADEMY.modules || !ACADEMY.modules.length){ mc.classList.remove('grid'); mc.innerHTML='<div class="empty2">📚 Pronto subiremos las clases. ¡Quédate atento!</div>'; return; }
     mc.innerHTML = ACADEMY.modules.map(function(m){
+      if(m.locked){
+        var days=Math.max(1, Math.ceil((m.unlockAt - Date.now())/86400000));
+        var lc = m.image ? '<img class="mod-cover" src="'+esc(m.image)+'" alt="" />' : '<div class="mod-cover">🔒</div>';
+        return '<div class="modcard locked">'+lc+'<div class="mod-info"><div class="mod-t">'+esc(m.title||'Módulo')+'</div><div class="mod-lock">🔒 Se libera en '+days+' día'+(days===1?'':'s')+'</div></div></div>';
+      }
       var ls=m.lessons||[]; var d=ls.filter(function(l){return isDone(l.id);}).length;
       var pct = ls.length? Math.round(d/ls.length*100):0;
       var cover = m.image ? '<img class="mod-cover" src="'+esc(m.image)+'" alt="" />' : '<div class="mod-cover">📚</div>';

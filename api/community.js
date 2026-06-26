@@ -119,6 +119,7 @@ function cleanModule(p) {
     title: (p.title || '').toString().slice(0, 120),
     desc: (p.desc || '').toString().slice(0, 400),
     image: (p.image || '').toString().slice(0, 300),
+    lockDays: Math.max(0, parseInt(p.lockDays, 10) || 0),
     lessons: Array.isArray(p.lessons) ? p.lessons.map(cleanLesson) : [],
   };
 }
@@ -169,10 +170,17 @@ module.exports = async (req, res) => {
     if (b.action === 'academy') {
       const phone = verifyToken(b.token);
       if (!phone) return res.status(401).json({ error: 'Tu sesión venció. Entra de nuevo. 🙏' });
-      const modules = await getModules();
+      const rawmods = await getModules();
       const progress = await getProgress(phone);
       const mraw = await redis(['GET', 'member:' + phone]);
-      let name = ''; if (mraw) { try { name = JSON.parse(mraw).name || ''; } catch (e) {} }
+      let name = '', joinedAt = 0; if (mraw) { try { const mm = JSON.parse(mraw); name = mm.name || ''; joinedAt = mm.createdAt || 0; } catch (e) {} }
+      const now = Date.now();
+      const modules = rawmods.map((m) => { // drip: oculta el contenido de los módulos aún bloqueados
+        const lockDays = Number(m.lockDays || 0);
+        const unlockAt = (lockDays > 0 && joinedAt) ? joinedAt + lockDays * 86400000 : 0;
+        if (unlockAt && now < unlockAt) return { id: m.id, title: m.title, desc: m.desc, image: m.image, locked: true, unlockAt, lessons: [] };
+        return Object.assign({}, m, { locked: false, unlockAt: 0 });
+      });
       const groupLink = (await redis(['GET', 'config:club_grouplink'])) || '';
       const waText = (await redis(['GET', 'config:club_watext'])) || DEFAULT_WA_TEXT;
       return res.status(200).json({ ok: true, modules, progress, name, club: { groupLink, waText, waNumber: '51983427614' } });
@@ -293,6 +301,7 @@ module.exports = async (req, res) => {
             mods[idx].title = (incoming.title || '').toString().slice(0, 120);
             mods[idx].desc = (incoming.desc || '').toString().slice(0, 400);
             mods[idx].image = (incoming.image || '').toString().slice(0, 300);
+            mods[idx].lockDays = Math.max(0, parseInt(incoming.lockDays, 10) || 0);
           }
         } else {
           mods.push(cleanModule(incoming));

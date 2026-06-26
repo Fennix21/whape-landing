@@ -387,6 +387,8 @@
           <button type="button" class="cm-up" onclick="cmUpload('cmModImg','cmModImgPrev',this)">📁 Subir</button>
         </div>
         <img class="cm-prev" id="cmModImgPrev" style="display:none" alt="" />
+        <label class="cm-lbl">🔒 Liberar después de <span class="cm-opt">N días (drip) · 0 = disponible ya</span></label>
+        <input id="cmModLock" class="cmin" type="number" min="0" placeholder="0" />
         <div class="cm-formbtns">
           <button class="cm-save" onclick="saveModule()">💾 Guardar módulo</button>
           <button class="cm-cancel" onclick="cancelModForm()">Cancelar</button>
@@ -820,7 +822,7 @@
       if(!CM_TREE.length){ hh+='<div class="cm-empty"><span class="big">📂</span>Aún no hay módulos.<br>Crea el primero para empezar tu academia. ✨</div>'; }
       else { hh+=CM_TREE.map(function(mm){
         var n=(mm.lessons||[]).length;
-        return '<div class="cm-row"><div class="ic" onclick="openCmModule(\''+mm.id+'\')" style="cursor:pointer"><div class="rt">📂 '+esc(mm.title||'Módulo')+'</div><div class="rs">'+n+' clase'+(n===1?'':'s')+' · toca para abrir</div></div>'
+        return '<div class="cm-row"><div class="ic" onclick="openCmModule(\''+mm.id+'\')" style="cursor:pointer"><div class="rt">📂 '+esc(mm.title||'Módulo')+(mm.lockDays>0?' 🔒'+mm.lockDays+'d':'')+'</div><div class="rs">'+n+' clase'+(n===1?'':'s')+' · toca para abrir</div></div>'
           +'<button class="ib" onclick="editModule(\''+mm.id+'\')" title="Editar módulo">✏️</button>'
           +'<button class="ib" onclick="delModule(\''+mm.id+'\')" title="Eliminar módulo" style="color:#ff8aa0">🗑️</button></div>';
       }).join(''); }
@@ -852,13 +854,14 @@
     document.getElementById('cmModTitle').value=m.title||'';
     document.getElementById('cmModDesc').value=m.desc||'';
     document.getElementById('cmModImg').value=m.image||'';
+    document.getElementById('cmModLock').value=m.lockDays||0;
     document.getElementById('cmModForm').style.display='block';
     cmShowPrev('cmModImg','cmModImgPrev');
     document.getElementById('cmModTitle').focus();
   }
   function cancelModForm(){ var f=document.getElementById('cmModForm'); if(f) f.style.display='none'; }
   function saveModule(){
-    var mod={ id:document.getElementById('cmModId').value||undefined, title:document.getElementById('cmModTitle').value.trim(), desc:document.getElementById('cmModDesc').value.trim(), image:document.getElementById('cmModImg').value.trim() };
+    var mod={ id:document.getElementById('cmModId').value||undefined, title:document.getElementById('cmModTitle').value.trim(), desc:document.getElementById('cmModDesc').value.trim(), image:document.getElementById('cmModImg').value.trim(), lockDays:document.getElementById('cmModLock').value };
     if(!mod.title){ alert('Ponle un título al módulo.'); return; }
     capi('savemod',{mod:mod}).then(function(res){ if(!res.ok){ alert(res.d.error||'Error'); return; } CM_TREE=res.d.modules||[]; cancelModForm(); renderTree(); });
   }
