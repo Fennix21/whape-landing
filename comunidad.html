@@ -40,6 +40,10 @@
   .rec-hint{color:var(--muted);font-size:11.5px;margin:8px 0 6px;text-align:center;line-height:1.5}
   .rec-soon{background:var(--surface2);border:1px solid var(--stroke);border-radius:12px;padding:16px;color:var(--muted);font-size:13.5px;line-height:1.6;text-align:center;margin-bottom:14px}
   .rec-foot{text-align:center;margin-top:16px;font-size:13px}
+  .rec-step{font-size:11.5px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin:4px 0 11px}
+  .rec-wabtn{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;padding:14px;border-radius:12px;background:#25D366;color:#08361c;font-weight:800;font-size:15px;text-decoration:none;transition:transform .12s,filter .12s}
+  .rec-wabtn:hover{filter:brightness(1.05);transform:translateY(-1px)}
+  .rec-wa-ic{font-size:18px}
   .em-modal{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.72);align-items:center;justify-content:center;padding:20px}
   .em-modal.show{display:flex}
   .em-card{position:relative;width:100%;max-width:380px;background:var(--surface);border:1px solid var(--stroke);border-radius:18px;padding:26px 22px;text-align:center}
@@ -267,15 +271,17 @@
         <button class="rec-opt" onclick="recPick('email')">📧 Por correo</button>
       </div>
       <div id="recWa" style="display:none">
-        <a class="btn" id="recWaBtn" href="#" target="_blank" rel="noopener">📲 1) Pedir mi código por WhatsApp</a>
-        <div class="rec-hint">Se abrirá WhatsApp con un mensaje. Envíalo y te llegará tu código al instante. 🔑</div>
-        <label>2) Tu WhatsApp</label>
+        <div class="rec-step">Paso 1 · Pide tu código</div>
+        <a class="rec-wabtn" id="recWaBtn" href="#" target="_blank" rel="noopener"><span class="rec-wa-ic">💬</span> Pedir código por WhatsApp</a>
+        <div class="rec-hint">Se abrirá WhatsApp con un mensaje listo. Envíalo y te llega tu código al instante. 🔑</div>
+        <div class="rec-step" style="margin-top:22px">Paso 2 · Cámbiala</div>
+        <label>Tu WhatsApp</label>
         <input id="recPhone" placeholder="Ej. 983427614" inputmode="numeric" />
-        <label>3) Código que te llegó</label>
+        <label>Código que te llegó</label>
         <input id="recCode" placeholder="6 dígitos" inputmode="numeric" />
-        <label>4) Nueva contraseña</label>
+        <label>Nueva contraseña</label>
         <input id="recPass" type="password" placeholder="Mínimo 4 caracteres" />
-        <button class="btn" onclick="doReset()">Cambiar contraseña</button>
+        <button class="btn" onclick="doReset()" style="margin-top:18px">Cambiar contraseña</button>
         <div class="err" id="recErr"></div>
       </div>
       <div id="recEmail" style="display:none">
