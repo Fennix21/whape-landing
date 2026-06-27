@@ -237,8 +237,8 @@
 <div id="auth">
   <div class="card">
     <img src="logo.png" class="logo" alt="WHAPE" />
-    <h1>Comunidad WHAPE</h1>
-    <p class="sub">Clases y contenido de valor para vender más y cobrar seguro. 🔊</p>
+    <h1 id="authTitle">Comunidad WHAPE</h1>
+    <p class="sub" id="authSub">Clases y contenido de valor para vender más y cobrar seguro. 🔊</p>
     <div class="tabs">
       <button id="tabSignup" class="on" onclick="setTab('signup')">Registrarme</button>
       <button id="tabLogin" onclick="setTab('login')">Entrar</button>
@@ -265,7 +265,6 @@
     </div>
     <div id="formRecover" style="display:none">
       <div class="rec-title">🔑 Recuperar contraseña</div>
-      <div class="rec-sub">¿Cómo quieres recuperar tu acceso?</div>
       <div class="rec-choose" id="recChoose">
         <button class="rec-opt" onclick="recPick('wa')">📲 Por WhatsApp</button>
         <button class="rec-opt" onclick="recPick('email')">📧 Por correo</button>
@@ -416,6 +415,8 @@
 
   function setTab(t){
     var rec = t==='recover';
+    var tt=document.getElementById('authTitle'); if(tt) tt.style.display = rec?'none':'block';
+    var su=document.getElementById('authSub'); if(su) su.style.display = rec?'none':'block';
     var tabs=document.querySelector('.tabs'); if(tabs) tabs.style.display = rec ? 'none':'flex';
     document.getElementById('formRecover').style.display = rec ? 'block':'none';
     if(rec){ document.getElementById('formSignup').style.display='none'; document.getElementById('formLogin').style.display='none'; recPick('back'); return; }
