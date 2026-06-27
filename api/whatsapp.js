@@ -219,6 +219,22 @@ module.exports = async (req, res) => {
       return res.status(200).send('ok');
     }
 
+    // ¿Pidió recuperar su contraseña de la academia? (botón del login) -> genera y envía un código.
+    if (text && /\(recuperar\)/i.test(text) && HAS_REDIS) {
+      const mr = await redis(['GET', 'member:' + from]);
+      let ack;
+      if (!mr) {
+        ack = 'No encontré una cuenta de la comunidad con este número 🤔. Si aún no te registras, hazlo en whape.club/comunidad.';
+      } else {
+        const code = String(Math.floor(100000 + Math.random() * 900000));
+        await redis(['SET', 'reset:' + from, JSON.stringify({ code, exp: Date.now() + 30 * 60 * 1000 })]);
+        ack = '🔑 Tu código para cambiar la contraseña es: *' + code + '*\n\nPégalo en la página (válido 30 minutos). Si no fuiste tú, ignora este mensaje.';
+      }
+      await sendWhatsApp(from, ack);
+      lead.messages.push({ role: 'assistant', text: ack, ts: Date.now() }); await saveLead(lead);
+      return res.status(200).send('ok');
+    }
+
     // ¿Pidió desbloquear "a mano" (texto libre, sin el botón)? Identificamos el módulo y lo desbloqueamos solos.
     if (HAS_REDIS && text && /desbloqu|abrir el (nivel|m[oó]dulo)|acceso al (nivel|m[oó]dulo)|ver el (nivel|m[oó]dulo)/i.test(text)) {
       try {

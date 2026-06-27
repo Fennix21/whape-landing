@@ -32,6 +32,24 @@
   .btn:active{transform:translateY(1px)}
   .err{color:#ff8aa0;font-size:13px;margin-top:12px;text-align:center;min-height:18px}
   .hint{color:var(--muted);font-size:11.5px;margin-top:14px;text-align:center;line-height:1.5}
+  .rec-title{font-size:18px;font-weight:800;text-align:center;margin-bottom:4px}
+  .rec-sub{color:var(--muted);font-size:13px;text-align:center;margin-bottom:16px}
+  .rec-choose{display:flex;flex-direction:column;gap:10px}
+  .rec-opt{padding:14px;border:1px solid var(--stroke);border-radius:12px;background:var(--bg);color:var(--text);font-family:inherit;font-weight:700;font-size:15px;cursor:pointer}
+  .rec-opt:hover{border-color:var(--accent)}
+  .rec-hint{color:var(--muted);font-size:11.5px;margin:8px 0 6px;text-align:center;line-height:1.5}
+  .rec-soon{background:var(--surface2);border:1px solid var(--stroke);border-radius:12px;padding:16px;color:var(--muted);font-size:13.5px;line-height:1.6;text-align:center;margin-bottom:14px}
+  .rec-foot{text-align:center;margin-top:16px;font-size:13px}
+  .em-modal{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.72);align-items:center;justify-content:center;padding:20px}
+  .em-modal.show{display:flex}
+  .em-card{position:relative;width:100%;max-width:380px;background:var(--surface);border:1px solid var(--stroke);border-radius:18px;padding:26px 22px;text-align:center}
+  .em-x{position:absolute;top:12px;right:12px;background:var(--surface2);border:1px solid var(--stroke);color:var(--muted);width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px}
+  .em-icon{font-size:36px;margin-bottom:8px}
+  .em-msg{font-size:14.5px;line-height:1.55;color:var(--text);margin-bottom:16px}
+  .em-card input{margin-bottom:10px}
+  .em-save{width:100%;padding:13px;border:0;border-radius:12px;font-family:inherit;font-weight:800;font-size:15px;color:#fff;background:linear-gradient(90deg,var(--accent),var(--accent2));cursor:pointer}
+  .em-later{width:100%;margin-top:8px;background:transparent;border:0;color:var(--muted);font-family:inherit;font-size:13px;cursor:pointer;padding:8px}
+  .em-err{color:#ff8aa0;font-size:13px;margin-top:8px;min-height:16px}
 
   /* --- App --- */
   #app{display:none}
@@ -205,6 +223,32 @@
       <input id="liPass" type="password" placeholder="Tu contraseña" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()" />
       <button class="btn" onclick="login()">Entrar</button>
       <div class="err" id="liErr"></div>
+      <div class="rec-foot"><a href="#" onclick="setTab('recover');return false;">¿Olvidaste tu contraseña?</a></div>
+    </div>
+    <div id="formRecover" style="display:none">
+      <div class="rec-title">🔑 Recuperar contraseña</div>
+      <div class="rec-sub">¿Cómo quieres recuperar tu acceso?</div>
+      <div class="rec-choose" id="recChoose">
+        <button class="rec-opt" onclick="recPick('wa')">📲 Por WhatsApp</button>
+        <button class="rec-opt" onclick="recPick('email')">📧 Por correo</button>
+      </div>
+      <div id="recWa" style="display:none">
+        <a class="btn" id="recWaBtn" href="#" target="_blank" rel="noopener">📲 1) Pedir mi código por WhatsApp</a>
+        <div class="rec-hint">Se abrirá WhatsApp con un mensaje. Envíalo y te llegará tu código al instante. 🔑</div>
+        <label>2) Tu WhatsApp</label>
+        <input id="recPhone" placeholder="Ej. 983427614" inputmode="numeric" />
+        <label>3) Código que te llegó</label>
+        <input id="recCode" placeholder="6 dígitos" inputmode="numeric" />
+        <label>4) Nueva contraseña</label>
+        <input id="recPass" type="password" placeholder="Mínimo 4 caracteres" />
+        <button class="btn" onclick="doReset()">Cambiar contraseña</button>
+        <div class="err" id="recErr"></div>
+      </div>
+      <div id="recEmail" style="display:none">
+        <div class="rec-soon">📧 La recuperación por correo estará disponible muy pronto. Por ahora usa la opción de WhatsApp 📲</div>
+        <button class="btn" onclick="recPick('back')">← Elegir otra opción</button>
+      </div>
+      <div class="rec-foot"><a href="#" onclick="setTab('login');return false;">← Volver a entrar</a></div>
     </div>
   </div>
 </div>
@@ -272,6 +316,18 @@
   </div>
 </div>
 
+<div id="emailModal" class="em-modal">
+  <div class="em-card">
+    <button class="em-x" onclick="emailSnooze()" aria-label="Cerrar">✕</button>
+    <div class="em-icon">📧</div>
+    <div class="em-msg" id="emMsg"></div>
+    <input id="emInput" type="email" placeholder="tucorreo@ejemplo.com" autocomplete="email" />
+    <button class="em-save" onclick="saveEmail()">Guardar mi correo</button>
+    <button class="em-later" onclick="emailSnooze()">Ahora no</button>
+    <div class="em-err" id="emErr"></div>
+  </div>
+</div>
+
 <script>
   var TOKEN = localStorage.getItem('whape_club') || '';
   var NAME = localStorage.getItem('whape_club_name') || '';
@@ -280,10 +336,40 @@
   var curMod = null, curLesson = null;
 
   function setTab(t){
+    var rec = t==='recover';
+    var tabs=document.querySelector('.tabs'); if(tabs) tabs.style.display = rec ? 'none':'flex';
+    document.getElementById('formRecover').style.display = rec ? 'block':'none';
+    if(rec){ document.getElementById('formSignup').style.display='none'; document.getElementById('formLogin').style.display='none'; recPick('back'); return; }
     document.getElementById('tabSignup').classList.toggle('on', t==='signup');
     document.getElementById('tabLogin').classList.toggle('on', t==='login');
     document.getElementById('formSignup').style.display = t==='signup' ? 'block':'none';
     document.getElementById('formLogin').style.display = t==='login' ? 'block':'none';
+  }
+  function recPick(opt){
+    if(opt==='back'){ document.getElementById('recChoose').style.display='flex'; document.getElementById('recWa').style.display='none'; document.getElementById('recEmail').style.display='none'; return; }
+    document.getElementById('recChoose').style.display='none';
+    document.getElementById('recWa').style.display = opt==='wa'?'block':'none';
+    document.getElementById('recEmail').style.display = opt==='email'?'block':'none';
+    if(opt==='wa'){ document.getElementById('recWaBtn').href='https://wa.me/51983427614?text='+encodeURIComponent('Quiero recuperar mi contraseña 🔑 (recuperar)'); }
+  }
+  function doReset(){
+    var phone=document.getElementById('recPhone').value.trim(); var code=document.getElementById('recCode').value.trim(); var pass=document.getElementById('recPass').value;
+    var err=document.getElementById('recErr'); err.textContent='';
+    api('resetpw',{phone:phone, code:code, password:pass}).then(function(res){ if(!res.ok){ err.textContent=(res.d&&res.d.error)||'No se pudo cambiar.'; return; } enter(res.d.token, res.d.name); });
+  }
+  function maybeShowEmailPopup(){
+    if(ACADEMY.email) return;
+    var snz=localStorage.getItem('whape_club_emailsnooze'); if(snz && (Date.now()-Number(snz) < 172800000)) return;
+    document.getElementById('emMsg').textContent = ACADEMY.emailPrompt || '📧 Déjanos tu correo para recuperar tu contraseña y recibir accesos especiales.';
+    document.getElementById('emErr').textContent=''; document.getElementById('emInput').value='';
+    document.getElementById('emailModal').classList.add('show');
+  }
+  function emailSnooze(){ localStorage.setItem('whape_club_emailsnooze', String(Date.now())); document.getElementById('emailModal').classList.remove('show'); }
+  function saveEmail(){
+    var v=document.getElementById('emInput').value.trim(); var err=document.getElementById('emErr');
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)){ err.textContent='Pon un correo válido.'; return; }
+    err.textContent='';
+    api('setemail',{token:TOKEN, email:v}).then(function(res){ if(!res.ok){ err.textContent=(res.d&&res.d.error)||'No se pudo guardar'; return; } ACADEMY.email=v; document.getElementById('emailModal').classList.remove('show'); });
   }
   function esc(t){ var e=document.createElement('div'); e.textContent=t==null?'':t; return e.innerHTML; }
   function ytId(u){ if(!u) return ''; var m=u.match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/); if(m) return m[1]; if(/^[\w-]{11}$/.test(u.trim())) return u.trim(); return ''; }
@@ -341,6 +427,7 @@
     ACADEMY = res.d; if(!ACADEMY.progress) ACADEMY.progress={done:{},last:''};
     if(res.d.name){ NAME=res.d.name; document.getElementById('meName').textContent='👋 '+NAME; }
     goHome();
+    maybeShowEmailPopup();
   }
 
   function renderCta(){

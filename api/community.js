@@ -25,6 +25,7 @@ const DEFAULT_WA_TEXT = '¡Hola! 🎓 Vengo de la Comunidad WHAPE y quiero recib
 const GRAPH = 'https://graph.facebook.com/v21.0';
 const FB_TYPES = ['pregunta', 'duda', 'comentario', 'sugerencia', 'interes'];
 const DEFAULT_FB_LABELS = { pregunta: '❓ Pregunta', duda: '🤔 Duda', comentario: '💬 Comentario', sugerencia: '💡 Sugerencia', interes: '🛒 Quiero comprar' };
+const DEFAULT_EMAIL_PROMPT = '📧 Déjanos tu correo para poder recuperar tu contraseña si la olvidas, y recibir accesos y bonos especiales antes que nadie. ¡Es opcional pero muy recomendado!';
 
 async function redis(cmd) {
   const r = await fetch(REDIS_URL, {
@@ -182,6 +183,26 @@ module.exports = async (req, res) => {
       return res.status(200).json({ ok: true, token: makeToken(phone), name: m.name });
     }
 
+    if (b.action === 'resetpw') {
+      const phone = normPhone(b.phone);
+      const code = (b.code || '').toString().trim();
+      const pw = (b.password || '').toString();
+      if (pw.length < 4) return res.status(400).json({ error: 'La contraseña debe tener al menos 4 caracteres.' });
+      const rraw = await redis(['GET', 'reset:' + phone]);
+      if (!rraw) return res.status(400).json({ error: 'No hay un código pendiente para ese número. Pide uno nuevo por WhatsApp.' });
+      let rd; try { rd = JSON.parse(rraw); } catch (e) { return res.status(400).json({ error: 'Error con el código.' }); }
+      if (!rd.exp || rd.exp < Date.now()) { await redis(['DEL', 'reset:' + phone]); return res.status(400).json({ error: 'El código venció. Pide uno nuevo.' }); }
+      if (String(rd.code) !== code) return res.status(400).json({ error: 'Código incorrecto.' });
+      const mraw = await redis(['GET', 'member:' + phone]);
+      if (!mraw) return res.status(400).json({ error: 'No existe una cuenta con ese número.' });
+      let m; try { m = JSON.parse(mraw); } catch (e) { return res.status(500).json({ error: 'Error de datos.' }); }
+      const salt = crypto.randomBytes(12).toString('hex');
+      m.salt = salt; m.hash = hashPw(pw, salt);
+      await redis(['SET', 'member:' + phone, JSON.stringify(m)]);
+      await redis(['DEL', 'reset:' + phone]);
+      return res.status(200).json({ ok: true, token: makeToken(phone), name: m.name || '' });
+    }
+
     if (b.action === 'me') {
       const phone = verifyToken(b.token);
       if (!phone) return res.status(401).json({ error: 'Tu sesión venció. Entra de nuevo. 🙏' });
@@ -197,7 +218,7 @@ module.exports = async (req, res) => {
       const rawmods = await getModules();
       const progress = await getProgress(phone);
       const mraw = await redis(['GET', 'member:' + phone]);
-      let name = '', joinedAt = 0; if (mraw) { try { const mm = JSON.parse(mraw); name = mm.name || ''; joinedAt = mm.createdAt || 0; } catch (e) {} }
+      let name = '', joinedAt = 0, email = ''; if (mraw) { try { const mm = JSON.parse(mraw); name = mm.name || ''; joinedAt = mm.createdAt || 0; email = mm.email || ''; } catch (e) {} }
       const now = Date.now();
       const unlocked = (await redis(['SMEMBERS', 'unlocked:' + phone])) || [];
       const unlockedSet = {}; unlocked.forEach((x) => { unlockedSet[x] = true; });
@@ -211,7 +232,8 @@ module.exports = async (req, res) => {
       const groupLink = (await redis(['GET', 'config:club_grouplink'])) || '';
       const waText = (await redis(['GET', 'config:club_watext'])) || DEFAULT_WA_TEXT;
       const fblabels = await getFbLabels();
-      return res.status(200).json({ ok: true, modules, progress, name, fblabels, club: { groupLink, waText, waNumber: '51983427614' } });
+      const emailPrompt = (await redis(['GET', 'config:emailpopup'])) || DEFAULT_EMAIL_PROMPT;
+      return res.status(200).json({ ok: true, modules, progress, name, email, emailPrompt, fblabels, club: { groupLink, waText, waNumber: '51983427614' } });
     }
 
     if (b.action === 'complete') {
@@ -320,6 +342,20 @@ module.exports = async (req, res) => {
       return res.status(200).json({ ok: true, items });
     }
 
+    if (b.action === 'setemail') {
+      const phone = verifyToken(b.token);
+      if (!phone) return res.status(401).json({ error: 'Tu sesión venció.' });
+      const email = (b.email || '').toString().trim().toLowerCase().slice(0, 120);
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'Pon un correo válido.' });
+      const mraw = await redis(['GET', 'member:' + phone]);
+      if (!mraw) return res.status(400).json({ error: 'No existe la cuenta.' });
+      let m; try { m = JSON.parse(mraw); } catch (e) { return res.status(500).json({ error: 'Error de datos.' }); }
+      m.email = email;
+      await redis(['SET', 'member:' + phone, JSON.stringify(m)]);
+      await redis(['SET', 'memberemail:' + email, phone]); // índice para futura recuperación por correo
+      return res.status(200).json({ ok: true });
+    }
+
     // ---------- ADMIN ----------
     if (b.action === 'admin') {
       if ((b.pass || '') !== process.env.WHAPE_ADMIN_PASS) return res.status(401).json({ error: 'Contraseña incorrecta.' });
@@ -330,14 +366,17 @@ module.exports = async (req, res) => {
         const members = Number((await redis(['SCARD', 'members'])) || 0);
         const groupLink = (await redis(['GET', 'config:club_grouplink'])) || '';
         const waText = (await redis(['GET', 'config:club_watext'])) || DEFAULT_WA_TEXT;
-        return res.status(200).json({ ok: true, modules: mods, members, groupLink, waText });
+        const emailPopup = (await redis(['GET', 'config:emailpopup'])) || DEFAULT_EMAIL_PROMPT;
+        return res.status(200).json({ ok: true, modules: mods, members, groupLink, waText, emailPopup });
       }
       if (sub === 'setcfg') {
         const gl = (b.groupLink || '').toString().slice(0, 300);
         const wt = (b.waText || '').toString().slice(0, 600);
+        const ep = (b.emailPopup || '').toString().slice(0, 500);
         await redis(['SET', 'config:club_grouplink', gl]);
         await redis(['SET', 'config:club_watext', wt || DEFAULT_WA_TEXT]);
-        return res.status(200).json({ ok: true, groupLink: gl, waText: wt || DEFAULT_WA_TEXT });
+        await redis(['SET', 'config:emailpopup', ep || DEFAULT_EMAIL_PROMPT]);
+        return res.status(200).json({ ok: true, groupLink: gl, waText: wt || DEFAULT_WA_TEXT, emailPopup: ep || DEFAULT_EMAIL_PROMPT });
       }
       if (sub === 'upload') {
         const dataUrl = (b.dataUrl || '').toString();
