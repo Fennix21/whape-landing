@@ -126,6 +126,27 @@ async function getFbLabels() {
   let l = {}; if (raw) { try { l = JSON.parse(raw); } catch (e) {} }
   return Object.assign({}, DEFAULT_FB_LABELS, l);
 }
+// Envía el correo con el código de recuperación usando Resend (necesita RESEND_API_KEY + RESEND_FROM en Vercel).
+async function sendResetEmail(to, code, name) {
+  try {
+    const key = process.env.RESEND_API_KEY;
+    if (!key) { console.error('Falta RESEND_API_KEY'); return false; }
+    const from = process.env.RESEND_FROM || 'Comunidad WHAPE <onboarding@resend.dev>';
+    const html = '<div style="font-family:Arial,sans-serif;max-width:480px;margin:auto;color:#1b1430">'
+      + '<h2 style="margin:0 0 12px">Recuperar contraseña</h2>'
+      + '<p>Hola ' + (name || '') + ',</p>'
+      + '<p>Tu código para cambiar la contraseña de la <b>Comunidad WHAPE</b> es:</p>'
+      + '<div style="font-size:30px;font-weight:bold;letter-spacing:6px;background:#f3f0fb;padding:16px;text-align:center;border-radius:10px;margin:14px 0">' + code + '</div>'
+      + '<p style="color:#777;font-size:13px">Válido por 30 minutos. Si no fuiste tú, ignora este correo.</p></div>';
+    const r = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + key, 'content-type': 'application/json' },
+      body: JSON.stringify({ from, to: [to], subject: 'Tu código para recuperar tu contraseña 🔑', html }),
+    });
+    if (!r.ok) console.error('Resend error', await r.text());
+    return r.ok;
+  } catch (e) { console.error('sendResetEmail', e); return false; }
+}
 
 // Limpia un módulo/clase recibidos del panel (evita basura).
 function cleanLesson(p) {
@@ -184,7 +205,10 @@ module.exports = async (req, res) => {
     }
 
     if (b.action === 'resetpw') {
-      const phone = normPhone(b.phone);
+      let phone = '';
+      if (b.email) { phone = (await redis(['GET', 'memberemail:' + (b.email || '').toString().trim().toLowerCase()])) || ''; }
+      else { phone = normPhone(b.phone); }
+      if (!phone) return res.status(400).json({ error: 'No encontramos una cuenta con esos datos.' });
       const code = (b.code || '').toString().trim();
       const pw = (b.password || '').toString();
       if (pw.length < 4) return res.status(400).json({ error: 'La contraseña debe tener al menos 4 caracteres.' });
@@ -201,6 +225,22 @@ module.exports = async (req, res) => {
       await redis(['SET', 'member:' + phone, JSON.stringify(m)]);
       await redis(['DEL', 'reset:' + phone]);
       return res.status(200).json({ ok: true, token: makeToken(phone), name: m.name || '' });
+    }
+
+    if (b.action === 'forgotemail') {
+      const email = (b.email || '').toString().trim().toLowerCase();
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'Pon un correo válido.' });
+      const phone = await redis(['GET', 'memberemail:' + email]);
+      if (phone) {
+        const mraw = await redis(['GET', 'member:' + phone]);
+        if (mraw) {
+          let nm = ''; try { nm = JSON.parse(mraw).name || ''; } catch (e) {}
+          const code = String(Math.floor(100000 + Math.random() * 900000));
+          await redis(['SET', 'reset:' + phone, JSON.stringify({ code, exp: Date.now() + 30 * 60 * 1000 })]);
+          await sendResetEmail(email, code, nm);
+        }
+      }
+      return res.status(200).json({ ok: true }); // no revelamos si el correo existe (seguridad)
     }
 
     if (b.action === 'me') {

@@ -245,8 +245,17 @@
         <div class="err" id="recErr"></div>
       </div>
       <div id="recEmail" style="display:none">
-        <div class="rec-soon">📧 La recuperación por correo estará disponible muy pronto. Por ahora usa la opción de WhatsApp 📲</div>
-        <button class="btn" onclick="recPick('back')">← Elegir otra opción</button>
+        <label>1) Tu correo registrado</label>
+        <input id="recEmailInput" type="email" placeholder="tucorreo@ejemplo.com" autocomplete="email" />
+        <button class="btn" onclick="recSendEmail()">📧 Enviarme el código por correo</button>
+        <div class="rec-hint" id="recEmailHint">Si tu correo está registrado, te llegará un código (revisa también spam).</div>
+        <label>2) Código que te llegó</label>
+        <input id="recECode" placeholder="6 dígitos" inputmode="numeric" />
+        <label>3) Nueva contraseña</label>
+        <input id="recEPass" type="password" placeholder="Mínimo 4 caracteres" />
+        <button class="btn" onclick="doResetEmail()">Cambiar contraseña</button>
+        <div class="err" id="recEErr"></div>
+        <button class="btn" onclick="recPick('back')" style="background:var(--surface2);margin-top:10px">← Elegir otra opción</button>
       </div>
       <div class="rec-foot"><a href="#" onclick="setTab('login');return false;">← Volver a entrar</a></div>
     </div>
@@ -356,6 +365,17 @@
     var phone=document.getElementById('recPhone').value.trim(); var code=document.getElementById('recCode').value.trim(); var pass=document.getElementById('recPass').value;
     var err=document.getElementById('recErr'); err.textContent='';
     api('resetpw',{phone:phone, code:code, password:pass}).then(function(res){ if(!res.ok){ err.textContent=(res.d&&res.d.error)||'No se pudo cambiar.'; return; } enter(res.d.token, res.d.name); });
+  }
+  function recSendEmail(){
+    var email=document.getElementById('recEmailInput').value.trim(); var h=document.getElementById('recEmailHint');
+    if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){ h.style.color='#ff8aa0'; h.textContent='Pon un correo válido.'; return; }
+    h.style.color='var(--muted)'; h.textContent='Enviando…';
+    api('forgotemail',{email:email}).then(function(){ h.style.color='var(--success)'; h.textContent='✅ Si tu correo está registrado, te llegó un código. Revisa tu bandeja (y spam).'; });
+  }
+  function doResetEmail(){
+    var email=document.getElementById('recEmailInput').value.trim(); var code=document.getElementById('recECode').value.trim(); var pass=document.getElementById('recEPass').value;
+    var err=document.getElementById('recEErr'); err.textContent='';
+    api('resetpw',{email:email, code:code, password:pass}).then(function(res){ if(!res.ok){ err.textContent=(res.d&&res.d.error)||'No se pudo cambiar.'; return; } enter(res.d.token, res.d.name); });
   }
   function maybeShowEmailPopup(){
     if(ACADEMY.email) return;
