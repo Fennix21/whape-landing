@@ -50,6 +50,40 @@
   .em-save{width:100%;padding:13px;border:0;border-radius:12px;font-family:inherit;font-weight:800;font-size:15px;color:#fff;background:linear-gradient(90deg,var(--accent),var(--accent2));cursor:pointer}
   .em-later{width:100%;margin-top:8px;background:transparent;border:0;color:var(--muted);font-family:inherit;font-size:13px;cursor:pointer;padding:8px}
   .em-err{color:#ff8aa0;font-size:13px;margin-top:8px;min-height:16px}
+  .topright{margin-left:auto;display:flex;align-items:center;gap:8px;position:relative}
+  .acct-btn{display:flex;align-items:center;gap:7px;background:var(--surface2);border:1px solid var(--stroke);border-radius:999px;padding:4px 11px 4px 4px;cursor:pointer;font-family:inherit;color:var(--text)}
+  .acct-btn:hover{border-color:var(--accent)}
+  .acct-av{width:28px;height:28px;border-radius:50%;object-fit:cover;background:var(--bg)}
+  .acct-name{font-size:13px;font-weight:700;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .acct-caret{color:var(--muted);font-size:11px}
+  .bell-badge{position:absolute;top:-5px;right:-5px;background:#ff5470;color:#fff;font-size:9px;font-weight:800;min-width:15px;height:15px;border-radius:999px;display:none;align-items:center;justify-content:center;padding:0 3px}
+  .dropdown{display:none;position:absolute;top:calc(100% + 8px);right:0;background:var(--surface);border:1px solid var(--stroke);border-radius:12px;padding:6px;min-width:185px;z-index:50;box-shadow:0 10px 30px rgba(0,0,0,.4)}
+  .dropdown.open{display:block}
+  .dropdown>button{display:block;width:100%;text-align:left;background:transparent;border:0;color:var(--text);font-family:inherit;font-size:13.5px;font-weight:600;padding:10px 12px;border-radius:8px;cursor:pointer}
+  .dropdown>button:hover{background:var(--surface2)}
+  .dropdown .dd-danger{color:#ff8aa0}
+  .notif-dd{min-width:300px;max-width:340px;max-height:62vh;overflow-y:auto;padding:8px}
+  .notif-h{font-weight:800;font-size:13px;padding:4px 6px 8px}
+  .notif-empty{color:var(--muted);font-size:13px;padding:18px;text-align:center}
+  .notif-item{background:var(--bg);border:1px solid var(--stroke);border-radius:10px;padding:10px 12px;margin-bottom:7px}
+  .notif-item.unseen{border-color:var(--accent)}
+  .notif-top{font-size:12.5px;color:var(--text)}
+  .notif-where{font-size:11px;color:var(--muted);margin:2px 0 6px}
+  .notif-reply{font-size:13px;color:var(--text);background:rgba(43,217,166,.1);border-radius:7px;padding:7px 9px;line-height:1.45;white-space:pre-wrap;word-break:break-word}
+  .acc-modal{display:none;position:fixed;inset:0;z-index:210;background:rgba(0,0,0,.72);align-items:center;justify-content:center;padding:20px}
+  .acc-modal.show{display:flex}
+  .acc-card{position:relative;width:100%;max-width:420px;max-height:88vh;overflow-y:auto;background:var(--surface);border:1px solid var(--stroke);border-radius:18px;padding:24px 22px}
+  .acc-x{position:absolute;top:12px;right:12px;background:var(--surface2);border:1px solid var(--stroke);color:var(--muted);width:30px;height:30px;border-radius:50%;cursor:pointer;font-size:14px}
+  .acc-h{font-size:18px;font-weight:800;margin-bottom:14px}
+  .acc-avwrap{position:relative;width:84px;margin:0 auto 16px}
+  .acc-avimg{width:84px;height:84px;border-radius:50%;object-fit:cover;border:3px solid var(--accent);background:var(--bg);display:block}
+  .acc-avedit{position:absolute;bottom:0;right:0;background:var(--accent);color:#fff;border:2px solid var(--surface);width:28px;height:28px;border-radius:50%;cursor:pointer;font-size:12px}
+  .acc-lbl{display:block;font-size:12.5px;color:var(--muted);margin:10px 0 5px;font-weight:600}
+  .acc-opt{color:var(--muted);font-weight:400}
+  .acc-save{width:100%;margin-top:14px;padding:12px;border:0;border-radius:11px;font-family:inherit;font-weight:800;font-size:14.5px;color:#fff;background:linear-gradient(90deg,var(--accent),var(--accent2));cursor:pointer}
+  .acc-msg{font-size:13px;margin-top:10px;min-height:16px;text-align:center}
+  .acc-divider{height:1px;background:var(--stroke);margin:22px 0 16px}
+  .acc-h2{font-size:15px;font-weight:800;margin-bottom:6px}
 
   /* --- App --- */
   #app{display:none}
@@ -267,9 +301,13 @@
   <div class="top">
     <img src="logo.png" alt="WHAPE" />
     <span class="ti">Comunidad WHAPE</span>
-    <span class="me" id="meName"></span>
-    <button class="iconbtn" id="themeBtn" onclick="toggleTheme()" title="Cambiar tema">🌙</button>
-    <button class="out" onclick="logout()">Salir</button>
+    <div class="topright">
+      <button class="iconbtn" id="bellBtn" onclick="toggleNotif(event)" title="Avisos" style="position:relative">🔔<span id="bellBadge" class="bell-badge">0</span></button>
+      <button class="iconbtn" id="themeBtn" onclick="toggleTheme()" title="Cambiar tema">🌙</button>
+      <button class="acct-btn" id="acctBtn" onclick="toggleAcctMenu(event)"><img id="acctAvatar" src="logo.png" class="acct-av" alt="" /><span class="acct-name" id="meName"></span><span class="acct-caret">▾</span></button>
+      <div id="acctMenu" class="dropdown"><button onclick="openAccount()">👤 Mi cuenta</button><button class="dd-danger" onclick="logout()">🚪 Cerrar sesión</button></div>
+      <div id="notifPanel" class="dropdown notif-dd"></div>
+    </div>
   </div>
   <div class="wrap">
     <!-- INICIO -->
@@ -336,6 +374,32 @@
     <div class="em-err" id="emErr"></div>
   </div>
 </div>
+
+<div id="accountModal" class="acc-modal">
+  <div class="acc-card">
+    <button class="acc-x" onclick="closeAccount()" aria-label="Cerrar">✕</button>
+    <div class="acc-h">👤 Mi cuenta</div>
+    <div class="acc-avwrap">
+      <img id="accAvatarImg" src="logo.png" class="acc-avimg" alt="" />
+      <button class="acc-avedit" onclick="pickAvatar()" title="Cambiar foto">✏️</button>
+    </div>
+    <label class="acc-lbl">Nombre</label>
+    <input id="accName" type="text" />
+    <label class="acc-lbl">Correo <span class="acc-opt">· para recuperar tu contraseña</span></label>
+    <input id="accEmail" type="email" placeholder="tucorreo@ejemplo.com" autocomplete="email" />
+    <button class="acc-save" onclick="saveProfile()">Guardar cambios</button>
+    <div class="acc-msg" id="accMsg"></div>
+    <div class="acc-divider"></div>
+    <div class="acc-h2">🔒 Cambiar contraseña</div>
+    <label class="acc-lbl">Nueva contraseña</label>
+    <input id="accPw1" type="password" placeholder="Mínimo 4 caracteres" autocomplete="new-password" />
+    <label class="acc-lbl">Confirmar contraseña</label>
+    <input id="accPw2" type="password" autocomplete="new-password" />
+    <button class="acc-save" onclick="changePw()">Cambiar contraseña</button>
+    <div class="acc-msg" id="accPwMsg"></div>
+  </div>
+</div>
+<input type="file" id="accFile" accept="image/*" style="display:none" />
 
 <script>
   var TOKEN = localStorage.getItem('whape_club') || '';
@@ -423,8 +487,85 @@
   }
   function logout(){
     TOKEN=''; localStorage.removeItem('whape_club'); localStorage.removeItem('whape_club_name');
+    closeDropdowns();
     document.getElementById('app').style.display='none';
     document.getElementById('auth').style.display='flex';
+  }
+  // ---- Cuenta + notificaciones ----
+  function applyAccountUI(){
+    var nm = ACADEMY.name || NAME || '';
+    var mn=document.getElementById('meName'); if(mn) mn.textContent = nm || 'Mi cuenta';
+    var av=document.getElementById('acctAvatar'); if(av) av.src = ACADEMY.avatar || 'logo.png';
+    updateBell(ACADEMY.notif||0);
+  }
+  function updateBell(n){ var b=document.getElementById('bellBadge'); if(!b) return; if(n>0){ b.textContent = n>9?'9+':n; b.style.display='inline-flex'; } else b.style.display='none'; }
+  function closeDropdowns(){ var a=document.getElementById('acctMenu'), n=document.getElementById('notifPanel'); if(a)a.classList.remove('open'); if(n)n.classList.remove('open'); }
+  function toggleAcctMenu(e){ if(e)e.stopPropagation(); document.getElementById('notifPanel').classList.remove('open'); document.getElementById('acctMenu').classList.toggle('open'); }
+  function toggleNotif(e){ if(e)e.stopPropagation(); document.getElementById('acctMenu').classList.remove('open'); var p=document.getElementById('notifPanel'); var open=!p.classList.contains('open'); p.classList.toggle('open'); if(open) loadNotif(); }
+  document.addEventListener('click', function(e){ if(!e.target.closest || !e.target.closest('.topright')) closeDropdowns(); });
+  function loadNotif(){
+    var p=document.getElementById('notifPanel'); p.innerHTML='<div class="notif-empty">Cargando…</div>';
+    api('notifications',{token:TOKEN}).then(function(res){
+      if(!res.ok){ p.innerHTML='<div class="notif-empty">No se pudo cargar.</div>'; return; }
+      renderNotif(res.d.items||[]);
+      if((res.d.unseen||0)>0){ api('marknotifseen',{token:TOKEN, id:'*'}); updateBell(0); }
+    });
+  }
+  function renderNotif(items){
+    var p=document.getElementById('notifPanel'); var L=fbLabels();
+    items=items.slice().sort(function(a,b){ return (b.repliedAt||0)-(a.repliedAt||0); });
+    if(!items.length){ p.innerHTML='<div class="notif-empty">🔔 No tienes avisos por ahora.</div>'; return; }
+    p.innerHTML='<div class="notif-h">🔔 Tus avisos</div>'+items.map(function(x){
+      return '<div class="notif-item'+(x.seen?'':' unseen')+'"><div class="notif-top">✍️ El creador respondió tu <b>'+esc(L[x.type]||x.type)+'</b></div><div class="notif-where">en: '+esc(x.lessonTitle||'una clase')+'</div><div class="notif-reply">'+esc(x.reply)+'</div></div>';
+    }).join('');
+  }
+  function openAccount(){
+    closeDropdowns();
+    document.getElementById('accName').value = ACADEMY.name||NAME||'';
+    document.getElementById('accEmail').value = ACADEMY.email||'';
+    document.getElementById('accAvatarImg').src = ACADEMY.avatar||'logo.png';
+    document.getElementById('accMsg').textContent=''; document.getElementById('accPwMsg').textContent='';
+    document.getElementById('accPw1').value=''; document.getElementById('accPw2').value='';
+    document.getElementById('accountModal').classList.add('show');
+  }
+  function closeAccount(){ document.getElementById('accountModal').classList.remove('show'); }
+  function saveProfile(){
+    var name=document.getElementById('accName').value.trim(); var email=document.getElementById('accEmail').value.trim();
+    var msg=document.getElementById('accMsg'); msg.style.color='var(--muted)'; msg.textContent='Guardando…';
+    api('updateprofile',{token:TOKEN, name:name, email:email}).then(function(res){
+      if(!res.ok){ msg.style.color='#ff8aa0'; msg.textContent=(res.d&&res.d.error)||'No se pudo guardar'; return; }
+      ACADEMY.name=res.d.name||name; NAME=ACADEMY.name; ACADEMY.email=res.d.email!==undefined?res.d.email:email;
+      localStorage.setItem('whape_club_name', NAME); applyAccountUI();
+      msg.style.color='var(--success)'; msg.textContent='✅ Guardado.';
+    });
+  }
+  function changePw(){
+    var p1=document.getElementById('accPw1').value; var p2=document.getElementById('accPw2').value; var msg=document.getElementById('accPwMsg');
+    if(p1.length<4){ msg.style.color='#ff8aa0'; msg.textContent='Mínimo 4 caracteres.'; return; }
+    if(p1!==p2){ msg.style.color='#ff8aa0'; msg.textContent='Las contraseñas no coinciden.'; return; }
+    msg.style.color='var(--muted)'; msg.textContent='Cambiando…';
+    api('changepw',{token:TOKEN, password:p1}).then(function(res){
+      if(!res.ok){ msg.style.color='#ff8aa0'; msg.textContent=(res.d&&res.d.error)||'No se pudo cambiar'; return; }
+      document.getElementById('accPw1').value=''; document.getElementById('accPw2').value='';
+      msg.style.color='var(--success)'; msg.textContent='✅ Contraseña cambiada.';
+    });
+  }
+  function pickAvatar(){
+    var fi=document.getElementById('accFile');
+    fi.onchange=function(){
+      var f=fi.files[0]; fi.value=''; if(!f) return;
+      if(!/^image\//.test(f.type)){ alert('Elige una imagen.'); return; }
+      var rd=new FileReader();
+      rd.onload=function(e){ var img=new Image(); img.onload=function(){
+        var max=400, w=img.width, h=img.height;
+        if(w>max||h>max){ if(w>=h){ h=Math.round(h*max/w); w=max; } else { w=Math.round(w*max/h); h=max; } }
+        var c=document.createElement('canvas'); c.width=w; c.height=h; c.getContext('2d').drawImage(img,0,0,w,h);
+        var dataUrl=c.toDataURL('image/jpeg',0.85);
+        api('setavatar',{token:TOKEN, dataUrl:dataUrl}).then(function(res){ if(!res.ok){ alert((res.d&&res.d.error)||'No se pudo subir'); return; } ACADEMY.avatar=res.d.avatar; document.getElementById('accAvatarImg').src=res.d.avatar; applyAccountUI(); });
+      }; img.src=e.target.result; };
+      rd.readAsDataURL(f);
+    };
+    fi.click();
   }
 
   // ---- helpers de academia ----
@@ -445,7 +586,8 @@
     var res = await api('academy', { token:TOKEN });
     if(!res.ok){ if(res.d && /sesión/i.test(res.d.error||'')){ logout(); return; } ACADEMY={modules:[],progress:{done:{},last:''}}; goHome(); return; }
     ACADEMY = res.d; if(!ACADEMY.progress) ACADEMY.progress={done:{},last:''};
-    if(res.d.name){ NAME=res.d.name; document.getElementById('meName').textContent='👋 '+NAME; }
+    if(res.d.name){ NAME=res.d.name; }
+    applyAccountUI();
     goHome();
     maybeShowEmailPopup();
   }

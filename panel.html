@@ -309,6 +309,7 @@
     <button class="ref" onclick="openInbox()" style="margin-right:8px;position:relative">📥 Bandeja<span id="inboxBadge" class="ibx-badge">0</span></button>
     <button class="ref" onclick="openPrompt()" style="margin-right:8px">⚙️ Bot</button>
     <button class="ref" onclick="loadLeads()">↻ Actualizar</button>
+    <button class="ref" onclick="panelLogout()" style="margin-left:8px;color:#ff8aa0;border-color:rgba(255,138,160,.4)">🚪 Salir</button>
   </div>
   <div class="main">
     <div class="listwrap">
@@ -611,6 +612,15 @@
       refreshInboxBadge();
       poll = setInterval(tick, 12000);
     });
+  }
+  function panelLogout(){
+    if(!confirm('¿Cerrar sesión del panel?')) return;
+    PASS=''; localStorage.removeItem('whape_panel');
+    if(poll){ clearInterval(poll); poll=null; }
+    current=null;
+    document.getElementById('app').style.display='none';
+    document.getElementById('login').style.display='flex';
+    var p=document.getElementById('pass'); if(p) p.value='';
   }
 
   function loadLeads(){ api('list').then(function(res){ if(res.ok){ LEADS = res.d.leads || []; renderLeads(); renderKanban(); } }); }

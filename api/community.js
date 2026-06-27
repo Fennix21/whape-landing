@@ -248,7 +248,7 @@ module.exports = async (req, res) => {
       if (!phone) return res.status(401).json({ error: 'Tu sesión venció. Entra de nuevo. 🙏' });
       const raw = await redis(['GET', 'member:' + phone]);
       let m = null; if (raw) { try { m = JSON.parse(raw); } catch (e) {} }
-      return res.status(200).json({ ok: true, name: m ? m.name : '', phone });
+      return res.status(200).json({ ok: true, name: m ? m.name : '', phone, email: m ? (m.email || '') : '', avatar: m ? (m.avatar || '') : '' });
     }
 
     // ---------- MIEMBRO: academia + progreso ----------
@@ -258,7 +258,7 @@ module.exports = async (req, res) => {
       const rawmods = await getModules();
       const progress = await getProgress(phone);
       const mraw = await redis(['GET', 'member:' + phone]);
-      let name = '', joinedAt = 0, email = ''; if (mraw) { try { const mm = JSON.parse(mraw); name = mm.name || ''; joinedAt = mm.createdAt || 0; email = mm.email || ''; } catch (e) {} }
+      let name = '', joinedAt = 0, email = '', avatar = ''; if (mraw) { try { const mm = JSON.parse(mraw); name = mm.name || ''; joinedAt = mm.createdAt || 0; email = mm.email || ''; avatar = mm.avatar || ''; } catch (e) {} }
       const now = Date.now();
       const unlocked = (await redis(['SMEMBERS', 'unlocked:' + phone])) || [];
       const unlockedSet = {}; unlocked.forEach((x) => { unlockedSet[x] = true; });
@@ -273,7 +273,9 @@ module.exports = async (req, res) => {
       const waText = (await redis(['GET', 'config:club_watext'])) || DEFAULT_WA_TEXT;
       const fblabels = await getFbLabels();
       const emailPrompt = (await redis(['GET', 'config:emailpopup'])) || DEFAULT_EMAIL_PROMPT;
-      return res.status(200).json({ ok: true, modules, progress, name, email, emailPrompt, fblabels, club: { groupLink, waText, waNumber: '51983427614' } });
+      let notif = 0;
+      try { const ir = await redis(['GET', 'academy:inbox']); if (ir) { const ibx = JSON.parse(ir); notif = ibx.filter((x) => x.phone === phone && x.reply && !x.seenByMember).length; } } catch (e) {}
+      return res.status(200).json({ ok: true, modules, progress, name, email, avatar, emailPrompt, fblabels, notif, club: { groupLink, waText, waNumber: '51983427614' } });
     }
 
     if (b.action === 'complete') {
@@ -396,6 +398,78 @@ module.exports = async (req, res) => {
       return res.status(200).json({ ok: true });
     }
 
+    if (b.action === 'updateprofile') {
+      const phone = verifyToken(b.token);
+      if (!phone) return res.status(401).json({ error: 'Tu sesión venció.' });
+      const mraw = await redis(['GET', 'member:' + phone]);
+      if (!mraw) return res.status(400).json({ error: 'No existe la cuenta.' });
+      let m; try { m = JSON.parse(mraw); } catch (e) { return res.status(500).json({ error: 'Error.' }); }
+      const name = (b.name || '').toString().trim().slice(0, 60);
+      if (name.length >= 2) m.name = name;
+      if (typeof b.email === 'string') {
+        const email = b.email.trim().toLowerCase().slice(0, 120);
+        if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return res.status(400).json({ error: 'Correo no válido.' });
+        if (email !== (m.email || '')) {
+          if (m.email) { try { await redis(['DEL', 'memberemail:' + m.email]); } catch (e) {} }
+          m.email = email;
+          if (email) await redis(['SET', 'memberemail:' + email, phone]);
+        }
+      }
+      await redis(['SET', 'member:' + phone, JSON.stringify(m)]);
+      return res.status(200).json({ ok: true, name: m.name || '', email: m.email || '' });
+    }
+
+    if (b.action === 'setavatar') {
+      const phone = verifyToken(b.token);
+      if (!phone) return res.status(401).json({ error: 'Tu sesión venció.' });
+      const dataUrl = (b.dataUrl || '').toString();
+      if (!/^data:image\/(png|jpe?g|webp|gif);base64,/.test(dataUrl)) return res.status(400).json({ error: 'Imagen no válida.' });
+      if (dataUrl.length > 1200000) return res.status(400).json({ error: 'La imagen pesa demasiado.' });
+      const id = newId('img');
+      await redis(['SET', 'img:' + id, dataUrl]);
+      const url = '/api/img?id=' + id;
+      const mraw = await redis(['GET', 'member:' + phone]);
+      let m = {}; if (mraw) { try { m = JSON.parse(mraw); } catch (e) {} }
+      m.avatar = url;
+      await redis(['SET', 'member:' + phone, JSON.stringify(m)]);
+      return res.status(200).json({ ok: true, avatar: url });
+    }
+
+    if (b.action === 'changepw') {
+      const phone = verifyToken(b.token);
+      if (!phone) return res.status(401).json({ error: 'Tu sesión venció.' });
+      const pw = (b.password || '').toString();
+      if (pw.length < 4) return res.status(400).json({ error: 'La contraseña debe tener al menos 4 caracteres.' });
+      const mraw = await redis(['GET', 'member:' + phone]);
+      if (!mraw) return res.status(400).json({ error: 'No existe la cuenta.' });
+      let m; try { m = JSON.parse(mraw); } catch (e) { return res.status(500).json({ error: 'Error.' }); }
+      const salt = crypto.randomBytes(12).toString('hex');
+      m.salt = salt; m.hash = hashPw(pw, salt);
+      await redis(['SET', 'member:' + phone, JSON.stringify(m)]);
+      return res.status(200).json({ ok: true });
+    }
+
+    if (b.action === 'notifications') {
+      const phone = verifyToken(b.token);
+      if (!phone) return res.status(401).json({ error: 'Tu sesión venció.' });
+      const raw = await redis(['GET', 'academy:inbox']);
+      let inbox = []; if (raw) { try { inbox = JSON.parse(raw); } catch (e) {} }
+      const items = inbox.filter((x) => x.phone === phone && x.reply)
+        .map((x) => ({ id: x.id, type: x.type, text: x.text, reply: x.reply, repliedAt: x.repliedAt || 0, lessonId: x.lessonId, lessonTitle: x.lessonTitle, seen: !!x.seenByMember }));
+      return res.status(200).json({ ok: true, items, unseen: items.filter((x) => !x.seen).length });
+    }
+
+    if (b.action === 'marknotifseen') {
+      const phone = verifyToken(b.token);
+      if (!phone) return res.status(401).json({ error: 'Tu sesión venció.' });
+      const raw = await redis(['GET', 'academy:inbox']);
+      let inbox = []; if (raw) { try { inbox = JSON.parse(raw); } catch (e) {} }
+      let changed = false;
+      inbox.forEach((x) => { if (x.phone === phone && x.reply && !x.seenByMember && (b.id === '*' || x.id === b.id)) { x.seenByMember = true; changed = true; } });
+      if (changed) await redis(['SET', 'academy:inbox', JSON.stringify(inbox)]);
+      return res.status(200).json({ ok: true });
+    }
+
     // ---------- ADMIN ----------
     if (b.action === 'admin') {
       if ((b.pass || '') !== process.env.WHAPE_ADMIN_PASS) return res.status(401).json({ error: 'Contraseña incorrecta.' });
@@ -475,7 +549,7 @@ module.exports = async (req, res) => {
         const raw = await redis(['GET', 'academy:inbox']);
         let inbox = []; if (raw) { try { inbox = JSON.parse(raw); } catch (e) {} }
         const it = inbox.find((x) => x.id === b.id);
-        if (it) { it.reply = (b.reply || '').toString().slice(0, 2000); it.repliedAt = Date.now(); it.read = true; }
+        if (it) { it.reply = (b.reply || '').toString().slice(0, 2000); it.repliedAt = Date.now(); it.read = true; it.seenByMember = false; }
         await redis(['SET', 'academy:inbox', JSON.stringify(inbox)]);
         return res.status(200).json({ ok: true, inbox, unread: inbox.filter((x) => !x.read).length, fblabels: await getFbLabels() });
       }
