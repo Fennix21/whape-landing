@@ -23,6 +23,8 @@ const HAS_REDIS = !!(REDIS_URL && REDIS_TOKEN);
 const SECRET = process.env.WHAPE_SECRET || 'whape-dev-secret';
 const DEFAULT_WA_TEXT = '¡Hola! 🎓 Vengo de la Comunidad WHAPE y quiero recibir novedades y soporte por aquí. (academia)';
 const GRAPH = 'https://graph.facebook.com/v21.0';
+const FB_TYPES = ['pregunta', 'duda', 'comentario', 'sugerencia', 'interes'];
+const DEFAULT_FB_LABELS = { pregunta: '❓ Pregunta', duda: '🤔 Duda', comentario: '💬 Comentario', sugerencia: '💡 Sugerencia', interes: '🛒 Quiero comprar' };
 
 async function redis(cmd) {
   const r = await fetch(REDIS_URL, {
@@ -118,6 +120,11 @@ async function notifyOwner(text, fromPhone) {
     });
   } catch (e) { console.error('notifyOwner', e); }
 }
+async function getFbLabels() {
+  const raw = await redis(['GET', 'config:fblabels']);
+  let l = {}; if (raw) { try { l = JSON.parse(raw); } catch (e) {} }
+  return Object.assign({}, DEFAULT_FB_LABELS, l);
+}
 
 // Limpia un módulo/clase recibidos del panel (evita basura).
 function cleanLesson(p) {
@@ -203,7 +210,8 @@ module.exports = async (req, res) => {
       });
       const groupLink = (await redis(['GET', 'config:club_grouplink'])) || '';
       const waText = (await redis(['GET', 'config:club_watext'])) || DEFAULT_WA_TEXT;
-      return res.status(200).json({ ok: true, modules, progress, name, club: { groupLink, waText, waNumber: '51983427614' } });
+      const fblabels = await getFbLabels();
+      return res.status(200).json({ ok: true, modules, progress, name, fblabels, club: { groupLink, waText, waNumber: '51983427614' } });
     }
 
     if (b.action === 'complete') {
@@ -278,8 +286,7 @@ module.exports = async (req, res) => {
     if (b.action === 'feedback') {
       const phone = verifyToken(b.token);
       if (!phone) return res.status(401).json({ error: 'Tu sesión venció. Entra de nuevo.' });
-      const TYPES = ['pregunta', 'duda', 'comentario', 'sugerencia', 'interes'];
-      const type = TYPES.indexOf((b.type || '').toString()) >= 0 ? b.type : 'comentario';
+      const type = FB_TYPES.indexOf((b.type || '').toString()) >= 0 ? b.type : 'comentario';
       const text = (b.text || '').toString().trim().slice(0, 2000);
       if (!text) return res.status(400).json({ error: 'Escribe tu mensaje.' });
       const lessonId = (b.lessonId || '').toString();
@@ -296,10 +303,21 @@ module.exports = async (req, res) => {
       // tag al lead para tu CRM
       try { const lr = await redis(['GET', 'lead:' + phone]); if (lr) { const ld = JSON.parse(lr); if (!ld.tags) ld.tags = []; if (ld.tags.indexOf('academia') < 0) ld.tags.push('academia'); if (type === 'interes' && ld.tags.indexOf('interés-academia') < 0) ld.tags.push('interés-academia'); await redis(['SET', 'lead:' + phone, JSON.stringify(ld)]); } } catch (e) {}
       // aviso a tu WhatsApp
-      const emoji = { pregunta: '❓', duda: '🤔', comentario: '💬', sugerencia: '💡', interes: '🛒' }[type] || '📥';
-      const label = type === 'interes' ? 'QUIERE COMPRAR 🛒' : type;
-      await notifyOwner(emoji + ' Nuevo *' + label + '* en tu academia\n👤 ' + (name || ('+' + phone)) + '\n📚 ' + (lessonTitle || '(clase)') + '\n💬 "' + text.slice(0, 250) + '"\n\nMíralo en tu Bandeja 👉 whape.club/panel', phone);
+      const labels = await getFbLabels();
+      const label = labels[type] || type;
+      await notifyOwner('📥 Nuevo *' + label + '* en tu academia\n👤 ' + (name || ('+' + phone)) + '\n📚 ' + (lessonTitle || '(clase)') + '\n💬 "' + text.slice(0, 250) + '"\n\nMíralo en tu Bandeja 👉 whape.club/panel', phone);
       return res.status(200).json({ ok: true });
+    }
+
+    if (b.action === 'myfeedback') {
+      const phone = verifyToken(b.token);
+      if (!phone) return res.status(401).json({ error: 'Tu sesión venció.' });
+      const lessonId = (b.lessonId || '').toString();
+      const raw = await redis(['GET', 'academy:inbox']);
+      let inbox = []; if (raw) { try { inbox = JSON.parse(raw); } catch (e) {} }
+      const items = inbox.filter((x) => x.phone === phone && (!lessonId || x.lessonId === lessonId))
+        .map((x) => ({ id: x.id, type: x.type, text: x.text, ts: x.ts, read: !!x.read, reply: x.reply || '', repliedAt: x.repliedAt || 0 }));
+      return res.status(200).json({ ok: true, items });
     }
 
     // ---------- ADMIN ----------
@@ -372,7 +390,22 @@ module.exports = async (req, res) => {
       if (sub === 'inbox') {
         const raw = await redis(['GET', 'academy:inbox']);
         let inbox = []; if (raw) { try { inbox = JSON.parse(raw); } catch (e) {} }
-        return res.status(200).json({ ok: true, inbox, unread: inbox.filter((x) => !x.read).length });
+        return res.status(200).json({ ok: true, inbox, unread: inbox.filter((x) => !x.read).length, fblabels: await getFbLabels() });
+      }
+      if (sub === 'inboxreply') {
+        const raw = await redis(['GET', 'academy:inbox']);
+        let inbox = []; if (raw) { try { inbox = JSON.parse(raw); } catch (e) {} }
+        const it = inbox.find((x) => x.id === b.id);
+        if (it) { it.reply = (b.reply || '').toString().slice(0, 2000); it.repliedAt = Date.now(); it.read = true; }
+        await redis(['SET', 'academy:inbox', JSON.stringify(inbox)]);
+        return res.status(200).json({ ok: true, inbox, unread: inbox.filter((x) => !x.read).length, fblabels: await getFbLabels() });
+      }
+      if (sub === 'setfblabels') {
+        const incoming = b.labels || {};
+        const labels = {};
+        FB_TYPES.forEach((k) => { labels[k] = (incoming[k] || DEFAULT_FB_LABELS[k]).toString().slice(0, 40); });
+        await redis(['SET', 'config:fblabels', JSON.stringify(labels)]);
+        return res.status(200).json({ ok: true, fblabels: labels });
       }
       if (sub === 'inboxread') {
         const raw = await redis(['GET', 'academy:inbox']);

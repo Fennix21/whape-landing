@@ -204,6 +204,11 @@
   .ibx-act{background:var(--surface2);border:1px solid var(--stroke);color:var(--muted);font-family:inherit;font-size:12px;padding:7px 10px;border-radius:8px;cursor:pointer}
   .ibx-act.del{color:#ff8aa0}
   .ibx-act:hover{border-color:var(--accent)}
+  .ibx-myreply{margin-top:8px;font-size:12.5px;color:var(--success);background:rgba(43,217,166,.1);border:1px solid rgba(43,217,166,.3);border-radius:8px;padding:8px 11px;line-height:1.5}
+  .ibx-replybox{margin-top:9px}
+  .ibx-replybox textarea{width:100%;min-height:60px;resize:vertical;padding:9px 11px;border-radius:9px;border:1px solid var(--stroke);background:var(--bg);color:#fff;font-family:inherit;font-size:13px;margin-bottom:7px}
+  .ibx-replybox textarea:focus{outline:none;border-color:var(--accent)}
+  .ibx-sendrep{background:var(--accent);color:#fff;border-color:var(--accent)}
   .wrow{display:flex;align-items:center;gap:10px;justify-content:space-between;border:1px solid var(--stroke);border-radius:10px;padding:10px 12px;margin-bottom:8px}
   .wrow .wbody{color:var(--muted);font-size:12px;margin-top:4px;line-height:1.4}
   .wrow button{flex:none;padding:8px 14px;font-weight:700;font-size:13px;background:var(--success);color:#06241B;border-radius:8px}
@@ -397,6 +402,15 @@
     </div>
     <div style="overflow-y:auto;max-height:76vh;padding:2px">
       <div class="ibx-filters" id="ibxFilters"></div>
+      <div id="ibxLabelsForm" class="cm-form" style="display:none">
+        <div class="cm-formtitle">✎ Editar nombres de las etiquetas</div>
+        <label class="cm-lbl">Tipo "pregunta"</label><input id="lblPregunta" class="cmin" placeholder="❓ Pregunta" />
+        <label class="cm-lbl">Tipo "duda"</label><input id="lblDuda" class="cmin" placeholder="🤔 Duda" />
+        <label class="cm-lbl">Tipo "comentario"</label><input id="lblComentario" class="cmin" placeholder="💬 Comentario" />
+        <label class="cm-lbl">Tipo "sugerencia"</label><input id="lblSugerencia" class="cmin" placeholder="💡 Sugerencia" />
+        <label class="cm-lbl">Tipo "interés" <span class="cm-opt">· ej. 🚀 Subir de nivel</span></label><input id="lblInteres" class="cmin" placeholder="🛒 Quiero comprar" />
+        <div class="cm-formbtns"><button class="cm-save" onclick="saveFbLabels()">💾 Guardar etiquetas</button><button class="cm-cancel" onclick="toggleLabelsForm()">Cerrar</button></div>
+      </div>
       <div id="ibxList"></div>
     </div>
   </div>
@@ -960,36 +974,46 @@
     });
   }
   // --- Bandeja de la academia ---
-  var INBOX=[], IBX_FILTER='all';
+  var INBOX=[], IBX_FILTER='all', INBOX_LABELS={};
   function refreshInboxBadge(){ capi('inbox').then(function(res){ if(res.ok) updateInboxBadge(res.d.unread); }); }
   function updateInboxBadge(u){ var b=document.getElementById('inboxBadge'); if(!b) return; if(u>0){ b.textContent=u; b.style.display='inline-flex'; } else b.style.display='none'; }
   function openInbox(){ document.getElementById('inboxModal').classList.add('open'); document.getElementById('ibxList').innerHTML='<div class="cm-empty">Cargando…</div>'; loadInbox(); }
   function closeInbox(){ document.getElementById('inboxModal').classList.remove('open'); }
-  function loadInbox(){ capi('inbox').then(function(res){ if(!res.ok){ document.getElementById('ibxList').innerHTML='<div class="cm-empty" style="color:#ff8aa0">'+(res.d.error||'Error')+'</div>'; return; } INBOX=res.d.inbox||[]; updateInboxBadge(res.d.unread); renderInbox(); }); }
+  function loadInbox(){ capi('inbox').then(function(res){ if(!res.ok){ document.getElementById('ibxList').innerHTML='<div class="cm-empty" style="color:#ff8aa0">'+(res.d.error||'Error')+'</div>'; return; } INBOX=res.d.inbox||[]; INBOX_LABELS=res.d.fblabels||{}; updateInboxBadge(res.d.unread); renderInbox(); }); }
   function ibxFilter(f){ IBX_FILTER=f; renderInbox(); }
   function renderInbox(){
-    var meta={pregunta:['❓','Pregunta'],duda:['🤔','Duda'],comentario:['💬','Comentario'],sugerencia:['💡','Sugerencia'],interes:['🛒','Quiere comprar']};
+    var def={pregunta:'❓ Pregunta',duda:'🤔 Duda',comentario:'💬 Comentario',sugerencia:'💡 Sugerencia',interes:'🛒 Quiero comprar'};
+    function lbl(t){ return (INBOX_LABELS&&INBOX_LABELS[t])||def[t]||t; }
     var unread=INBOX.filter(function(x){return !x.read;}).length;
-    var filters=[['all','Todos'],['unread','No leídos ('+unread+')'],['interes','🛒 Compra'],['pregunta','❓ Preguntas'],['duda','🤔 Dudas'],['sugerencia','💡 Sugerencias']];
-    document.getElementById('ibxFilters').innerHTML = filters.map(function(f){ return '<button class="ibx-f'+(IBX_FILTER===f[0]?' on':'')+'" onclick="ibxFilter(\''+f[0]+'\')">'+f[1]+'</button>'; }).join('') + '<button class="ibx-f" onclick="inboxAllRead()" style="margin-left:auto">✓ Todo leído</button>';
+    var fdefs=[['all','Todos'],['unread','No leídos ('+unread+')'],['interes',lbl('interes')],['pregunta',lbl('pregunta')],['duda',lbl('duda')],['sugerencia',lbl('sugerencia')]];
+    document.getElementById('ibxFilters').innerHTML = fdefs.map(function(f){ return '<button class="ibx-f'+(IBX_FILTER===f[0]?' on':'')+'" onclick="ibxFilter(\''+f[0]+'\')">'+esc(f[1])+'</button>'; }).join('') + '<button class="ibx-f" onclick="toggleLabelsForm()" style="margin-left:auto">✎ Etiquetas</button><button class="ibx-f" onclick="inboxAllRead()">✓ Todo leído</button>';
     var items=INBOX.filter(function(x){ if(IBX_FILTER==='all') return true; if(IBX_FILTER==='unread') return !x.read; return x.type===IBX_FILTER; });
     var list=document.getElementById('ibxList');
     if(!items.length){ list.innerHTML='<div class="cm-empty">📭 No hay mensajes en este filtro.</div>'; return; }
     list.innerHTML=items.map(function(x){
-      var m=meta[x.type]||['📥',x.type];
       var wa='https://wa.me/'+(x.phone||'').replace(/\D/g,'')+'?text='+encodeURIComponent('Hola '+(x.name||'')+' 👋, sobre tu mensaje en la academia: ');
       return '<div class="ibx-item'+(x.read?'':' unread')+'">'
-        +'<div class="ibx-top" onclick="ibxRead(\''+x.id+'\',true)"><span class="ibx-tag t-'+x.type+'">'+m[0]+' '+m[1]+'</span><span class="ibx-name">'+esc(x.name||('+'+x.phone))+'</span><span class="ibx-when">'+fmtTime(x.ts)+'</span></div>'
+        +'<div class="ibx-top" onclick="ibxRead(\''+x.id+'\',true)"><span class="ibx-tag t-'+x.type+'">'+esc(lbl(x.type))+'</span><span class="ibx-name">'+esc(x.name||('+'+x.phone))+'</span><span class="ibx-when">'+fmtTime(x.ts)+'</span></div>'
         +'<div class="ibx-where">📚 '+esc(x.lessonTitle||'(clase)')+(x.moduleTitle?(' · '+esc(x.moduleTitle)):'')+'</div>'
         +'<div class="ibx-text">'+esc(x.text||'')+'</div>'
-        +'<div class="ibx-acts"><a class="ibx-reply" href="'+wa+'" target="_blank" rel="noopener">💬 Responder</a>'
-        +'<button class="ibx-act" onclick="ibxRead(\''+x.id+'\','+(x.read?'false':'true')+')">'+(x.read?'No leído':'Leído')+'</button>'
-        +'<button class="ibx-act del" onclick="ibxDel(\''+x.id+'\')">🗑️</button></div></div>';
+        +(x.reply?'<div class="ibx-myreply"><b>✍️ Tu respuesta:</b> '+esc(x.reply)+'</div>':'')
+        +'<div class="ibx-acts">'
+          +'<a class="ibx-reply" href="'+wa+'" target="_blank" rel="noopener">💬 WhatsApp</a>'
+          +'<button class="ibx-act" onclick="ibxReplyToggle(this)">✏️ Responder en la academia</button>'
+          +'<button class="ibx-act" onclick="ibxRead(\''+x.id+'\','+(x.read?'false':'true')+')">'+(x.read?'No leído':'Leído')+'</button>'
+          +'<button class="ibx-act del" onclick="ibxDel(\''+x.id+'\')">🗑️</button>'
+        +'</div>'
+        +'<div class="ibx-replybox" style="display:none"><textarea class="ibx-rt" placeholder="Tu respuesta (la verá dentro de su academia)…">'+esc(x.reply||'')+'</textarea><button class="ibx-act ibx-sendrep" onclick="ibxSendReply(\''+x.id+'\', this)">Enviar respuesta</button></div>'
+      +'</div>';
     }).join('');
   }
   function ibxRead(id, read){ capi('inboxread',{id:id, read:read}).then(function(res){ if(res.ok){ INBOX=res.d.inbox||[]; updateInboxBadge(res.d.unread); renderInbox(); } }); }
   function inboxAllRead(){ capi('inboxread',{id:'*'}).then(function(res){ if(res.ok){ INBOX=res.d.inbox||[]; updateInboxBadge(res.d.unread); renderInbox(); } }); }
   function ibxDel(id){ if(!confirm('¿Eliminar este mensaje de la bandeja?')) return; capi('inboxdel',{id:id}).then(function(res){ if(res.ok){ INBOX=res.d.inbox||[]; updateInboxBadge(res.d.unread); renderInbox(); } }); }
+  function ibxReplyToggle(btn){ var item=btn.closest('.ibx-item'); var box=item.querySelector('.ibx-replybox'); box.style.display = box.style.display==='none'?'block':'none'; if(box.style.display==='block'){ var t=box.querySelector('.ibx-rt'); if(t) t.focus(); } }
+  function ibxSendReply(id, btn){ var item=btn.closest('.ibx-item'); var ta=item.querySelector('.ibx-rt'); var text=ta.value.trim(); if(!text){ alert('Escribe una respuesta.'); return; } btn.disabled=true; btn.textContent='Enviando…'; capi('inboxreply',{id:id, reply:text}).then(function(res){ if(!res.ok){ btn.disabled=false; btn.textContent='Enviar respuesta'; alert(res.d.error||'Error'); return; } INBOX=res.d.inbox||[]; if(res.d.fblabels) INBOX_LABELS=res.d.fblabels; updateInboxBadge(res.d.unread); renderInbox(); }); }
+  function toggleLabelsForm(){ var f=document.getElementById('ibxLabelsForm'); if(f.style.display==='block'){ f.style.display='none'; return; } var L=INBOX_LABELS||{}; document.getElementById('lblPregunta').value=L.pregunta||''; document.getElementById('lblDuda').value=L.duda||''; document.getElementById('lblComentario').value=L.comentario||''; document.getElementById('lblSugerencia').value=L.sugerencia||''; document.getElementById('lblInteres').value=L.interes||''; f.style.display='block'; }
+  function saveFbLabels(){ var labels={ pregunta:document.getElementById('lblPregunta').value.trim(), duda:document.getElementById('lblDuda').value.trim(), comentario:document.getElementById('lblComentario').value.trim(), sugerencia:document.getElementById('lblSugerencia').value.trim(), interes:document.getElementById('lblInteres').value.trim() }; capi('setfblabels',{labels:labels}).then(function(res){ if(!res.ok){ alert(res.d.error||'Error'); return; } INBOX_LABELS=res.d.fblabels||{}; document.getElementById('ibxLabelsForm').style.display='none'; renderInbox(); }); }
   // Módulo
   function newModule(){ fillModForm({}); }
   function editModule(id){ fillModForm(CM_TREE.find(function(x){return x.id===id;})||{}); }
