@@ -159,6 +159,18 @@ module.exports = async (req, res) => {
         if (!lead.tags) lead.tags = [];
         if (lead.tags.indexOf('academia') < 0) lead.tags.push('academia');
       }
+      if (text) { // caminos de la landing conversacional: Premium (pago) vs Gratis
+        const lt = text.toLowerCase();
+        if (lt.indexOf('(premium)') >= 0) {
+          if (!lead.tags) lead.tags = [];
+          if (lead.tags.indexOf('premium') < 0) lead.tags.push('premium');
+          if (lead.status === 'nuevo') lead.status = 'interesado'; // intención de compra: avanza el embudo
+        }
+        if (lt.indexOf('(gratis)') >= 0) {
+          if (!lead.tags) lead.tags = [];
+          if (lead.tags.indexOf('gratis') < 0) lead.tags.push('gratis');
+        }
+      }
 
       // Avisos a tu WhatsApp personal
       const who = lead.name || ('+' + from);
