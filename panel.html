@@ -130,9 +130,11 @@
     body.open .back{display:inline-flex}
     /* modales casi a pantalla completa */
     #promptModal,#statsModal,#tplModal,#wtplModal,#communityModal,#progressModal,#inboxModal,#feedModal{padding:8px}
-    .pm-card{padding:14px;max-height:94vh}
+    .pm-card{padding:14px;max-height:94vh;max-height:94dvh}
     .cm-stats{flex-wrap:wrap}
     .m{max-width:88%}
+    /* el textarea se encoge para que el footer (Guardar/Cancelar) no se corte; scrollea su propio texto */
+    #pmText,#tplText,#wtplText{min-height:130px}
   }
   /* Pantalla de carga (evita el parpadeo del login al recargar) */
   #loading{display:none;align-items:center;justify-content:center;height:100vh;height:100dvh}
@@ -255,7 +257,7 @@
   .st-spark-d{display:flex;gap:4px;margin-top:4px}
   .st-spark-d div{flex:1;text-align:center;font-size:9px;color:var(--muted)}
   .st-empty{color:var(--muted);font-size:12px;text-align:center;padding:14px}
-  .pm-card{background:var(--surface);border:1px solid var(--stroke);border-radius:16px;width:100%;max-width:720px;max-height:90vh;display:flex;flex-direction:column;padding:18px}
+  .pm-card{background:var(--surface);border:1px solid var(--stroke);border-radius:16px;width:100%;max-width:720px;max-height:90vh;max-height:90dvh;display:flex;flex-direction:column;padding:18px}
   .pm-head{display:flex;align-items:center;gap:10px;font-size:17px}
   .pm-head strong{flex:1}
   .pm-x{background:var(--surface2);color:#fff;border:1px solid var(--stroke);width:34px;height:34px;border-radius:8px;font-size:15px}
@@ -425,7 +427,7 @@
       <strong>📥 Bandeja de la academia</strong>
       <button class="pm-x" onclick="closeInbox()" aria-label="Cerrar">✕</button>
     </div>
-    <div style="overflow-y:auto;max-height:76vh;padding:2px">
+    <div style="overflow-y:auto;max-height:76vh;max-height:76dvh;padding:2px">
       <div class="ibx-filters" id="ibxFilters"></div>
       <div id="ibxLabelsForm" class="cm-form" style="display:none">
         <div class="cm-formtitle">✎ Editar nombres de las etiquetas</div>
@@ -447,7 +449,7 @@
       <strong>📈 Progreso de la academia</strong>
       <button class="pm-x" onclick="closeProgress()" aria-label="Cerrar">✕</button>
     </div>
-    <div id="progBody" style="overflow-y:auto;max-height:76vh;padding:2px"></div>
+    <div id="progBody" style="overflow-y:auto;max-height:76vh;max-height:76dvh;padding:2px"></div>
   </div>
 </div>
 
@@ -457,7 +459,7 @@
       <strong>🗣️ Comunidad · Publicaciones</strong>
       <button class="pm-x" onclick="closeFeed()" aria-label="Cerrar">✕</button>
     </div>
-    <div style="overflow-y:auto;max-height:74vh;padding:2px 2px 4px">
+    <div style="overflow-y:auto;max-height:74vh;max-height:74dvh;padding:2px 2px 4px">
       <p class="pm-hint">Aprueba ✅ o rechaza ✖ lo pendiente (aparece arriba). En lo aprobado puedes fijar 📌 o borrar 🗑.</p>
       <div id="feedAdminList"></div>
     </div>
@@ -470,7 +472,7 @@
       <strong id="cmHead">🎓 Academia · Contenido</strong>
       <button class="pm-x" onclick="closeCommunity()" aria-label="Cerrar">✕</button>
     </div>
-    <div style="overflow-y:auto;max-height:74vh;padding:2px 2px 4px">
+    <div style="overflow-y:auto;max-height:74vh;max-height:74dvh;padding:2px 2px 4px">
       <div class="cm-stats" id="cmMeta"></div>
       <input type="file" id="cmFileInput" accept="image/*" style="display:none" />
       <button type="button" class="cm-back" onclick="toggleCfg()" style="margin-bottom:12px">⚙️ Botones y mensajes del club</button>
