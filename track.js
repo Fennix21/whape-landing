@@ -22,7 +22,7 @@
       var href = (a.getAttribute('href') || '').toLowerCase();
       if (href.indexOf('wa.me') >= 0 || href.indexOf('api.whatsapp') >= 0 || href.indexOf('whatsapp.com') >= 0) ev = 'whatsapp_click';
       else if (href.indexOf('/registro-comunidad') >= 0) ev = 'registro_click';
-      else if (href.indexOf('/comunidad') >= 0) ev = 'comunidad_click';
+      else if (href.indexOf('/academia') >= 0 || href.indexOf('/comunidad') >= 0) ev = 'comunidad_click';
     }
     if (ev) send(ev);
   }, true);

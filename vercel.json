@@ -2,7 +2,8 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "redirects": [
-    { "source": "/club", "destination": "/comunidad", "permanent": false }
+    { "source": "/club", "destination": "/academia", "permanent": false },
+    { "source": "/comunidad", "destination": "/academia", "permanent": false }
   ],
   "functions": {
     "api/whatsapp.js": { "maxDuration": 30 }

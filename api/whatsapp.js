@@ -209,7 +209,7 @@ module.exports = async (req, res) => {
       const mr = await redis(['GET', 'member:' + from]);
       let ack;
       if (!mr) {
-        ack = 'No encontré una cuenta de la comunidad con este número 🤔. Si aún no te registras, hazlo en whape.club/comunidad.';
+        ack = 'No encontré una cuenta de la comunidad con este número 🤔. Si aún no te registras, hazlo en whape.club/academia.';
       } else {
         const code = String(Math.floor(100000 + Math.random() * 900000));
         await redis(['SET', 'reset:' + from, JSON.stringify({ code, exp: Date.now() + 30 * 60 * 1000 })]);
@@ -244,10 +244,10 @@ module.exports = async (req, res) => {
           if (!lead.tags) lead.tags = [];
           if (lead.tags.indexOf('academia') < 0) lead.tags.push('academia');
           ack = has
-            ? '¡Ese módulo ya lo tienes desbloqueado! 🙂 Ábrelo en tu academia: whape.club/comunidad'
-            : ('¡Listo! 🔓 Desbloqueé *' + (mod.title || 'el módulo') + '* en tu academia. Ábrela y ya lo verás: whape.club/comunidad 🎓');
+            ? '¡Ese módulo ya lo tienes desbloqueado! 🙂 Ábrelo en tu academia: whape.club/academia'
+            : ('¡Listo! 🔓 Desbloqueé *' + (mod.title || 'el módulo') + '* en tu academia. Ábrela y ya lo verás: whape.club/academia 🎓');
         } else {
-          ack = 'Para desbloquear un módulo, entra a tu academia 👉 whape.club/comunidad, abre el que quieres y toca el botón verde *"🔓 Desbloquear por WhatsApp"*. Eso me avisa y lo activo al toque. 🙌';
+          ack = 'Para desbloquear un módulo, entra a tu academia 👉 whape.club/academia, abre el que quieres y toca el botón verde *"🔓 Desbloquear por WhatsApp"*. Eso me avisa y lo activo al toque. 🙌';
         }
         await sendWhatsApp(from, ack);
         lead.messages.push({ role: 'assistant', text: ack, ts: Date.now() });
