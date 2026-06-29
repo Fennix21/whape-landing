@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>WHAPE — Convierte tu mayor problema en tu mayor oportunidad</title>
-<meta name="description" content="Entrena la habilidad de ver oportunidades donde otros solo ven problemas, y conviértelas en un negocio que vende por WhatsApp. Solo 100 cupos." />
+<title>WHAPE — El camino a recuperar tu tiempo</title>
+<meta name="description" content="Tus horas no rinden por estar en el entorno equivocado. Descubre cómo cambiar de círculo." />
 <meta property="og:type" content="website" />
-<meta property="og:title" content="Convierte tu mayor problema en tu mayor oportunidad" />
-<meta property="og:description" content="Una comunidad donde cada problema se ve como una oportunidad de negocio. Solo abriré 100 cupos." />
+<meta property="og:title" content="El camino a recuperar tu tiempo y tu energía" />
+<meta property="og:description" content="Del círculo vicioso al círculo virtuoso. Solo 100 cupos." />
 <meta property="og:image" content="https://whape.club/logo.png" />
-<meta property="og:url" content="https://whape.club" />
+<meta property="og:url" content="https://whape.club/reto" />
 <link rel="icon" href="logo.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -17,34 +17,24 @@
 <style>
   :root{
     --bg:#0F0C1C; --surface:#1A1630; --surface2:#241F3D; --stroke:#332C52;
-    --accent:#8E2DE2; --accent2:#4A00E0; --success:#2BD9A6; --gold:#FFD24A;
+    --accent:#8E2DE2; --accent2:#4A00E0; --success:#2BD9A6; --gold:#FFD24A; --warn:#ff7a90;
     --text:#FFFFFF; --muted:#ABA4C7;
   }
   *{box-sizing:border-box;margin:0;padding:0}
   html{scroll-behavior:smooth}
   body{font-family:'Sora',system-ui,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100dvh}
-  a{text-decoration:none;color:inherit}
   .grad{background:linear-gradient(100deg,var(--accent) 10%,var(--success) 90%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
-  .app{max-width:560px;margin:0 auto;padding:0 16px 40px;min-height:100dvh;display:flex;flex-direction:column}
+  .app{max-width:560px;margin:0 auto;padding:0 16px 48px;min-height:100dvh;display:flex;flex-direction:column}
 
-  /* top */
   .bar{display:flex;align-items:center;gap:9px;padding:16px 2px 10px}
   .bar img{width:30px;height:30px;border-radius:8px}
   .bar b{font-weight:800;letter-spacing:.12em;font-size:14px}
   .bar .cupos{margin-left:auto;font-size:11px;font-weight:700;color:var(--gold);background:rgba(255,210,74,.12);border:1px solid rgba(255,210,74,.3);padding:5px 10px;border-radius:999px}
 
-  /* progress */
   .prog{height:5px;background:var(--surface2);border-radius:999px;overflow:hidden;margin:4px 2px 14px}
   .prog > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--success));transition:width .5s ease}
 
-  /* intro */
-  .intro{text-align:center;padding:30px 6px 10px;animation:fade .5s ease}
-  .intro .eyebrow{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--gold);background:rgba(255,210,74,.1);border:1px solid rgba(255,210,74,.3);padding:6px 13px;border-radius:999px;margin-bottom:18px}
-  .intro h1{font-size:clamp(27px,7.5vw,38px);line-height:1.12;font-weight:800;letter-spacing:-.02em}
-  .intro p{color:var(--muted);font-size:16px;margin:16px auto 26px;max-width:30ch}
-
-  /* chat */
-  .chat{flex:1;display:none;padding-top:6px}
+  .chat{flex:1;padding-top:4px}
   .row{display:flex;margin-bottom:9px;animation:slide .45s ease both}
   .row.me{justify-content:flex-end}
   .bubble{max-width:86%;padding:12px 15px;border-radius:18px;font-size:15.5px;line-height:1.5}
@@ -56,11 +46,30 @@
   .typing span{width:7px;height:7px;border-radius:50%;background:var(--muted);animation:blink 1.2s infinite}
   .typing span:nth-child(2){animation-delay:.2s} .typing span:nth-child(3){animation-delay:.4s}
 
-  .opts{display:flex;flex-direction:column;gap:9px;margin:12px 0 4px;animation:fade .4s ease}
-  .opt{text-align:left;background:var(--surface2);border:1px solid var(--stroke);color:var(--text);font-family:inherit;font-size:15px;font-weight:600;padding:14px 16px;border-radius:14px;cursor:pointer;transition:transform .12s,border-color .12s}
-  .opt:hover{border-color:var(--accent);transform:translateX(3px)}
+  /* OPCIONES — alto contraste con el fondo */
+  .opts{display:flex;flex-direction:column;gap:10px;margin:12px 0 4px;animation:fade .4s ease}
+  .opt{display:flex;align-items:center;gap:11px;text-align:left;background:#2C2552;border:1.5px solid var(--accent);color:#fff;font-family:inherit;font-size:15.5px;font-weight:700;padding:15px 16px;border-radius:14px;cursor:pointer;transition:transform .12s,background .12s,box-shadow .12s}
+  .opt::before{content:"›";color:var(--gold);font-weight:800;font-size:20px;line-height:1}
+  .opt:hover{background:linear-gradient(120deg,var(--accent),var(--accent2));transform:translateX(3px);box-shadow:0 8px 24px rgba(142,45,226,.35)}
 
-  /* fork cards */
+  /* bloques especiales */
+  .special{margin:6px 0 10px;animation:slide .45s ease both}
+  .ct{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+  .ct-col{border:1px solid var(--stroke);border-radius:14px;padding:15px 13px}
+  .ct-col.bad{background:rgba(255,122,144,.06)} .ct-col.good{background:rgba(43,217,166,.07);border-color:rgba(43,217,166,.35)}
+  .ct-h{font-size:13px;font-weight:800;margin-bottom:11px}
+  .ct-col.bad .ct-h{color:var(--warn)} .ct-col.good .ct-h{color:var(--success)}
+  .ct-col ul{list-style:none;display:flex;flex-direction:column;gap:9px}
+  .ct-col li{font-size:13px;color:#E7E3F4;line-height:1.4}
+
+  .sum{background:var(--surface);border:1px solid var(--gold);border-radius:18px;padding:20px 18px;box-shadow:0 0 0 1px rgba(255,210,74,.15)}
+  .sum-h{font-size:15px;font-weight:800;color:var(--gold);margin-bottom:14px}
+  .sum ul{list-style:none;display:flex;flex-direction:column;gap:11px}
+  .sum li{font-size:14.5px;color:#fff;line-height:1.45;display:flex;gap:9px}
+  .sum li b{color:var(--success);flex:none}
+  .sum-cta{margin-top:16px;font-size:15.5px;font-weight:700;text-align:center}
+
+  /* fork */
   .fork{display:flex;flex-direction:column;gap:14px;margin:14px 0 4px;animation:fade .5s ease}
   .card{background:var(--surface);border:1px solid var(--stroke);border-radius:20px;padding:22px 20px;position:relative}
   .card.hot{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold),0 14px 40px rgba(255,210,74,.12)}
@@ -78,11 +87,12 @@
   .btn-free{background:var(--success);color:#06241B}
   .btn-free:hover{transform:translateY(-2px)}
   .card.free{background:var(--surface2)}
-  .restart{display:block;margin:22px auto 0;background:none;border:none;color:var(--muted);font-family:inherit;font-size:13px;cursor:pointer;text-decoration:underline}
+  .restart{display:block;margin:20px auto 0;background:none;border:none;color:var(--muted);font-family:inherit;font-size:13px;cursor:pointer;text-decoration:underline}
 
   @keyframes fade{from{opacity:0}to{opacity:1}}
   @keyframes slide{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
   @keyframes blink{0%,60%,100%{opacity:.3}30%{opacity:1}}
+  @media(max-width:430px){ .ct-col{padding:13px 11px} }
 </style>
 </head>
 <body>
@@ -92,16 +102,6 @@
     <span class="cupos">🔥 Solo 100 cupos</span>
   </div>
   <div class="prog"><i id="progFill"></i></div>
-
-  <!-- INTRO -->
-  <div class="intro" id="intro">
-    <span class="eyebrow">Un reto para ti</span>
-    <h1>Convierte tu <span class="grad">mayor problema</span> en tu mayor oportunidad.</h1>
-    <p>La riqueza no premia a quien trabaja más duro. Premia a quien resuelve los problemas que todos quieren evitar.</p>
-    <button class="btn btn-prem" style="max-width:300px;margin:0 auto" onclick="start()">Acepto el reto →</button>
-  </div>
-
-  <!-- CHAT -->
   <div class="chat" id="chat"></div>
 </div>
 
@@ -110,74 +110,63 @@
   var FOCUS = 'free';
   var STEP = 0;
 
+  var now = new Date(), end = new Date(now.getFullYear(), 11, 31, 23, 59, 59);
+  var DAYS = Math.max(1, Math.floor((end - now) / 86400000));
+  var FREEH = (DAYS * 5).toLocaleString('es-PE');
+
+  var CONTRAST =
+    '<div class="ct">' +
+      '<div class="ct-col bad"><div class="ct-h">🌫️ El entorno que te limita</div><ul>' +
+        '<li>“Eso no funciona”</li><li>Quejas, miedo y excusas</li><li>Te roba la energía</li><li><b style="color:var(--warn)">Círculo vicioso:</b> igual cada año</li></ul></div>' +
+      '<div class="ct-col good"><div class="ct-h">🚀 Nuestro entorno</div><ul>' +
+        '<li>“¿Y cómo lo harías?”</li><li>Soluciones y acción</li><li>Te recarga la energía</li><li><b style="color:var(--success)">Círculo virtuoso:</b> creces sin parar</li></ul></div>' +
+    '</div>';
+
+  var SUMMARY =
+    '<div class="sum"><div class="sum-h">💡 Lo que acabas de descubrir</div><ul>' +
+      '<li><b>✓</b> No te falta tiempo. Te falta energía.</li>' +
+      '<li><b>✓</b> Tu entorno decide: círculo vicioso o virtuoso.</li>' +
+      '<li><b>✓</b> Con el entorno correcto, tus pocas horas rinden como nunca.</li>' +
+      '<li><b>✓</b> Tu mayor problema puede ser tu próximo negocio.</li>' +
+    '</ul><div class="sum-cta">Estás a <span class="grad">un solo paso</span> de cambiar de círculo. 👇</div></div>';
+
   var STEPS = [
-    { bot: ["Tengo un reto para ti. 👋", "Quiero que tomes el problema más grande que tienes hoy… y lo conviertas en la oportunidad que cambie tu vida."],
-      opts: [{ t: "Acepto el reto →" }] },
+    { bot: ["Cruzaste la puerta. 👏", "Eso ya te separa de la mayoría, que solo se queja y se queda en el mismo lugar.", "Antes de mostrarte el camino, mira algo con tus propios números."],
+      opts: [{ t: "Muéstrame 👀" }, { t: "Estoy listo" }] },
 
-    { bot: ["Sé sincero conmigo. ¿Qué describe mejor tu momento de hoy?"],
-      opts: [
-        { t: "😮‍💨 Tengo un trabajo que no me llena" },
-        { t: "🤔 Quiero emprender pero no sé cómo" },
-        { t: "📈 Ya vendo algo y quiero que crezca" },
-        { t: "👀 Solo estoy explorando" }
-      ] },
+    { bot: ["Te dije que te quedan ~" + DAYS + " días este año.", "Pero tú no vives en días. Vives en horas.", "Y de cada día, solo unas 5 son realmente tuyas… y cansadas. En lo que queda del año, eso son apenas " + FREEH + " horas tuyas."],
+      ask: "¿Cuántas de esas horas usas hoy para algo que te acerque a tu libertad?",
+      opts: [{ t: "Casi ninguna 😕" }, { t: "Una o dos" }, { t: "Se me van en el celular" }] },
 
-    { bot: ["No estás solo. Y justo ahí está lo interesante:", "Cuando miles de personas sienten el mismo problema, no solo hay dolor… hay un mercado entero esperando que alguien construya la solución."],
-      opts: [{ t: "Tiene sentido…" }] },
+    { bot: ["Eso es lo normal… cuando estás en el entorno equivocado.", "Llegas agotado → no actúas → nada cambia → te frustras → te agotas más.", "Un círculo vicioso que te deja igual, año tras año."],
+      opts: [{ t: "Me pasa, sí 😔" }, { t: "Llevo años así" }] },
 
-    { bot: ["Una pregunta clave. Cuando ves un problema, ¿qué ves primero?"],
-      opts: [
-        { t: "Una molestia que quiero evitar" },
-        { t: "Tal vez… una oportunidad" }
-      ] },
+    { bot: ["Ahora mira la diferencia entre los dos mundos:"],
+      render: "contrast",
+      ask: "¿En cuál crecerías más rápido?",
+      opts: [{ t: "En el de posibilidades", focus: "premium" }, { t: "En el que me impulsa", focus: "premium" }] },
 
-    { bot: ["La mayoría ve problemas. Los creadores ven oportunidades. 🔑", "Cada negocio exitoso nació de una sola pregunta:", "«¿Por qué existe este problema… y cómo lo resolvería mejor?»"],
-      opts: [{ t: "Quiero aprender a pensar así" }] },
+    { bot: ["Así operamos en WHAPE:", "Entras a un entorno que te DA energía → actúas con claridad → ves resultados → te motivas → actúas más.", "Un círculo virtuoso. Y con un sistema: comunidad + academia + el método para convertir tus problemas en un negocio por WhatsApp."],
+      opts: [{ t: "Eso necesito 🔥", focus: "premium" }, { t: "Cuéntame cómo entro" }] },
 
-    { bot: ["El problema real es el entorno.", "Es muy difícil crear algo grande rodeado de gente que convierte cada problema en una excusa. Las ideas se contagian… y la forma de pensar también."],
-      opts: [{ t: "Eso me pasa 😣" }, { t: "Quiero cambiar mi entorno" }] },
+    { bot: ["Imagina los próximos " + DAYS + " días distintos.", "Cerrar el año con claridad, un proyecto tuyo avanzando, y gente que construye CONTIGO en vez de frenarte."],
+      ask: "¿Cómo quieres llegar a fin de año?",
+      opts: [{ t: "Igual que hoy… no, gracias" }, { t: "Quiero llegar distinto", focus: "premium" }] },
 
-    { bot: ["Por eso creé esta comunidad. 🌐", "Un lugar donde cada problema se ve como una oportunidad, y entrenamos algo que no enseñan en el colegio: convertir frustraciones en un negocio que vende por WhatsApp + Yape con un sistema completo (landing + bot + CRM + academia)."],
-      opts: [{ t: "Eso es exactamente lo que busco" }] },
-
-    { bot: ["Solo voy a abrir el acceso a las primeras 100 personas que quieran desarrollar esta forma de pensar desde cero.", "¿Qué tan en serio te lo tomas?"],
-      opts: [
-        { t: "🔥 Voy en serio, lo quiero todo", focus: "premium" },
-        { t: "🌱 Quiero empezar de a pocos", focus: "free" }
-      ] },
-
-    { bot: ["Llegaste hasta aquí, y eso ya dice mucho de ti. 👏", "Elige cómo quieres empezar:"],
+    { bot: ["Antes de elegir, llévate esto:"],
+      render: "summary",
       fork: true }
   ];
 
-  function start(){
-    document.getElementById('intro').style.display = 'none';
-    document.getElementById('chat').style.display = 'block';
-    go(0);
-  }
-
-  function progress(i){
-    document.getElementById('progFill').style.width = Math.round(i / (STEPS.length - 1) * 100) + '%';
-  }
-
+  function progress(i){ document.getElementById('progFill').style.width = Math.round(i / (STEPS.length - 1) * 100) + '%'; }
   function el(html){ var d = document.createElement('div'); d.innerHTML = html.trim(); return d.firstChild; }
   function chat(){ return document.getElementById('chat'); }
   function scrollDown(){ window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); }
 
-  function appendBot(text){
-    var r = el('<div class="row bot"><div class="av">🧠</div><div class="bubble"></div></div>');
-    r.querySelector('.bubble').textContent = text;
-    chat().appendChild(r); scrollDown();
-  }
-  function appendMe(text){
-    var r = el('<div class="row me"><div class="bubble"></div></div>');
-    r.querySelector('.bubble').textContent = text;
-    chat().appendChild(r); scrollDown();
-  }
-  function showTyping(){
-    var t = el('<div class="row bot" id="typing"><div class="av">🧠</div><div class="typing"><span></span><span></span><span></span></div></div>');
-    chat().appendChild(t); scrollDown();
-  }
+  function appendBot(text){ var r = el('<div class="row bot"><div class="av">🧠</div><div class="bubble"></div></div>'); r.querySelector('.bubble').textContent = text; chat().appendChild(r); scrollDown(); }
+  function appendMe(text){ var r = el('<div class="row me"><div class="bubble"></div></div>'); r.querySelector('.bubble').textContent = text; chat().appendChild(r); scrollDown(); }
+  function appendSpecial(html){ var d = el('<div class="special"></div>'); d.innerHTML = html; chat().appendChild(d); scrollDown(); }
+  function showTyping(){ chat().appendChild(el('<div class="row bot" id="typing"><div class="av">🧠</div><div class="typing"><span></span><span></span><span></span></div></div>')); scrollDown(); }
   function hideTyping(){ var t = document.getElementById('typing'); if(t) t.remove(); }
 
   function go(i){
@@ -185,23 +174,20 @@
     var s = STEPS[i];
     var msgs = s.bot.slice();
     (function next(){
-      if(!msgs.length){ s.fork ? renderFork() : renderOpts(s); return; }
-      showTyping();
-      setTimeout(function(){ hideTyping(); appendBot(msgs.shift()); setTimeout(next, 350); }, 600);
+      if(msgs.length){ showTyping(); setTimeout(function(){ hideTyping(); appendBot(msgs.shift()); setTimeout(next, 350); }, 600); return; }
+      if(s.render === 'contrast') appendSpecial(CONTRAST);
+      if(s.render === 'summary') appendSpecial(SUMMARY);
+      var finish = function(){ s.fork ? renderFork() : renderOpts(s); };
+      if(s.ask){ showTyping(); setTimeout(function(){ hideTyping(); appendBot(s.ask); setTimeout(finish, 300); }, 600); }
+      else finish();
     })();
   }
 
   function renderOpts(s){
     var box = el('<div class="opts"></div>');
-    s.opts.forEach(function(o){
-      var b = el('<button class="opt"></button>');
-      b.textContent = o.t;
-      b.onclick = function(){ choose(o); };
-      box.appendChild(b);
-    });
+    s.opts.forEach(function(o){ var b = el('<button class="opt"></button>'); b.appendChild(document.createTextNode(o.t)); b.onclick = function(){ choose(o); }; box.appendChild(b); });
     chat().appendChild(box); scrollDown();
   }
-
   function choose(o){
     var opts = chat().querySelector('.opts'); if(opts) opts.remove();
     appendMe(o.t);
@@ -217,29 +203,29 @@
       (premHot ? '<span class="tag">⭐ Recomendado para ti</span>' : '') +
       '<h3>🚀 Acceso Premium</h3>' +
       '<div class="price">Pago único S/99 <small>· de por vida, sin mensualidad</small></div>' +
-      '<p>Para quien va en serio. Solo 100 cupos.</p>' +
+      '<p>El círculo virtuoso completo. Solo 100 cupos.</p>' +
       '<ul>' +
         '<li><b>✓</b> Academia Premium completa (paso a paso)</li>' +
-        '<li><b>✓</b> El sistema de ventas: landing + bot + CRM + academia</li>' +
-        '<li><b>✓</b> Plantillas y recursos listos para usar</li>' +
-        '<li><b>✓</b> Acompañamiento en la comunidad</li>' +
+        '<li><b>✓</b> El sistema: landing + bot + CRM + academia</li>' +
+        '<li><b>✓</b> Plantillas listas + acompañamiento</li>' +
       '</ul>' +
       '<a class="btn btn-prem" data-ev="premium_click" href="https://wa.me/' + WA + '?text=' + encodeURIComponent('Hola, quiero el ACCESO PREMIUM de WHAPE (S/99) (premium)') + '" target="_blank" rel="noopener">Quiero mi acceso Premium →</a>';
 
     var free = el('<div class="card free"></div>');
     free.innerHTML =
       '<h3>🌱 Empezar gratis</h3>' +
-      '<p>Da tu primer paso hoy, sin pagar nada. Únete a la comunidad + academia y empieza a entrenar esta forma de pensar.</p>' +
+      '<p>Entra hoy a la comunidad + academia y empieza a cambiar de círculo, sin pagar nada.</p>' +
       '<a class="btn btn-free" data-ev="gratis_click" href="https://wa.me/' + WA + '?text=' + encodeURIComponent('Hola, quiero entrar GRATIS a la comunidad WHAPE (gratis)') + '" target="_blank" rel="noopener">Entrar gratis</a>';
 
     var box = el('<div class="fork"></div>');
-    if(premHot){ box.appendChild(prem); box.appendChild(free); }
-    else { box.appendChild(free); box.appendChild(prem); }
+    if(premHot){ box.appendChild(prem); box.appendChild(free); } else { box.appendChild(free); box.appendChild(prem); }
     var restart = el('<button class="restart">↻ Empezar de nuevo</button>');
     restart.onclick = function(){ location.reload(); };
     box.appendChild(restart);
     chat().appendChild(box); scrollDown();
   }
+
+  go(0);
 </script>
 <script defer src="/_vercel/insights/script.js"></script>
 <script defer src="/_vercel/speed-insights/script.js"></script>
