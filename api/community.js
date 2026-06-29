@@ -26,6 +26,15 @@ const GRAPH = 'https://graph.facebook.com/v21.0';
 const FB_TYPES = ['pregunta', 'duda', 'comentario', 'sugerencia', 'interes'];
 const DEFAULT_FB_LABELS = { pregunta: '❓ Pregunta', duda: '🤔 Duda', comentario: '💬 Comentario', sugerencia: '💡 Sugerencia', interes: '🛒 Quiero comprar' };
 const DEFAULT_EMAIL_PROMPT = '📧 Déjanos tu correo para poder recuperar tu contraseña si la olvidas, y recibir accesos y bonos especiales antes que nadie. ¡Es opcional pero muy recomendado!';
+// Comunidad estilo Skool: umbrales de puntos por nivel (1-9) y categorías por defecto.
+const COMMUNITY_LEVELS = [0, 5, 20, 65, 155, 515, 2015, 8015, 33015];
+const DEFAULT_CATS = [
+  { id: 'general', label: '💬 General' },
+  { id: 'presentate', label: '👋 Preséntate' },
+  { id: 'preguntas', label: '❓ Preguntas' },
+  { id: 'logros', label: '🏆 Logros' },
+  { id: 'recursos', label: '📚 Recursos' },
+];
 
 async function redis(cmd) {
   const r = await fetch(REDIS_URL, {
@@ -58,6 +67,53 @@ function verifyToken(token) {
   return good === sig ? phone : null;
 }
 function newId(prefix) { return prefix + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+
+// --- Comunidad (feed estilo Skool) ---
+function levelFromPoints(pts) {
+  let lvl = 1;
+  for (let i = 0; i < COMMUNITY_LEVELS.length; i++) { if ((pts || 0) >= COMMUNITY_LEVELS[i]) lvl = i + 1; }
+  return lvl;
+}
+async function getCats() {
+  const raw = await redis(['GET', 'config:community_cats']);
+  if (raw) { try { const c = JSON.parse(raw); if (Array.isArray(c) && c.length) return c; } catch (e) {} }
+  return DEFAULT_CATS;
+}
+async function getPosts() {
+  const ids = (await redis(['SMEMBERS', 'community:posts'])) || [];
+  if (!ids.length) return [];
+  const raws = (await redis(['MGET', ...ids.map((id) => 'post:' + id)])) || [];
+  const out = [];
+  raws.forEach((r) => { if (r) { try { out.push(JSON.parse(r)); } catch (e) {} } });
+  return out;
+}
+async function loadPost(id) {
+  const raw = await redis(['GET', 'post:' + id]);
+  if (!raw) return null;
+  try { return JSON.parse(raw); } catch (e) { return null; }
+}
+async function savePost(p) { await redis(['SET', 'post:' + p.id, JSON.stringify(p)]); }
+async function bumpPoints(phone, delta) {
+  const raw = await redis(['GET', 'member:' + phone]);
+  if (!raw) return;
+  let m; try { m = JSON.parse(raw); } catch (e) { return; }
+  m.points = Math.max(0, (m.points || 0) + delta);
+  await redis(['SET', 'member:' + phone, JSON.stringify(m)]);
+}
+function publicPost(p, phone, levelMap) {
+  levelMap = levelMap || {};
+  return {
+    id: p.id, name: p.name, avatar: p.avatar || '',
+    authorLevel: levelFromPoints(levelMap[p.phone] || 0),
+    cat: p.cat || 'general', title: p.title || '', body: p.body || '',
+    ts: p.ts, pinned: !!p.pinned,
+    likeCount: (p.likedBy || []).length,
+    liked: (p.likedBy || []).indexOf(phone) >= 0,
+    comments: (p.comments || []).map((c) => ({ id: c.id, name: c.name, avatar: c.avatar || '', body: c.body, ts: c.ts, level: levelFromPoints(levelMap[c.phone] || 0), mine: c.phone === phone })),
+    commentCount: (p.comments || []).length,
+    mine: p.phone === phone,
+  };
+}
 
 async function getModules() {
   const raw = await redis(['GET', 'academy:modules']);
@@ -470,6 +526,117 @@ module.exports = async (req, res) => {
       return res.status(200).json({ ok: true });
     }
 
+    // ---------- COMUNIDAD (feed estilo Skool) ----------
+    if (b.action === 'feed') {
+      const phone = verifyToken(b.token);
+      if (!phone) return res.status(401).json({ error: 'Tu sesión venció. Entra de nuevo. 🙏' });
+      const cats = await getCats();
+      let posts = await getPosts();
+      const cat = (b.cat || '').toString();
+      if (cat && cat !== 'all') posts = posts.filter((p) => (p.cat || 'general') === cat);
+      const want = {}; want[phone] = 1;
+      posts.forEach((p) => { want[p.phone] = 1; (p.comments || []).forEach((c) => { want[c.phone] = 1; }); });
+      const plist = Object.keys(want);
+      const levelMap = {};
+      const mraws = (await redis(['MGET', ...plist.map((p) => 'member:' + p)])) || [];
+      plist.forEach((p, i) => { let pts = 0; if (mraws[i]) { try { pts = JSON.parse(mraws[i]).points || 0; } catch (e) {} } levelMap[p] = pts; });
+      const sort = (b.sort || 'recent').toString();
+      posts.sort((a, c) => {
+        if (!!a.pinned !== !!c.pinned) return a.pinned ? -1 : 1;
+        if (sort === 'top') return ((c.likedBy || []).length - (a.likedBy || []).length) || (c.ts - a.ts);
+        return c.ts - a.ts;
+      });
+      const out = posts.map((p) => publicPost(p, phone, levelMap));
+      const myPoints = levelMap[phone] || 0;
+      return res.status(200).json({ ok: true, posts: out, cats, me: { points: myPoints, level: levelFromPoints(myPoints) } });
+    }
+
+    if (b.action === 'feedpost') {
+      const phone = verifyToken(b.token);
+      if (!phone) return res.status(401).json({ error: 'Tu sesión venció. Entra de nuevo. 🙏' });
+      const title = (b.title || '').toString().trim().slice(0, 140);
+      const body = (b.body || '').toString().trim().slice(0, 4000);
+      const cat = (b.cat || 'general').toString().slice(0, 40);
+      if (!body && !title) return res.status(400).json({ error: 'Escribe algo para publicar.' });
+      const mraw = await redis(['GET', 'member:' + phone]);
+      let name = '', avatar = ''; if (mraw) { try { const mm = JSON.parse(mraw); name = mm.name || ''; avatar = mm.avatar || ''; } catch (e) {} }
+      const p = { id: newId('p'), phone, name, avatar, cat, title, body, ts: Date.now(), pinned: false, likedBy: [], comments: [] };
+      await savePost(p);
+      await redis(['SADD', 'community:posts', p.id]);
+      return res.status(200).json({ ok: true, id: p.id });
+    }
+
+    if (b.action === 'feeddel') {
+      const phone = verifyToken(b.token);
+      if (!phone) return res.status(401).json({ error: 'Tu sesión venció.' });
+      const p = await loadPost((b.id || '').toString());
+      if (!p) return res.status(404).json({ error: 'Esa publicación ya no existe.' });
+      if (p.phone !== phone) return res.status(403).json({ error: 'Solo puedes borrar tus propias publicaciones.' });
+      await redis(['DEL', 'post:' + p.id]);
+      await redis(['SREM', 'community:posts', p.id]);
+      return res.status(200).json({ ok: true });
+    }
+
+    if (b.action === 'feedlike') {
+      const phone = verifyToken(b.token);
+      if (!phone) return res.status(401).json({ error: 'Tu sesión venció.' });
+      const p = await loadPost((b.id || '').toString());
+      if (!p) return res.status(404).json({ error: 'Esa publicación ya no existe.' });
+      p.likedBy = p.likedBy || [];
+      const i = p.likedBy.indexOf(phone);
+      let liked;
+      if (i >= 0) { p.likedBy.splice(i, 1); liked = false; if (p.phone !== phone) await bumpPoints(p.phone, -1); }
+      else { p.likedBy.push(phone); liked = true; if (p.phone !== phone) await bumpPoints(p.phone, 1); }
+      await savePost(p);
+      return res.status(200).json({ ok: true, liked, likeCount: p.likedBy.length });
+    }
+
+    if (b.action === 'feedcomment') {
+      const phone = verifyToken(b.token);
+      if (!phone) return res.status(401).json({ error: 'Tu sesión venció.' });
+      const body = (b.body || '').toString().trim().slice(0, 2000);
+      if (!body) return res.status(400).json({ error: 'Escribe un comentario.' });
+      const p = await loadPost((b.id || '').toString());
+      if (!p) return res.status(404).json({ error: 'Esa publicación ya no existe.' });
+      const mraw = await redis(['GET', 'member:' + phone]);
+      let name = '', avatar = '', pts = 0; if (mraw) { try { const mm = JSON.parse(mraw); name = mm.name || ''; avatar = mm.avatar || ''; pts = mm.points || 0; } catch (e) {} }
+      p.comments = p.comments || [];
+      const c = { id: newId('c'), phone, name, avatar, body, ts: Date.now() };
+      p.comments.push(c);
+      await savePost(p);
+      return res.status(200).json({ ok: true, comment: { id: c.id, name: c.name, avatar: c.avatar, body: c.body, ts: c.ts, level: levelFromPoints(pts), mine: true } });
+    }
+
+    if (b.action === 'feedcommentdel') {
+      const phone = verifyToken(b.token);
+      if (!phone) return res.status(401).json({ error: 'Tu sesión venció.' });
+      const p = await loadPost((b.postId || '').toString());
+      if (!p) return res.status(404).json({ error: 'Esa publicación ya no existe.' });
+      const cid = (b.commentId || '').toString();
+      const c = (p.comments || []).find((x) => x.id === cid);
+      if (!c) return res.status(404).json({ error: 'Ese comentario ya no existe.' });
+      if (c.phone !== phone && p.phone !== phone) return res.status(403).json({ error: 'No puedes borrar este comentario.' });
+      p.comments = (p.comments || []).filter((x) => x.id !== cid);
+      await savePost(p);
+      return res.status(200).json({ ok: true });
+    }
+
+    if (b.action === 'leaderboard') {
+      const phone = verifyToken(b.token);
+      if (!phone) return res.status(401).json({ error: 'Tu sesión venció.' });
+      const phones = (await redis(['SMEMBERS', 'members'])) || [];
+      const rows = [];
+      if (phones.length) {
+        const mraws = (await redis(['MGET', ...phones.map((p) => 'member:' + p)])) || [];
+        mraws.forEach((r) => { if (r) { try { const m = JSON.parse(r); rows.push({ phone: m.phone, name: m.name || '', avatar: m.avatar || '', points: m.points || 0 }); } catch (e) {} } });
+      }
+      rows.sort((a, c) => c.points - a.points);
+      const myRank = rows.findIndex((r) => r.phone === phone) + 1;
+      const myPts = (rows.find((r) => r.phone === phone) || {}).points || 0;
+      const top = rows.slice(0, 30).map((r, i) => ({ rank: i + 1, name: r.name, avatar: r.avatar, points: r.points, level: levelFromPoints(r.points), me: r.phone === phone }));
+      return res.status(200).json({ ok: true, top, myRank, total: rows.length, me: { points: myPts, level: levelFromPoints(myPts) } });
+    }
+
     // ---------- ADMIN ----------
     if (b.action === 'admin') {
       if ((b.pass || '') !== process.env.WHAPE_ADMIN_PASS) return res.status(401).json({ error: 'Contraseña incorrecta.' });
@@ -613,6 +780,31 @@ module.exports = async (req, res) => {
         if (mod && Array.isArray(mod.lessons)) mod.lessons = mod.lessons.filter((l) => l.id !== b.lessonId);
         await saveModules(mods);
         return res.status(200).json({ ok: true, modules: mods });
+      }
+      if (sub === 'feedlist') {
+        const posts = await getPosts();
+        posts.sort((a, c) => { if (!!a.pinned !== !!c.pinned) return a.pinned ? -1 : 1; return c.ts - a.ts; });
+        return res.status(200).json({ ok: true, cats: await getCats(), posts: posts.map((p) => ({ id: p.id, name: p.name, cat: p.cat, title: p.title, body: (p.body || '').slice(0, 240), ts: p.ts, pinned: !!p.pinned, likes: (p.likedBy || []).length, comments: (p.comments || []).length })) });
+      }
+      if (sub === 'feeddel') {
+        const id = (b.id || '').toString();
+        await redis(['DEL', 'post:' + id]);
+        await redis(['SREM', 'community:posts', id]);
+        return res.status(200).json({ ok: true });
+      }
+      if (sub === 'feedpin') {
+        const p = await loadPost((b.id || '').toString());
+        if (!p) return res.status(404).json({ error: 'Esa publicación ya no existe.' });
+        p.pinned = !p.pinned;
+        await savePost(p);
+        return res.status(200).json({ ok: true, pinned: p.pinned });
+      }
+      if (sub === 'setcats') {
+        let cats = b.cats;
+        if (!Array.isArray(cats)) return res.status(400).json({ error: 'Categorías inválidas.' });
+        cats = cats.filter((c) => c && c.id && c.label).slice(0, 20);
+        await redis(['SET', 'config:community_cats', JSON.stringify(cats)]);
+        return res.status(200).json({ ok: true, cats });
       }
       return res.status(400).json({ error: 'Sub-acción no válida.' });
     }
