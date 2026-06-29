@@ -789,7 +789,7 @@ module.exports = async (req, res) => {
       if (sub === 'feedlist') {
         const posts = await getPosts();
         posts.sort((a, c) => { if (!!a.approved !== !!c.approved) return a.approved ? 1 : -1; if (!!a.pinned !== !!c.pinned) return a.pinned ? -1 : 1; return c.ts - a.ts; });
-        return res.status(200).json({ ok: true, cats: await getCats(), posts: posts.map((p) => ({ id: p.id, name: p.name, cat: p.cat, title: p.title, body: (p.body || '').slice(0, 240), ts: p.ts, pinned: !!p.pinned, approved: !!p.approved, likes: (p.likedBy || []).length, comments: (p.comments || []).length })) });
+        return res.status(200).json({ ok: true, cats: await getCats(), posts: posts.map((p) => ({ id: p.id, name: p.name, cat: p.cat, title: p.title, body: (p.body || ''), ts: p.ts, pinned: !!p.pinned, approved: !!p.approved, likes: (p.likedBy || []).length, comments: (p.comments || []).length })) });
       }
       if (sub === 'feeddel') {
         const id = (b.id || '').toString();
