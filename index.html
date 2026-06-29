@@ -3,11 +3,11 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>WHAPE — Te volviste el promedio de quienes te rodean</title>
-<meta name="description" content="Tu entorno está decidiendo cómo piensas, qué crees posible y hasta dónde llegas. Lee esto con calma: quizás no vuelvas a ver tus problemas igual." />
+<title>WHAPE — ¿Cuánto de tu tiempo es realmente tuyo?</title>
+<meta name="description" content="No te falta tiempo. Te falta energía. Y tu entorno es quien te la roba. Mira los números." />
 <meta property="og:type" content="website" />
-<meta property="og:title" content="Te volviste el promedio de quienes te rodean" />
-<meta property="og:description" content="No estás estancado. Estás rodeado. Y el lugar se puede cambiar." />
+<meta property="og:title" content="¿Cuánto de tu tiempo es realmente tuyo?" />
+<meta property="og:description" content="Con tiempo y sin energía, el tiempo no sirve de nada. Mira los números." />
 <meta property="og:image" content="https://whape.club/logo.png" />
 <meta property="og:url" content="https://whape.club" />
 <link rel="icon" href="logo.png" />
@@ -24,56 +24,55 @@
   html{scroll-behavior:smooth}
   body{font-family:'Sora',system-ui,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden}
   .grad{background:linear-gradient(100deg,var(--accent) 5%,var(--success) 95%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
-  .wrap{max-width:660px;margin:0 auto;padding:0 22px}
+  .wrap{max-width:600px;margin:0 auto;padding:0 22px}
 
-  .topbar{display:flex;align-items:center;gap:9px;padding:18px 22px;position:sticky;top:0;z-index:20;backdrop-filter:blur(8px);background:rgba(15,12,28,.55)}
+  .topbar{display:flex;align-items:center;gap:9px;padding:18px 22px}
   .topbar img{width:28px;height:28px;border-radius:8px}
   .topbar b{font-weight:800;letter-spacing:.14em;font-size:13px}
 
-  section{padding:66px 0}
-  section.hero{padding:48px 0 40px;text-align:center}
-  .eyebrow{display:inline-block;font-size:12.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:18px}
-  h1{font-size:clamp(30px,7.6vw,46px);line-height:1.1;font-weight:800;letter-spacing:-.02em}
-  h2{font-size:clamp(24px,5.6vw,35px);line-height:1.16;font-weight:800;letter-spacing:-.02em;margin-bottom:18px}
-  p.lead{font-size:18px;color:var(--read);line-height:1.75;margin-top:18px}
-  p.body{font-size:17px;color:var(--read);line-height:1.78;margin-bottom:18px}
+  section{padding:52px 0}
+  section.hero{padding:30px 0 34px;text-align:center}
+  .eyebrow{display:inline-block;font-size:12.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
+  h1{font-size:clamp(30px,8vw,46px);line-height:1.08;font-weight:800;letter-spacing:-.02em}
+  h2{font-size:clamp(24px,6vw,34px);line-height:1.15;font-weight:800;letter-spacing:-.02em;margin-bottom:14px}
+  p.lead{font-size:18px;color:var(--read);line-height:1.7;margin-top:16px}
+  p.body{font-size:17px;color:var(--read);line-height:1.72;margin-bottom:14px}
   p.body:last-child{margin-bottom:0}
-  .kick{color:var(--accent);font-weight:700;font-size:13px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:14px}
-  .kick.warn{color:var(--warn)} .kick.go{color:var(--success)} .kick.gold{color:var(--gold)}
+  .kick{color:var(--accent);font-weight:700;font-size:13px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px}
+  .kick.warn{color:var(--warn)} .kick.go{color:var(--success)}
 
-  .scenes{list-style:none;display:flex;flex-direction:column;gap:16px;margin:6px 0 22px}
-  .scenes li{font-size:16.5px;color:var(--read);line-height:1.7;padding-left:20px;border-left:2px solid var(--stroke)}
+  /* countdown */
+  .count{text-align:center;margin:6px 0 26px}
+  .count .big{font-size:clamp(64px,22vw,120px);font-weight:800;line-height:.95;letter-spacing:-.03em}
+  .count .lbl{font-size:14px;color:var(--muted);font-weight:600;margin-top:6px;text-transform:uppercase;letter-spacing:.08em}
+  .count .tick{font-variant-numeric:tabular-nums;font-size:17px;color:var(--gold);margin-top:12px;font-weight:700;background:rgba(255,210,74,.08);border:1px solid rgba(255,210,74,.25);display:inline-block;padding:7px 14px;border-radius:999px}
 
-  .quote{font-size:clamp(22px,5.4vw,30px);font-weight:700;line-height:1.3;letter-spacing:-.01em;margin:30px 0;padding:4px 0}
+  /* receipt */
+  .calc{background:var(--surface);border:1px solid var(--stroke);border-radius:18px;padding:20px 22px;margin:22px 0;font-size:16.5px}
+  .calc .r{display:flex;justify-content:space-between;align-items:center;padding:7px 0;color:var(--read)}
+  .calc .r .h{color:var(--muted)}
+  .calc .r.neg .h{color:var(--warn)}
+  .calc .sep{border-top:1px dashed var(--stroke);margin:6px 0}
+  .calc .r.res{font-weight:800;font-size:18px}
+  .calc .r.res .v{color:var(--gold)}
+  .calc .note{color:var(--muted);font-size:13.5px;margin-top:8px;text-align:right}
 
-  .contrast{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:26px}
-  .col{border:1px solid var(--stroke);border-radius:16px;padding:20px 18px}
-  .col h4{font-size:13px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;margin-bottom:14px}
-  .col.now h4{color:var(--warn)} .col.next h4{color:var(--success)}
-  .col ul{list-style:none;display:flex;flex-direction:column;gap:11px}
-  .col li{font-size:14px;color:var(--read);line-height:1.45;display:flex;gap:8px}
-  .col.now{background:rgba(255,122,144,.05)} .col.next{background:rgba(43,217,166,.06);border-color:rgba(43,217,166,.3)}
+  .punch{font-size:clamp(20px,5.2vw,27px);font-weight:700;line-height:1.32;margin:26px 0 0}
+  .punch b{color:var(--gold)}
+  .quote{font-size:clamp(21px,5.4vw,29px);font-weight:700;line-height:1.3;margin:26px 0 0}
 
-  .divider{height:1px;background:linear-gradient(90deg,transparent,var(--stroke),transparent);margin:0 auto;max-width:660px}
+  .divider{height:1px;background:linear-gradient(90deg,transparent,var(--stroke),transparent);max-width:600px;margin:0 auto}
 
   .cta{text-align:center;background:radial-gradient(70% 90% at 50% 0%,rgba(142,45,226,.22),transparent 70%)}
-  .cta h2{margin-bottom:14px}
-  .cupos{display:inline-block;font-size:12.5px;font-weight:700;color:var(--gold);background:rgba(255,210,74,.1);border:1px solid rgba(255,210,74,.3);padding:7px 14px;border-radius:999px;margin-bottom:22px}
+  .cupos{display:inline-block;font-size:12.5px;font-weight:700;color:var(--gold);background:rgba(255,210,74,.1);border:1px solid rgba(255,210,74,.3);padding:7px 14px;border-radius:999px;margin-bottom:20px}
   .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:800;font-size:17px;padding:17px 30px;border-radius:16px;border:none;cursor:pointer;
        background:linear-gradient(120deg,var(--gold),#ff9d2e);color:#241a00;box-shadow:0 12px 36px rgba(255,210,74,.28);transition:transform .15s,box-shadow .15s}
   .btn:hover{transform:translateY(-2px);box-shadow:0 16px 46px rgba(255,210,74,.42)}
-  .cta .sub{color:var(--muted);font-size:14px;margin-top:16px}
+  .cta .sub{color:var(--muted);font-size:14px;margin-top:15px}
+  footer{text-align:center;color:var(--muted);font-size:12.5px;padding:26px 22px 40px}
 
-  footer{text-align:center;color:var(--muted);font-size:12.5px;padding:30px 22px 40px}
-
-  /* floating cta */
-  .float{position:fixed;left:50%;transform:translateX(-50%) translateY(20px);bottom:18px;z-index:30;opacity:0;pointer-events:none;transition:opacity .35s,transform .35s}
-  .float.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
-  .float a{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(120deg,var(--gold),#ff9d2e);color:#241a00;font-weight:800;font-size:15px;padding:13px 22px;border-radius:999px;box-shadow:0 10px 30px rgba(0,0,0,.45)}
-
-  .reveal{opacity:0;transform:translateY(22px);transition:opacity .7s ease,transform .7s ease}
+  .reveal{opacity:0;transform:translateY(20px);transition:opacity .6s ease,transform .6s ease}
   .reveal.in{opacity:1;transform:none}
-  @media(max-width:520px){ .contrast{grid-template-columns:1fr} section{padding:54px 0} }
 </style>
 <noscript><style>.reveal{opacity:1;transform:none}</style></noscript>
 </head>
@@ -81,170 +80,109 @@
 
 <div class="topbar"><img src="logo.png" alt="WHAPE" /><b>WHAPE</b></div>
 
-<!-- 1. HOOK / IDENTIFICACIÓN -->
+<!-- 1. HOOK -->
 <section class="hero">
   <div class="wrap">
-    <span class="eyebrow">Léelo con calma. Va de ti.</span>
-    <h1>Tarde o temprano, te vuelves <span class="grad">la conversación que más repites</span>.</h1>
-    <p class="lead">Y si te detienes a mirar, casi todas tus conversaciones de los últimos años trataron de lo mismo: lo caro que está todo, lo difícil que es el trabajo, la mala suerte, lo imposible que sería emprender “en este país”.</p>
-    <p class="lead">No lo elegiste. Es de lo que habla la gente a tu alrededor. Y poco a poco, sin notarlo, también empezó a ser de lo que hablas tú.</p>
+    <span class="eyebrow">Una pregunta incómoda</span>
+    <h1>¿Cuánto de tu día es <span class="grad">realmente tuyo</span>?</h1>
+    <p class="lead">Trabajas, vuelves cansado, y para lo que de verdad quieres hacer… ya no te queda energía.</p>
   </div>
 </section>
 
 <div class="divider"></div>
 
-<!-- 2. RECORDAR EXPERIENCIAS -->
+<!-- 2. COUNTDOWN + MATEMÁTICA -->
 <section>
   <div class="wrap reveal">
-    <div class="kick">¿Te suena esto?</div>
-    <h2>Una idea. Una emoción. Y alguien que la apagó.</h2>
-    <ul class="scenes">
-      <li>Tuviste una idea, te emocionaste, la contaste en la mesa… y alguien, con una sonrisita, te dijo: “eso ya lo hacen todos” o “mejor no te ilusiones”.</li>
-      <li>Quisiste estudiar algo nuevo, vender algo, intentar algo. Y antes de empezar, ya te habían dado diez razones de por qué iba a fracasar.</li>
-      <li>Hablaste de lo que sueñas y sentiste, en el aire, esa risa incómoda. La de quien cree que soñar es de ingenuos.</li>
-    </ul>
-    <p class="body">Y lo peor no fue el comentario. Lo peor fue lo que pasó después: <b>dejaste de contar tus ideas</b>. Para evitar la incomodidad, aprendiste a callarlas.</p>
-  </div>
-</section>
-
-<!-- 3. EL DESGASTE -->
-<section>
-  <div class="wrap reveal">
-    <div class="kick warn">Y eso cansa</div>
-    <h2>Cansa, aunque nunca lo digas en voz alta.</h2>
-    <p class="body">Cansa defender cada idea antes siquiera de intentarla. Cansa remar mientras los demás te explican por qué remar es inútil. Cansa ser el único que cree que las cosas podrían ser distintas.</p>
-    <p class="body">Y un día te descubres más callado. Más prudente. Más “realista”. Te dices que maduraste. Pero en el fondo lo sabes: no maduraste, te apagaste un poco.</p>
-    <div class="quote grad">No perdiste las ganas. Te las fueron quitando, comentario a comentario.</div>
-  </div>
-</section>
-
-<div class="divider"></div>
-
-<!-- 4. CONTAGIO -->
-<section>
-  <div class="wrap reveal">
-    <div class="kick">Lo que nadie te explicó</div>
-    <h2>Las ideas se contagian. La forma de pensar también.</h2>
-    <p class="body">No por lógica, sino por repetición. Si todos los días escuchas que emprender es imposible, que el dinero es difícil, que mejor no arriesgues… tu mente deja de buscar oportunidades. ¿Para qué buscar algo que “no existe”?</p>
-    <p class="body">Así, sin darte permiso, te conviertes en el promedio de las cinco personas con las que más hablas.</p>
-    <div class="quote">No estás viviendo tu potencial. Estás viviendo <span class="grad">tu entorno repetido mil veces</span>.</div>
-  </div>
-</section>
-
-<!-- 5. EL VERDADERO PROBLEMA -->
-<section>
-  <div class="wrap reveal">
-    <div class="kick">Aquí está lo que casi nadie entiende</div>
-    <h2>El problema no son las personas. Es el aire que respiran.</h2>
-    <p class="body">Tu gente probablemente te quiere. Probablemente solo intenta “protegerte” de una decepción. No son malas personas.</p>
-    <p class="body">El problema es invisible: es el <b>sistema de pensamiento</b> que comparten. Escasez. Miedo. Resignación. Victimismo. Un programa mental que corre en todos… y que también se instaló en ti.</p>
-    <p class="body">No tienes un problema de personas. Tienes un problema de <b>entorno</b>. Respiras el mismo pesimismo todos los días, y empezaste a creer que así es el mundo.</p>
-  </div>
-</section>
-
-<div class="divider"></div>
-
-<!-- 6. CONTRASTE -->
-<section>
-  <div class="wrap reveal">
-    <div class="kick go">Ahora imagina lo contrario</div>
-    <h2>¿Y si tu entorno te empujara… en vez de frenarte?</h2>
-    <p class="body">Imagina pasar tus días entre personas que, cuando les cuentas una idea, no te dicen “eso no sirve”, sino <b>“¿y cómo lo harías?”</b>. Que ven un problema y, en lugar de quejarse, preguntan: “¿cómo se resolvería esto… y se podría cobrar por hacerlo?”.</p>
-    <div class="contrast">
-      <div class="col now">
-        <h4>Donde estás hoy</h4>
-        <ul>
-          <li>✕ “Eso no funciona”</li>
-          <li>✕ Hablar de lo mal que está todo</li>
-          <li>✕ Soñar en silencio</li>
-          <li>✕ Cada problema es una excusa</li>
-        </ul>
-      </div>
-      <div class="col next">
-        <h4>Donde podrías estar</h4>
-        <ul>
-          <li>✓ “¿Y cómo lo harías?”</li>
-          <li>✓ Hablar de soluciones e ideas</li>
-          <li>✓ Compartir lo que te funciona</li>
-          <li>✓ Cada problema es una oportunidad</li>
-        </ul>
-      </div>
+    <div class="kick">Hagamos números</div>
+    <div class="count">
+      <div class="big grad" id="cDays">—</div>
+      <div class="lbl">días para que acabe el año</div>
+      <div class="tick" id="cTick">—</div>
     </div>
-    <p class="body" style="margin-top:24px">En un entorno así no necesitas más disciplina. Necesitas menos esfuerzo para creer. Porque cuando todos a tu alrededor crean, <b>crear se vuelve lo normal</b>.</p>
-  </div>
-</section>
-
-<!-- 7. DESEO DE PERTENECER -->
-<section>
-  <div class="wrap reveal">
-    <div class="kick">Existe gente así</div>
-    <h2>Más de la que crees. Y ya dejaron de quejarse.</h2>
-    <p class="body">Decidieron mirar el problema como una oportunidad y entrenar una habilidad que no enseñan en el colegio: <b>detectar oportunidades escondidas dentro de los problemas</b>, y convertirlas en soluciones, productos, servicios, negocios.</p>
-    <p class="body">Cuando te rodeas de personas que ven oportunidades donde otros solo ven obstáculos, empiezas a hacerte preguntas distintas. Y las preguntas distintas dan respuestas distintas. Y las respuestas distintas construyen, poco a poco, una vida distinta.</p>
+    <p class="body">Suena a mucho tiempo. Pero ese tiempo <b>no es tuyo</b>. Mira un día cualquiera:</p>
+    <div class="calc">
+      <div class="r"><span class="h">Tu día</span><span class="v">24 h</span></div>
+      <div class="r neg"><span class="h">− Dormir</span><span class="v">8 h</span></div>
+      <div class="r neg"><span class="h">− Trabajo y traslados</span><span class="v">9 h</span></div>
+      <div class="r neg"><span class="h">− Comer y pendientes</span><span class="v">2 h</span></div>
+      <div class="sep"></div>
+      <div class="r res"><span class="h">Para ti</span><span class="v">5 h</span></div>
+      <div class="note">…y llegas a ellas agotado.</div>
+    </div>
+    <p class="body">Cada día le das <b style="color:var(--warn)">9 horas</b> a un sueldo… y <b style="color:var(--gold)">5 horas cansadas</b> a tu propia vida.</p>
+    <div class="punch">De los <b id="mDays">—</b> días que faltan, solo <b id="mRealD">—</b> son <b>realmente tuyos</b>.<br><span style="color:var(--muted);font-weight:600;font-size:.8em">(<span id="mDays2">—</span> días × 5 h = <span id="mFreeH">—</span> horas tuyas)</span></div>
+    <p class="body" style="margin-top:20px">Y los vives sin energía.</p>
   </div>
 </section>
 
 <div class="divider"></div>
 
-<!-- 8. ESPERANZA -->
+<!-- 3. ENERGÍA > TIEMPO -->
 <section>
   <div class="wrap reveal">
-    <div class="kick go">Respira</div>
-    <h2>No estás estancado. Estás rodeado.</h2>
-    <p class="body">Hay una diferencia enorme. “Estancado” suena a que el problema eres tú. “Rodeado” significa que el problema es el lugar. Y el lugar <b>se puede cambiar</b>.</p>
-    <p class="body">No naciste para sobrevivir, para consumir más de lo que creas, para apagar tus ideas por miedo a la burla. Naciste para crear.</p>
-    <div class="quote grad">El día que cambias de entorno, cambias de futuro.</div>
+    <div class="kick go">La verdad</div>
+    <h2>No te falta tiempo. Te falta energía.</h2>
+    <p class="body">Con tiempo y sin energía, el tiempo no sirve de nada. Tus ideas necesitan energía. El enfoque necesita energía. Estar donde quieres, con quien quieres, necesita energía.</p>
   </div>
 </section>
 
-<!-- 9. WHAPE COMO SIGUIENTE PASO -->
+<!-- 4. EL LADRÓN -->
 <section>
   <div class="wrap reveal">
-    <div class="kick gold">Por eso existe esto</div>
-    <h2>WHAPE no es un curso. Es un cambio de aire.</h2>
-    <p class="body">Es el entorno que durante años buscaste y no encontrabas. Una comunidad donde cada problema se mira como una oportunidad, y donde se entrena la habilidad de convertir frustraciones en negocios que generan ingresos mientras mejoran la vida de otros.</p>
-    <p class="body">Donde las conversaciones no giran en torno a por qué no se puede… sino a <b>cómo sí</b>.</p>
-    <p class="body">El cambio de conversación. El cambio de personas. El cambio de futuro.</p>
+    <div class="kick warn">El ladrón</div>
+    <h2>Y tu entorno es quien te la roba.</h2>
+    <p class="body">La gente que se queja, que apaga tus ideas, que vive cansada y resignada… te drena sin que lo notes. La energía del entorno lo es todo.</p>
+    <div class="quote grad">Cambia el aire que respiras, y recuperas la energía para vivir lo que sí quieres.</div>
   </div>
 </section>
 
-<!-- 10. CTA -->
+<div class="divider"></div>
+
+<!-- 5. CTA -->
 <section class="cta">
   <div class="wrap reveal">
-    <span class="cupos">🔥 Solo abriré 100 cupos</span>
-    <h2>Hay una puerta. Solo tú decides cruzarla.</h2>
-    <p class="body">Del otro lado no hay un discurso de venta. Hay una experiencia: una conversación que va a cambiar la forma en que ves tus propios problemas. Vas a descubrir, paso a paso, cómo eso que hoy te frustra podría ser el inicio de tu próximo negocio.</p>
-    <div style="margin-top:26px">
-      <a class="btn" data-ev="reto_start" href="/reto">Quiero ver el otro lado →</a>
-    </div>
-    <p class="sub">Toma 2 minutos. Y quizás no vuelvas a ver tus problemas igual.</p>
+    <span class="cupos">🔥 Solo 100 cupos</span>
+    <h2>Hay un lugar hecho para devolverte tu energía.</h2>
+    <p class="body">Del otro lado hay una experiencia de 2 minutos que puede cambiar cómo ves tu tiempo… y tus problemas.</p>
+    <div style="margin-top:24px"><a class="btn" data-ev="reto_start" href="/reto">Quiero recuperar mi tiempo →</a></div>
+    <p class="sub">Toma 2 minutos.</p>
   </div>
 </section>
 
 <footer>WHAPE · Hecho en Perú 🇵🇪</footer>
 
-<div class="float" id="float"><a data-ev="reto_start" href="/reto">Empezar la experiencia →</a></div>
-
 <script>
-  // Revelado al hacer scroll
+  function pad(n){ return n < 10 ? '0' + n : '' + n; }
+  function set(id, v){ var e = document.getElementById(id); if(e) e.textContent = v; }
+  function tick(){
+    var now = new Date();
+    var end = new Date(now.getFullYear(), 11, 31, 23, 59, 59);
+    var diff = end - now;
+    var days = Math.floor(diff / 86400000);
+    var h = Math.floor(diff % 86400000 / 3600000);
+    var m = Math.floor(diff % 3600000 / 60000);
+    var s = Math.floor(diff % 60000 / 1000);
+    set('cDays', days);
+    set('cTick', pad(h) + 'h ' + pad(m) + 'm ' + pad(s) + 's');
+    return days;
+  }
+  function fillMath(){
+    var days = tick();
+    var freeH = days * 5;
+    var realD = Math.round(freeH / 24);
+    set('mDays', days); set('mDays2', days);
+    set('mFreeH', freeH.toLocaleString('es-PE'));
+    set('mRealD', realD);
+  }
+  fillMath();
+  setInterval(tick, 1000);
+
   (function(){
     var els = document.querySelectorAll('.reveal');
     if(!('IntersectionObserver' in window)){ els.forEach(function(e){ e.classList.add('in'); }); return; }
-    var io = new IntersectionObserver(function(entries){
-      entries.forEach(function(en){ if(en.isIntersecting){ en.target.classList.add('in'); io.unobserve(en.target); } });
-    }, { threshold:.14 });
+    var io = new IntersectionObserver(function(en){ en.forEach(function(x){ if(x.isIntersecting){ x.target.classList.add('in'); io.unobserve(x.target); } }); }, { threshold:.14 });
     els.forEach(function(e){ io.observe(e); });
-  })();
-  // CTA flotante: aparece cuando ya leyó bastante
-  (function(){
-    var f = document.getElementById('float');
-    function onScroll(){
-      var sc = window.scrollY + window.innerHeight;
-      var h = document.body.scrollHeight;
-      var ratio = sc / h;
-      if(ratio > 0.55 && ratio < 0.97) f.classList.add('show'); else f.classList.remove('show');
-    }
-    window.addEventListener('scroll', onScroll, { passive:true }); onScroll();
   })();
 </script>
 <script defer src="/_vercel/insights/script.js"></script>
