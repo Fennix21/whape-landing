@@ -132,8 +132,16 @@
   #lbClose{position:fixed;top:16px;right:16px;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.25)}
   #lbClose:hover{background:rgba(255,255,255,.26)}
   /* Editor del prompt del bot */
-  #promptModal,#statsModal,#tplModal,#wtplModal,#communityModal,#progressModal,#inboxModal{display:none;position:fixed;inset:0;z-index:120;background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:18px}
-  #promptModal.open,#statsModal.open,#tplModal.open,#wtplModal.open,#communityModal.open,#progressModal.open,#inboxModal.open{display:flex}
+  #promptModal,#statsModal,#tplModal,#wtplModal,#communityModal,#progressModal,#inboxModal,#feedModal{display:none;position:fixed;inset:0;z-index:120;background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:18px}
+  #promptModal.open,#statsModal.open,#tplModal.open,#wtplModal.open,#communityModal.open,#progressModal.open,#inboxModal.open,#feedModal.open{display:flex}
+  .fa-row{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--stroke);border-radius:10px;padding:11px;margin-bottom:9px}
+  .fa-main{flex:1;min-width:0}
+  .fa-t{font-weight:700;font-size:14px;margin-bottom:3px}
+  .fa-meta{color:var(--muted);font-size:12px;margin-bottom:5px}
+  .fa-body{font-size:13px;color:var(--text);opacity:.85;white-space:pre-wrap;word-break:break-word;max-height:60px;overflow:hidden}
+  .fa-actions{display:flex;flex-direction:column;gap:6px;flex:none}
+  .fa-actions button{background:var(--surface2);border:1px solid var(--stroke);color:var(--text);border-radius:8px;padding:6px 10px;cursor:pointer;font-family:inherit;font-size:12px;font-weight:700;white-space:nowrap}
+  .fa-actions .fa-del{color:#ff6b81;border-color:#ff6b81}
   .cmin{width:100%;padding:10px 12px;margin-bottom:0;border-radius:9px;border:1px solid var(--stroke);background:var(--bg);color:#fff;font-family:inherit;font-size:14px}
   .cmin:focus{outline:none;border-color:var(--accent)}
   .cm-stats{display:flex;gap:10px;margin-bottom:14px}
@@ -305,6 +313,7 @@
     <button class="ref" id="viewToggle" onclick="toggleView()" style="margin-right:8px">🗂️ Embudo</button>
     <button class="ref" onclick="openStats()" style="margin-right:8px">📊 Analíticas</button>
     <button class="ref" onclick="openCommunity()" style="margin-right:8px">📚 Comunidad</button>
+    <button class="ref" onclick="openFeed()" style="margin-right:8px">🗣️ Feed</button>
     <button class="ref" onclick="openProgress()" style="margin-right:8px">📈 Progreso</button>
     <button class="ref" onclick="openInbox()" style="margin-right:8px;position:relative">📥 Bandeja<span id="inboxBadge" class="ibx-badge">0</span></button>
     <button class="ref" onclick="openPrompt()" style="margin-right:8px">⚙️ Bot</button>
@@ -423,6 +432,19 @@
       <button class="pm-x" onclick="closeProgress()" aria-label="Cerrar">✕</button>
     </div>
     <div id="progBody" style="overflow-y:auto;max-height:76vh;padding:2px"></div>
+  </div>
+</div>
+
+<div id="feedModal">
+  <div class="pm-card" style="max-width:680px">
+    <div class="pm-head">
+      <strong>🗣️ Comunidad · Publicaciones</strong>
+      <button class="pm-x" onclick="closeFeed()" aria-label="Cerrar">✕</button>
+    </div>
+    <div style="overflow-y:auto;max-height:74vh;padding:2px 2px 4px">
+      <p class="pm-hint">Modera el feed: fija lo importante 📌 o elimina lo que no corresponda.</p>
+      <div id="feedAdminList"></div>
+    </div>
   </div>
 </div>
 
@@ -837,6 +859,27 @@
     });
   }
   function closeStats(){ document.getElementById('statsModal').classList.remove('open'); }
+  // --- Comunidad: moderación del feed ---
+  function openFeed(){ document.getElementById('feedModal').classList.add('open'); loadFeedAdmin(); }
+  function closeFeed(){ document.getElementById('feedModal').classList.remove('open'); }
+  function loadFeedAdmin(){
+    var el=document.getElementById('feedAdminList'); el.innerHTML='<p class="pm-hint">Cargando…</p>';
+    capi('feedlist').then(function(res){
+      if(!res.ok){ el.innerHTML='<p class="pm-hint">'+esc((res.d&&res.d.error)||'No se pudo cargar.')+'</p>'; return; }
+      var posts=res.d.posts||[];
+      if(!posts.length){ el.innerHTML='<p class="pm-hint">Aún no hay publicaciones en la comunidad.</p>'; return; }
+      el.innerHTML=posts.map(function(p){
+        return '<div class="fa-row" id="fa-'+p.id+'">'
+          +'<div class="fa-main"><div class="fa-t">'+(p.pinned?'📌 ':'')+esc(p.title||'(sin título)')+'</div>'
+          +'<div class="fa-meta">'+esc(p.name||'Miembro')+' · '+esc(p.cat||'')+' · ❤ '+p.likes+' · 💬 '+p.comments+'</div>'
+          +'<div class="fa-body">'+esc(p.body||'')+'</div></div>'
+          +'<div class="fa-actions"><button onclick="pinFeed(\''+p.id+'\')">'+(p.pinned?'📌 Quitar':'📌 Fijar')+'</button>'
+          +'<button class="fa-del" onclick="delFeed(\''+p.id+'\')">🗑 Borrar</button></div></div>';
+      }).join('');
+    });
+  }
+  function pinFeed(id){ capi('feedpin',{id:id}).then(function(res){ if(!res.ok){ alert((res.d&&res.d.error)||'No se pudo.'); return; } loadFeedAdmin(); }); }
+  function delFeed(id){ if(!confirm('¿Borrar esta publicación de la comunidad? No se puede deshacer.')) return; capi('feeddel',{id:id}).then(function(res){ if(!res.ok){ alert((res.d&&res.d.error)||'No se pudo.'); return; } var r=document.getElementById('fa-'+id); if(r) r.remove(); }); }
   // --- Academia (gestión de módulos → clases) ---
   var CM_TREE=[], CM_MEMBERS=0, CM_CUR=null, CM_CFG={groupLink:'',waText:''}, CM_CURLES=null;
   function capi(sub, extra){
