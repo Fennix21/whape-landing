@@ -211,6 +211,68 @@
   /* Fase 4: tema claro + toolbar + grilla */
   body.light{--bg:#F5F3FB;--surface:#FFFFFF;--surface2:#F0ECF9;--stroke:#E4DEF2;--text:#1B1430;--muted:#6E6790}
   .iconbtn{background:var(--surface2);border:1px solid var(--stroke);color:var(--text);font-size:15px;width:36px;height:34px;border-radius:9px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;padding:0}
+  /* ===== Comunidad (estilo Skool) ===== */
+  .seg{display:inline-flex;background:var(--surface2);border:1px solid var(--stroke);border-radius:10px;padding:3px;gap:2px}
+  .seg button{background:transparent;border:0;color:var(--muted);font-family:inherit;font-weight:700;font-size:12.5px;padding:6px 11px;border-radius:8px;cursor:pointer;white-space:nowrap}
+  .seg button.on{background:linear-gradient(120deg,var(--accent),var(--accent2));color:#fff}
+  .feed-wrap{display:grid;grid-template-columns:1fr 290px;gap:18px;align-items:start}
+  .feed-side{display:flex;flex-direction:column;gap:14px;position:sticky;top:74px}
+  .side-card{background:var(--surface);border:1px solid var(--stroke);border-radius:14px;padding:16px}
+  .side-h{font-weight:800;font-size:14px;margin-bottom:12px}
+  .composer{background:var(--surface);border:1px solid var(--stroke);border-radius:14px;padding:12px;margin-bottom:14px}
+  .cmp-collapsed{display:flex;align-items:center;gap:10px;cursor:pointer;color:var(--muted);font-size:14px}
+  .cmp-av,.p-av,.ml-av{width:38px;height:38px;border-radius:50%;object-fit:cover;background:var(--surface2);flex:none}
+  .cmp-cat,.feed-sort{background:var(--surface2);border:1px solid var(--stroke);color:var(--text);border-radius:9px;padding:8px 10px;font-family:inherit;font-size:13px}
+  .cmp-cat{width:100%;margin-bottom:8px}
+  .cmp-title{width:100%;background:var(--surface2);border:1px solid var(--stroke);color:var(--text);border-radius:9px;padding:9px 11px;font-family:inherit;font-weight:700;margin-bottom:8px}
+  .cmp-body{width:100%;min-height:90px;background:var(--surface2);border:1px solid var(--stroke);color:var(--text);border-radius:9px;padding:10px 11px;font-family:inherit;font-size:14px;resize:vertical}
+  .cmp-foot{display:flex;justify-content:flex-end;gap:8px;margin-top:8px}
+  .cmp-cancel{background:transparent;border:1px solid var(--stroke);color:var(--muted);border-radius:9px;padding:8px 14px;cursor:pointer;font-family:inherit;font-weight:700}
+  .cmp-post{background:linear-gradient(120deg,var(--accent),var(--accent2));border:0;color:#fff;border-radius:9px;padding:8px 18px;cursor:pointer;font-family:inherit;font-weight:700}
+  .cmp-err{color:var(--warn,#ff6b81);font-size:12.5px;margin-top:6px}
+  .feed-bar{display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap}
+  .feed-cats{display:flex;gap:7px;flex-wrap:wrap;flex:1}
+  .fcat{background:var(--surface);border:1px solid var(--stroke);color:var(--muted);border-radius:999px;padding:6px 13px;font-family:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
+  .fcat.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .post{background:var(--surface);border:1px solid var(--stroke);border-radius:14px;padding:16px;margin-bottom:14px}
+  .p-head{display:flex;align-items:center;gap:10px}
+  .p-meta{flex:1;min-width:0}
+  .p-name{font-weight:700;font-size:14px}
+  .p-sub{color:var(--muted);font-size:12px}
+  .lvl{display:inline-block;background:var(--surface2);border:1px solid var(--stroke);color:var(--accent);font-size:10.5px;font-weight:800;padding:1px 6px;border-radius:6px;vertical-align:middle}
+  .lvl.sm{font-size:9.5px}
+  .pin{color:var(--success);font-size:11.5px;font-weight:700}
+  .pdel,.cdel{background:transparent;border:0;color:var(--muted);cursor:pointer;font-size:14px}
+  .p-title{font-weight:800;font-size:16px;margin:10px 0 4px}
+  .p-body{font-size:14px;color:var(--text);line-height:1.55;word-break:break-word}
+  .p-actions{display:flex;gap:10px;margin-top:12px}
+  .pa{background:var(--surface2);border:1px solid var(--stroke);color:var(--muted);border-radius:9px;padding:6px 12px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:600}
+  .pa.liked{color:#ff6b81;border-color:#ff6b81}
+  .p-comments{margin-top:12px;border-top:1px solid var(--stroke);padding-top:12px}
+  .cm{display:flex;gap:9px;margin-bottom:10px}
+  .cm-av{width:30px;height:30px;border-radius:50%;object-fit:cover;flex:none;background:var(--surface2)}
+  .cm-b{flex:1;background:var(--surface2);border-radius:10px;padding:8px 11px;font-size:13.5px}
+  .cm-n{font-weight:700;font-size:13px;display:block;margin-bottom:2px}
+  .cm-t{color:var(--muted);font-size:11px;margin-top:3px}
+  .cm-add{display:flex;gap:8px;margin-top:6px}
+  .cm-add input{flex:1;background:var(--surface2);border:1px solid var(--stroke);color:var(--text);border-radius:9px;padding:8px 11px;font-family:inherit;font-size:13px}
+  .cm-add button{background:var(--accent);border:0;color:#fff;border-radius:9px;padding:0 14px;cursor:pointer;font-size:14px}
+  .ml-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .ml-name{font-weight:700;font-size:14px}
+  .ml-lvl{color:var(--accent);font-size:12px;font-weight:700}
+  .ml-pts{font-size:22px;font-weight:800}
+  .ml-hint{color:var(--muted);font-size:11.5px;margin-top:4px}
+  .lb-list{display:flex;flex-direction:column;gap:8px}
+  .lb-row{display:flex;align-items:center;gap:8px;font-size:13px}
+  .lb-row.me{background:var(--surface2);border-radius:8px;padding:4px 6px;margin:0 -6px}
+  .lb-rk{display:inline-block;width:20px;text-align:center;color:var(--muted);font-weight:700}
+  .lb-av{width:26px;height:26px;border-radius:50%;object-fit:cover;background:var(--surface2)}
+  .lb-nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .lb-pt{font-weight:800;color:var(--accent)}
+  .lb-more{margin-top:10px;background:transparent;border:1px solid var(--stroke);color:var(--muted);border-radius:9px;padding:7px;width:100%;cursor:pointer;font-family:inherit;font-weight:700;font-size:12.5px}
+  .lb-empty{color:var(--muted);font-size:12.5px}
+  @media(max-width:760px){ .feed-wrap{grid-template-columns:1fr} .feed-side{position:static} }
+  @media(max-width:560px){ .top img{display:none} .top .ti{font-size:14px} .seg button{padding:6px 9px;font-size:12px} }
   .iconbtn:hover{border-color:var(--accent)}
   .ls-search{width:100%;padding:11px 14px;font-size:14px;border-radius:11px;border:1px solid var(--stroke);background:var(--surface);color:var(--text);font-family:inherit;margin-bottom:12px}
   .ls-search:focus{outline:none;border-color:var(--accent)}
@@ -305,8 +367,9 @@
 <div id="app">
   <div class="top">
     <img src="logo.png" alt="WHAPE" />
-    <span class="ti">Comunidad WHAPE</span>
+    <span class="ti" id="topTitle">Comunidad WHAPE</span>
     <div class="topright">
+      <div class="seg"><button id="segCom" class="on" onclick="goSection('comunidad')">Comunidad</button><button id="segAca" onclick="goSection('academia')">Academia</button></div>
       <button class="iconbtn" id="bellBtn" onclick="toggleNotif(event)" title="Avisos" style="position:relative">🔔<span id="bellBadge" class="bell-badge">0</span></button>
       <button class="iconbtn" id="themeBtn" onclick="toggleTheme()" title="Cambiar tema">🌙</button>
       <button class="acct-btn" id="acctBtn" onclick="toggleAcctMenu(event)"><img id="acctAvatar" src="logo.png" class="acct-av" alt="" /><span class="acct-name" id="meName"></span><span class="acct-caret">▾</span></button>
@@ -315,6 +378,47 @@
     </div>
   </div>
   <div class="wrap">
+    <!-- ===== COMUNIDAD (feed estilo Skool) ===== -->
+    <div id="sectionComunidad" style="display:none">
+      <div class="feed-wrap">
+        <div class="feed-main">
+          <div class="composer">
+            <div class="cmp-collapsed" id="cmpCollapsed" onclick="openComposer()">
+              <img id="cmpAvatar" src="logo.png" class="cmp-av" alt="" />
+              <span>Escribe algo para la comunidad…</span>
+            </div>
+            <div class="cmp-form" id="cmpForm" style="display:none">
+              <select id="cmpCat" class="cmp-cat"></select>
+              <input id="cmpTitle" class="cmp-title" maxlength="140" placeholder="Título (opcional)" />
+              <textarea id="cmpBody" class="cmp-body" maxlength="4000" placeholder="¿Qué quieres compartir o preguntar?"></textarea>
+              <div class="cmp-foot">
+                <button class="cmp-cancel" onclick="closeComposer()">Cancelar</button>
+                <button class="cmp-post" onclick="createPost()">Publicar</button>
+              </div>
+              <div class="cmp-err" id="cmpErr"></div>
+            </div>
+          </div>
+          <div class="feed-bar">
+            <div class="feed-cats" id="feedCats"></div>
+            <select id="feedSort" class="feed-sort" onchange="loadFeed()">
+              <option value="recent">Recientes</option>
+              <option value="top">Populares</option>
+            </select>
+          </div>
+          <div id="feedList"></div>
+        </div>
+        <aside class="feed-side">
+          <div class="side-card" id="myLevelCard"></div>
+          <div class="side-card">
+            <div class="side-h">🏆 Ranking</div>
+            <div id="leaderList" class="lb-list"></div>
+            <button class="lb-more" onclick="openLeaderboard()">Ver todo</button>
+          </div>
+        </aside>
+      </div>
+    </div>
+    <!-- ===== ACADEMIA ===== -->
+    <div id="sectionAcademia">
     <!-- INICIO -->
     <div id="viewHome">
       <div class="hello" id="hello"></div>
@@ -365,6 +469,7 @@
         </div>
       </div>
     </div>
+    </div><!-- /sectionAcademia -->
   </div>
 </div>
 
@@ -596,6 +701,7 @@
     if(res.d.name){ NAME=res.d.name; }
     applyAccountUI();
     goHome();
+    initSection();
     maybeShowEmailPopup();
   }
 
@@ -707,6 +813,122 @@
 
   // ---- calificación + comentarios ----
   function timeAgo(ts){ if(!ts) return ''; var s=Math.floor((Date.now()-ts)/1000); if(s<60) return 'hace un momento'; var m=Math.floor(s/60); if(m<60) return 'hace '+m+' min'; var h=Math.floor(m/60); if(h<24) return 'hace '+h+' h'; var d=Math.floor(h/24); if(d<30) return 'hace '+d+' d'; return new Date(ts).toLocaleDateString('es-PE',{day:'numeric',month:'short'}); }
+
+  // ===== Comunidad (feed estilo Skool) =====
+  var CURSEC='comunidad', CURCAT='all', FEEDCATS=[], FEEDMAP={};
+  var LVL_NAMES=['Novato','Aprendiz','Constructor','Vendedor','Experto','Líder','Maestro','Leyenda','Élite'];
+  function goSection(s){
+    if(s!=='comunidad' && s!=='academia') s='comunidad';
+    CURSEC=s; try{ localStorage.setItem('whape_section', s); }catch(e){}
+    var sc=document.getElementById('sectionComunidad'), sa=document.getElementById('sectionAcademia');
+    if(sc) sc.style.display = s==='comunidad'?'block':'none';
+    if(sa) sa.style.display = s==='academia'?'block':'none';
+    var t=document.getElementById('topTitle'); if(t) t.textContent=(s==='comunidad'?'Comunidad':'Academia')+' WHAPE';
+    var bc=document.getElementById('segCom'), ba=document.getElementById('segAca');
+    if(bc) bc.classList.toggle('on', s==='comunidad'); if(ba) ba.classList.toggle('on', s==='academia');
+    window.scrollTo(0,0);
+    if(s==='comunidad'){ var cv=document.getElementById('cmpAvatar'); if(cv) cv.src=(ACADEMY&&ACADEMY.avatar)||'logo.png'; loadFeed(); loadLeaderboard(); }
+  }
+  function initSection(){ var s=''; try{ s=localStorage.getItem('whape_section')||''; }catch(e){} goSection(s||'comunidad'); }
+  function catLabel(id){ for(var i=0;i<FEEDCATS.length;i++){ if(FEEDCATS[i].id===id) return esc(FEEDCATS[i].label); } return '💬 General'; }
+  function loadFeed(){
+    var sortEl=document.getElementById('feedSort'); var sort=sortEl?sortEl.value:'recent';
+    api('feed',{token:TOKEN, cat:CURCAT, sort:sort}).then(function(res){
+      if(!res.ok){ if(res.d && /sesión/i.test(res.d.error||'')){ logout(); return; } var fl=document.getElementById('feedList'); if(fl) fl.innerHTML='<div class="empty2">No se pudo cargar la comunidad.</div>'; return; }
+      FEEDCATS=res.d.cats||[];
+      renderCats(); renderComposerCats(); renderMyLevel(res.d.me);
+      renderFeed(res.d.posts||[]);
+    });
+  }
+  function renderCats(){
+    var el=document.getElementById('feedCats'); if(!el) return;
+    var html='<button class="fcat'+(CURCAT==='all'?' on':'')+'" onclick="setCat(\'all\')">Todo</button>';
+    FEEDCATS.forEach(function(c){ html+='<button class="fcat'+(CURCAT===c.id?' on':'')+'" onclick="setCat(\''+c.id+'\')">'+esc(c.label)+'</button>'; });
+    el.innerHTML=html;
+  }
+  function setCat(id){ CURCAT=id; loadFeed(); }
+  function renderComposerCats(){ var sel=document.getElementById('cmpCat'); if(!sel) return; sel.innerHTML=FEEDCATS.map(function(c){ return '<option value="'+esc(c.id)+'">'+esc(c.label)+'</option>'; }).join(''); }
+  function openComposer(){ document.getElementById('cmpCollapsed').style.display='none'; document.getElementById('cmpForm').style.display='block'; document.getElementById('cmpBody').focus(); }
+  function closeComposer(){ document.getElementById('cmpForm').style.display='none'; document.getElementById('cmpCollapsed').style.display='flex'; var e=document.getElementById('cmpErr'); if(e) e.textContent=''; }
+  function createPost(){
+    var cat=document.getElementById('cmpCat').value, title=document.getElementById('cmpTitle').value.trim(), body=document.getElementById('cmpBody').value.trim();
+    var err=document.getElementById('cmpErr'); err.textContent='';
+    if(!body && !title){ err.textContent='Escribe algo para publicar.'; return; }
+    api('feedpost',{token:TOKEN,cat:cat,title:title,body:body}).then(function(res){
+      if(!res.ok){ err.textContent=(res.d&&res.d.error)||'No se pudo publicar.'; return; }
+      document.getElementById('cmpTitle').value=''; document.getElementById('cmpBody').value=''; closeComposer(); loadFeed();
+    });
+  }
+  function renderFeed(posts){
+    FEEDMAP={}; posts.forEach(function(p){ FEEDMAP[p.id]=p; });
+    var el=document.getElementById('feedList'); if(!el) return;
+    if(!posts.length){ el.innerHTML='<div class="empty2">📝 Aún no hay publicaciones. ¡Sé el primero en escribir!</div>'; return; }
+    el.innerHTML=posts.map(postCard).join('');
+  }
+  function postCard(p){
+    var lvl='<span class="lvl">Nv '+(p.authorLevel||1)+'</span>';
+    var pin=p.pinned?'<span class="pin">📌 Fijado</span>':'';
+    var del=p.mine?'<button class="pdel" onclick="delPost(\''+p.id+'\')" title="Borrar">🗑</button>':'';
+    var title=p.title?'<div class="p-title">'+esc(p.title)+'</div>':'';
+    return '<div class="post" id="post-'+p.id+'">'
+      +'<div class="p-head"><img src="'+esc(p.avatar||'logo.png')+'" class="p-av" alt=""/>'
+      +'<div class="p-meta"><div class="p-name">'+esc(p.name||'Miembro')+' '+lvl+'</div><div class="p-sub">'+catLabel(p.cat)+' · '+timeAgo(p.ts)+'</div></div>'+pin+del+'</div>'
+      +title
+      +'<div class="p-body">'+esc(p.body).replace(/\n/g,'<br>')+'</div>'
+      +'<div class="p-actions"><button class="pa'+(p.liked?' liked':'')+'" onclick="likePost(\''+p.id+'\')">❤ <span>'+p.likeCount+'</span></button>'
+      +'<button class="pa" onclick="toggleComments(\''+p.id+'\')">💬 <span>'+p.commentCount+'</span></button></div>'
+      +'<div class="p-comments" id="cm-'+p.id+'" style="display:none">'+commentsHtml(p)+'</div></div>';
+  }
+  function commentsHtml(p){
+    var list=(p.comments||[]).map(function(c){
+      var del=c.mine?'<button class="cdel" onclick="delComment(\''+p.id+'\',\''+c.id+'\')" title="Borrar">🗑</button>':'';
+      return '<div class="cm"><img src="'+esc(c.avatar||'logo.png')+'" class="cm-av" alt=""/><div class="cm-b"><span class="cm-n">'+esc(c.name||'Miembro')+' <span class="lvl sm">Nv '+(c.level||1)+'</span></span>'+esc(c.body).replace(/\n/g,'<br>')+'<div class="cm-t">'+timeAgo(c.ts)+'</div></div>'+del+'</div>';
+    }).join('');
+    return '<div class="cm-list">'+list+'</div><div class="cm-add"><input id="ci-'+p.id+'" placeholder="Escribe un comentario…" onkeydown="if(event.key===\'Enter\'){event.preventDefault();addComment(\''+p.id+'\');}"/><button onclick="addComment(\''+p.id+'\')">➤</button></div>';
+  }
+  function toggleComments(id){ var b=document.getElementById('cm-'+id); if(b) b.style.display = b.style.display==='none'?'block':'none'; }
+  function likePost(id){
+    api('feedlike',{token:TOKEN,id:id}).then(function(res){
+      if(!res.ok){ alert((res.d&&res.d.error)||'No se pudo.'); return; }
+      var p=FEEDMAP[id]; if(p){ p.liked=res.d.liked; p.likeCount=res.d.likeCount; }
+      var card=document.getElementById('post-'+id); if(card){ var btn=card.querySelector('.p-actions .pa'); if(btn){ btn.classList.toggle('liked',res.d.liked); btn.querySelector('span').textContent=res.d.likeCount; } }
+    });
+  }
+  function addComment(id){
+    var inp=document.getElementById('ci-'+id); if(!inp) return; var v=inp.value.trim(); if(!v) return;
+    api('feedcomment',{token:TOKEN,id:id,body:v}).then(function(res){
+      if(!res.ok){ alert((res.d&&res.d.error)||'No se pudo.'); return; }
+      var p=FEEDMAP[id]; if(p){ p.comments=p.comments||[]; p.comments.push(res.d.comment); p.commentCount=(p.commentCount||0)+1; var box=document.getElementById('cm-'+id); if(box) box.innerHTML=commentsHtml(p); var card=document.getElementById('post-'+id); if(card){ var bs=card.querySelectorAll('.p-actions .pa'); if(bs[1]) bs[1].querySelector('span').textContent=p.commentCount; } }
+    });
+  }
+  function delPost(id){
+    if(!confirm('¿Borrar esta publicación?')) return;
+    api('feeddel',{token:TOKEN,id:id}).then(function(res){ if(!res.ok){ alert((res.d&&res.d.error)||'No se pudo.'); return; } var c=document.getElementById('post-'+id); if(c) c.remove(); });
+  }
+  function delComment(pid,cid){
+    if(!confirm('¿Borrar este comentario?')) return;
+    api('feedcommentdel',{token:TOKEN,postId:pid,commentId:cid}).then(function(res){
+      if(!res.ok){ alert((res.d&&res.d.error)||'No se pudo.'); return; }
+      var p=FEEDMAP[pid]; if(p){ p.comments=(p.comments||[]).filter(function(x){return x.id!==cid;}); p.commentCount=Math.max(0,(p.commentCount||1)-1); var box=document.getElementById('cm-'+pid); if(box) box.innerHTML=commentsHtml(p); var card=document.getElementById('post-'+pid); if(card){ var bs=card.querySelectorAll('.p-actions .pa'); if(bs[1]) bs[1].querySelector('span').textContent=p.commentCount; } }
+    });
+  }
+  function renderMyLevel(me){
+    var el=document.getElementById('myLevelCard'); if(!el||!me) return;
+    var nm=LVL_NAMES[(me.level||1)-1]||'Miembro';
+    el.innerHTML='<div class="ml-row"><img src="'+esc((ACADEMY&&ACADEMY.avatar)||'logo.png')+'" class="ml-av" alt=""/><div><div class="ml-name">'+esc(NAME||'Tú')+'</div><div class="ml-lvl">Nivel '+(me.level||1)+' · '+nm+'</div></div></div><div class="ml-pts">'+(me.points||0)+' <span style="font-size:12px;color:var(--muted);font-weight:600">puntos</span></div><div class="ml-hint">Ganas puntos cuando le dan ❤ a tus publicaciones.</div>';
+  }
+  function loadLeaderboard(full){
+    api('leaderboard',{token:TOKEN}).then(function(res){
+      if(!res.ok) return; var el=document.getElementById('leaderList'); if(!el) return;
+      var rows=res.d.top||[]; if(!full) rows=rows.slice(0,8);
+      if(!rows.length){ el.innerHTML='<div class="lb-empty">Aún sin participación. ¡Empieza tú!</div>'; return; }
+      el.innerHTML=rows.map(function(r){
+        var medal=r.rank===1?'🥇':r.rank===2?'🥈':r.rank===3?'🥉':'<span class="lb-rk">'+r.rank+'</span>';
+        return '<div class="lb-row'+(r.me?' me':'')+'">'+medal+'<img src="'+esc(r.avatar||'logo.png')+'" class="lb-av" alt=""/><span class="lb-nm">'+esc(r.name||'Miembro')+'</span><span class="lb-pt">'+r.points+'</span></div>';
+      }).join('');
+    });
+  }
+  function openLeaderboard(){ loadLeaderboard(true); }
   function loadLessonExtras(){
     document.getElementById('rateBox').innerHTML='';
     resetFeedback();
