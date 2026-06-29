@@ -12,23 +12,7 @@ const crypto = require('crypto');
 const { DEFAULT_PROMPT } = require('./_prompt');
 const GRAPH = 'https://graph.facebook.com/v21.0';
 
-// --- Generación de la clave de activación (idéntica a api/genkey.js y a la app) ---
-const B32 = '0123456789ABCDEFGHJKMNPQRSTVWXYZ';
-function base32(buf) {
-  let value = 0, bits = 0, out = '';
-  for (const b of buf) {
-    value = (value << 8) | b; bits += 8;
-    while (bits >= 5) { out += B32[(value >>> (bits - 5)) & 31]; bits -= 5; value &= (1 << bits) - 1; }
-  }
-  if (bits > 0) out += B32[(value << (5 - bits)) & 31];
-  return out;
-}
-function makeKey(code) {
-  const canonical = (code || '').replace(/[^a-z0-9]/gi, '').toLowerCase();
-  if (canonical.length < 6) return null;
-  const mac = crypto.createHmac('sha256', process.env.WHAPE_SECRET).update(canonical, 'utf8').digest();
-  return base32(mac.subarray(0, 10)).match(/.{1,4}/g).join('-');
-}
+// (Generación de claves de activación de la app: archivada en ../OYE-app-archivo para OYE)
 const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
 const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
 
@@ -66,10 +50,10 @@ async function persist(lead) {
 
 // Plantillas de respuesta rápida por defecto (editables desde el panel).
 const DEFAULT_TEMPLATES = [
-  { label: '💳 Datos para Yape', text: 'Para activar WHAPE son S/21 por Yape. Te paso el número: [PON AQUÍ TU NÚMERO DE YAPE]. Cuando pagues, mándame la captura del comprobante y te envío tu clave. 🙌' },
-  { label: '📲 Guía de instalación', text: 'Aquí tienes la guía paso a paso para instalar WHAPE: whape.club/guia 📲' },
-  { label: '👋 ¿Sigues ahí?', text: '¡Hola! 👋 ¿Sigues interesado en WHAPE? Cualquier duda, con gusto te ayudo.' },
-  { label: '🔑 Pedir código', text: 'Para enviarte tu clave necesito tu "Código de equipo": abre WHAPE → pantalla de activación → cópiame el código que aparece (ej. A7F3-9KQ2-1MBW-ZX08).' },
+  { label: '👋 Saludo', text: '¡Hola! 👋 Gracias por escribir. Cuéntame: ¿qué problema quieres resolver o qué quieres vender? Así te oriento mejor. 🙌' },
+  { label: '💡 Cómo funciona', text: 'Te enseño a detectar un problema de alto impacto, crear la solución y venderla con un sistema que capta, nutre y cierra por WhatsApp (landing + bot + CRM + academia). 🚀' },
+  { label: '💳 Datos de pago', text: 'Para empezar, el pago es por Yape al [PON AQUÍ TU NÚMERO]. Cuando pagues, mándame la captura y te doy acceso al sistema. 🙌' },
+  { label: '👀 ¿Sigues ahí?', text: '¡Hola! 👋 ¿Sigues interesado? Cualquier duda sobre el sistema, con gusto te ayudo.' },
 ];
 
 const { flushDueReminders } = require('./_reminders');
@@ -134,29 +118,6 @@ module.exports = async (req, res) => {
       l.status = b.status;
       await redis(['SET', 'lead:' + l.phone, JSON.stringify(l)]);
       return res.status(200).json({ ok: true });
-    }
-
-    if (b.action === 'genkey') {
-      if (!process.env.WHAPE_SECRET) return res.status(500).json({ error: 'Falta WHAPE_SECRET en Vercel.' });
-      const key = makeKey(b.code);
-      if (!key) return res.status(400).json({ error: 'Código de equipo inválido. Pídele al cliente el código completo (ej. A7F3-9KQ2-1MBW-ZX08).' });
-      const cuerpo =
-        '🎉 ¡Pago confirmado! Aquí está tu *clave de activación* de WHAPE:\n\n' +
-        '🔑 *' + key + '*\n\n' +
-        'Para activar:\n' +
-        '1) Abre WHAPE en tu celular.\n' +
-        '2) En la pantalla de activación, escribe o pega esta clave.\n' +
-        '3) Toca "Activar". ¡Listo! 🎊\n\n' +
-        '📲 Guía completa: whape.club/guia\n' +
-        '¡Gracias por tu compra! 🙌';
-      await sendWhatsApp(b.phone, cuerpo);
-      const l = await loadLead(b.phone);
-      l.deviceCode = b.code;
-      l.key = key;
-      l.status = 'activado';
-      l.messages.push({ role: 'assistant', text: cuerpo, ts: Date.now(), human: true });
-      await persist(l);
-      return res.status(200).json({ ok: true, key });
     }
 
     if (b.action === 'rename') {

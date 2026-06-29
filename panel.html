@@ -356,7 +356,6 @@
             <option value="activado">Activado</option>
             <option value="descartado">Descartado</option>
           </select>
-          <button class="ptoggle" id="chKey" onclick="sendKey()" style="background:rgba(255,210,74,.14);color:var(--gold);border-color:var(--gold)">🔑 Enviar clave</button>
           <button class="ptoggle" id="chPause" onclick="togglePause()"></button>
           <button class="ptoggle danger" onclick="clearChat()" title="Vaciar la conversación (mantiene el contacto)">🧹 Vaciar</button>
           <button class="ptoggle danger" onclick="deleteLead()" title="Eliminar el contacto y sus registros">🗑️ Eliminar</button>
@@ -758,9 +757,6 @@
       var l = res.d.lead;
       curLead = l;
       document.getElementById('chTitle').textContent = (l.name||('+'+l.phone)) + '  ·  +' + l.phone;
-      var kb = document.getElementById('chKey');
-      kb.textContent = l.key ? ('🔑 ' + l.key) : '🔑 Enviar clave';
-      kb.title = l.key ? 'Clave ya enviada (clic para reenviar)' : 'Generar y enviar la clave';
       document.getElementById('chStatus').value = l.status || 'nuevo';
       // Tags
       var tg = document.getElementById('chTags');

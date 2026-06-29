@@ -54,13 +54,7 @@ async function getPrompt() {
   return process.env.WHAPE_BOT_PROMPT || DEFAULT_PROMPT;
 }
 
-// Detecta el "Código de equipo" (ANDROID_ID = 16 hex, con o sin guiones/espacios).
-function detectDeviceCode(text) {
-  if (!text) return null;
-  const m = text.match(/[0-9a-f]{4}[\s-]?[0-9a-f]{4}[\s-]?[0-9a-f]{4}[\s-]?[0-9a-f]{4}/i)
-    || text.match(/\b[0-9a-f]{16}\b/i);
-  return m ? m[0].trim() : null;
-}
+// (Detección del "código de equipo" de la app: archivada en ../OYE-app-archivo para OYE)
 
 // Detecta de dónde viene el lead por una marca en su primer mensaje (la pone el enlace).
 function detectSource(text) {
@@ -144,7 +138,7 @@ module.exports = async (req, res) => {
     const from = msg.from;
     const profileName = value?.contacts?.[0]?.profile?.name || '';
     const text = msg.type === 'text' ? msg.text.body : null;
-    const deviceCode = detectDeviceCode(text); // ¿mandó su código de equipo?
+    const deviceCode = null; // (código de equipo de la app desactivado; archivado en OYE-app-archivo)
     // Adjunto (el comprobante de pago suele venir como imagen)
     let media = null, caption = '';
     if (msg.type === 'image') { media = { id: msg.image?.id, type: 'image' }; caption = msg.image?.caption || ''; }
@@ -173,7 +167,7 @@ module.exports = async (req, res) => {
         const preview = text || ('(envió ' + msg.type + ')');
         await notifyOwner('🆕 *Nuevo lead* en WHAPE\n👤 ' + who + ' (+' + from + ')\n💬 "' + preview + '"\n\nÉchale un vistazo 👉 whape.club/panel', from);
       } else if (lead.status === 'pago_pendiente' && prevStatus !== 'pago_pendiente') {
-        await notifyOwner('💸 *' + who + '* pasó a PAGO PENDIENTE (mandó comprobante o dijo que pagó).\nVerifica y envíale su clave 👉 whape.club/panel', from);
+        await notifyOwner('💸 *' + who + '* pasó a PAGO PENDIENTE (mandó comprobante o dijo que pagó).\nVerifica el pago 👉 whape.club/panel', from);
       }
     }
 
@@ -182,7 +176,7 @@ module.exports = async (req, res) => {
       if (!lead || !lead.paused) {
         const isImg = msg.type === 'image' || msg.type === 'document';
         const ack = isImg
-          ? '¡Gracias! 🙌 Recibí tu comprobante. Lo estoy verificando y en un momento te confirmo y te envío tu clave de activación. 🔑'
+          ? '¡Gracias! 🙌 Recibí tu archivo. Lo reviso y te confirmo en breve.'
           : '¡Gracias! 🙂 Escríbeme tu consulta por texto y te ayudo al toque.';
         await sendWhatsApp(from, ack);
         if (HAS_REDIS) lead.messages.push({ role: 'assistant', text: ack, ts: Date.now() }); // guardar también en el CRM
@@ -194,14 +188,6 @@ module.exports = async (req, res) => {
     // Si tú tomaste el control, el bot NO responde (solo guarda el mensaje)
     if (HAS_REDIS && lead.paused) {
       await saveLead(lead);
-      return res.status(200).send('ok');
-    }
-
-    // Si mandó su CÓDIGO DE EQUIPO: respuesta FIJA (la IA NUNCA debe inventar/validar/recitar códigos).
-    if (deviceCode) {
-      const ack = '¡Recibí tu código de equipo! ✅ Lo verifico junto con tu pago y te envío tu clave de activación en breve. 🔑';
-      await sendWhatsApp(from, ack);
-      if (HAS_REDIS) { lead.messages.push({ role: 'assistant', text: ack, ts: Date.now() }); await saveLead(lead); }
       return res.status(200).send('ok');
     }
 
