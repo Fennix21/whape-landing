@@ -130,7 +130,7 @@
     body.open .back{display:inline-flex}
     /* modales casi a pantalla completa */
     #promptModal,#statsModal,#tplModal,#wtplModal,#communityModal,#progressModal,#inboxModal,#feedModal{padding:8px}
-    .pm-card{padding:14px;max-height:94vh;max-height:94dvh}
+    .pm-card{padding:14px;max-height:94vh;max-height:94dvh;max-height:calc(var(--avh, 94dvh) - 12px)}
     .cm-stats{flex-wrap:wrap}
     .m{max-width:88%}
     /* el textarea se encoge para que el footer (Guardar/Cancelar) no se corte; scrollea su propio texto */
@@ -257,7 +257,8 @@
   .st-spark-d{display:flex;gap:4px;margin-top:4px}
   .st-spark-d div{flex:1;text-align:center;font-size:9px;color:var(--muted)}
   .st-empty{color:var(--muted);font-size:12px;text-align:center;padding:14px}
-  .pm-card{background:var(--surface);border:1px solid var(--stroke);border-radius:16px;width:100%;max-width:720px;max-height:90vh;max-height:90dvh;display:flex;flex-direction:column;padding:18px}
+  .pm-card{background:var(--surface);border:1px solid var(--stroke);border-radius:16px;width:100%;max-width:720px;max-height:90vh;max-height:90dvh;display:flex;flex-direction:column;overflow:hidden;padding:18px}
+  .pm-body{flex:1;min-height:0;overflow-y:auto;display:flex;flex-direction:column}
   .pm-head{display:flex;align-items:center;gap:10px;font-size:17px}
   .pm-head strong{flex:1}
   .pm-x{background:var(--surface2);color:#fff;border:1px solid var(--stroke);width:34px;height:34px;border-radius:8px;font-size:15px}
@@ -554,8 +555,10 @@
       <strong>⚡ Plantillas rápidas</strong>
       <button class="pm-x" onclick="closeTpls()" aria-label="Cerrar">✕</button>
     </div>
+    <div class="pm-body">
     <p class="pm-hint">Una plantilla por bloque. Primera línea = nombre del botón; lo demás = el mensaje. Separa cada plantilla con una línea que tenga solo <strong>---</strong>.</p>
     <textarea id="tplText" placeholder="💳 Datos de pago&#10;El pago es por Yape al 999...&#10;---&#10;👋 ¿Sigues ahí?&#10;¡Hola! ¿Sigues interesado?"></textarea>
+    </div>
     <div class="pm-foot">
       <div style="flex:1"></div>
       <button class="pm-cancel" onclick="closeTpls()">Cancelar</button>
@@ -591,6 +594,7 @@
       <button class="pm-x" onclick="closePrompt()" aria-label="Cerrar">✕</button>
     </div>
 
+    <div class="pm-body">
     <div class="pm-notify">
       <label class="pm-nlabel"><input type="checkbox" id="pmNotify" /> 🔔 Avisarme a mi WhatsApp cuando entre un lead nuevo o un pago pendiente</label>
       <div class="pm-nrow">
@@ -603,6 +607,7 @@
 
     <p class="pm-hint"><strong>🧠 Cerebro del bot.</strong> Edita las instrucciones. Los cambios aplican al instante en las siguientes respuestas. Sé claro y específico (tono, acento peruano neutro, qué decir, qué no decir).</p>
     <textarea id="pmText" placeholder="Cargando…"></textarea>
+    </div>
     <div class="pm-foot">
       <button class="pm-reset" onclick="resetPrompt()">↩️ Restaurar original</button>
       <div style="flex:1"></div>
@@ -615,6 +620,9 @@
 <script>
   var PASS = '', current = null, poll = null, LEADS = [], viewMode = 'chat', dragPhone = null, curLead = null, TPL = [];
   var PRICE = 21; // precio de WHAPE (S/) — usado para los totales del embudo
+  // Altura visible real del celular (fiable en todo navegador) para que los modales no se corten
+  function setAVH(){ document.documentElement.style.setProperty('--avh', window.innerHeight + 'px'); }
+  setAVH(); window.addEventListener('resize', setAVH); window.addEventListener('orientationchange', setAVH);
   var STAGES = [
     { k:'nuevo', t:'Nuevo' },
     { k:'interesado', t:'Interesado' },
