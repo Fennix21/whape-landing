@@ -20,10 +20,8 @@
     var ev = a.getAttribute('data-ev');
     if (!ev) {
       var href = (a.getAttribute('href') || '').toLowerCase();
-      if (href.indexOf('whape.apk') >= 0) ev = 'download_apk';
-      else if (href.indexOf('wa.me') >= 0 || href.indexOf('api.whatsapp') >= 0 || href.indexOf('whatsapp.com') >= 0) ev = 'whatsapp_click';
-      else if (href.indexOf('/invitados') >= 0) ev = 'invitados_click';
-      else if (href.indexOf('/guia') >= 0) ev = 'guia_click';
+      if (href.indexOf('wa.me') >= 0 || href.indexOf('api.whatsapp') >= 0 || href.indexOf('whatsapp.com') >= 0) ev = 'whatsapp_click';
+      else if (href.indexOf('/registro-comunidad') >= 0) ev = 'registro_click';
       else if (href.indexOf('/comunidad') >= 0) ev = 'comunidad_click';
     }
     if (ev) send(ev);

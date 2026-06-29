@@ -515,7 +515,7 @@
       <button class="pm-x" onclick="closeTpls()" aria-label="Cerrar">✕</button>
     </div>
     <p class="pm-hint">Una plantilla por bloque. Primera línea = nombre del botón; lo demás = el mensaje. Separa cada plantilla con una línea que tenga solo <strong>---</strong>.</p>
-    <textarea id="tplText" placeholder="💳 Datos para Yape&#10;Para activar son S/21 por Yape al 999...&#10;---&#10;👋 ¿Sigues ahí?&#10;¡Hola! ¿Sigues interesado?"></textarea>
+    <textarea id="tplText" placeholder="💳 Datos de pago&#10;El pago es por Yape al 999...&#10;---&#10;👋 ¿Sigues ahí?&#10;¡Hola! ¿Sigues interesado?"></textarea>
     <div class="pm-foot">
       <div style="flex:1"></div>
       <button class="pm-cancel" onclick="closeTpls()">Cancelar</button>
@@ -1105,18 +1105,18 @@
   function renderStats(d){
     var ev = d.events || {};
     var visitas = ev.pageview || 0;
-    var descargas = ev.download_apk || 0;
+    var comunidad = ev.comunidad_click || 0;
     var wsp = ev.whatsapp_click || 0;
     var leadsN = (LEADS||[]).length;
     var ventasN = (LEADS||[]).filter(function(l){ return l.status==='pagado'||l.status==='activado'; }).length;
     var steps = [
       { l:'👁️ Visitas', n:visitas },
-      { l:'📥 Descargas APK', n:descargas },
       { l:'💬 Clics WhatsApp', n:wsp },
+      { l:'📚 Clics Comunidad', n:comunidad },
       { l:'👥 Leads', n:leadsN },
       { l:'💰 Ventas', n:ventasN },
     ];
-    var max = Math.max(1, visitas, descargas, wsp, leadsN, ventasN);
+    var max = Math.max(1, visitas, comunidad, wsp, leadsN, ventasN);
     var funnel = '<div class="st-funnel">' + steps.map(function(s,i){
       var w = Math.max(8, Math.round(s.n/max*100));
       var pct = (i>0 && steps[i-1].n>0) ? ' <span class="st-pct">'+Math.round(s.n/steps[i-1].n*100)+'% del paso anterior</span>' : '';
@@ -1153,7 +1153,7 @@
         + '</div>';
     }
     var wspByPage = pageBreakdown('💬 Clics a WhatsApp por página', ebp.whatsapp_click);
-    var dlByPage = pageBreakdown('📥 Descargas APK por página', ebp.download_apk);
+    var dlByPage = pageBreakdown('📚 Clics a Comunidad por página', ebp.comunidad_click);
 
     // Conversión por fuente (de los leads del CRM)
     var bySource = {};
@@ -1390,23 +1390,6 @@
       document.getElementById('convbox').style.display='none';
       document.getElementById('empty').style.display='flex';
       loadLeads();
-    });
-  }
-  function sendKey(){
-    if(!current) return;
-    api('get', { phone: current }).then(function(res){
-      var l = res.d && res.d.lead;
-      var pre = (l && l.deviceCode) || '';
-      var code = prompt('Código de equipo del cliente (lo ve en la pantalla de activación de WHAPE):', pre);
-      if(code===null) return;
-      code = code.trim();
-      if(!code) return;
-      if(!confirm('Se GENERARÁ la clave y se ENVIARÁ al cliente por WhatsApp.\n\n¿Confirmas que ya verificaste el pago de S/21 en tu Yape?')) return;
-      api('genkey', { phone: current, code: code }).then(function(r){
-        if(!r.ok){ alert(r.d.error || 'No se pudo generar/enviar la clave'); return; }
-        alert('✅ Clave enviada al cliente:\n\n' + r.d.key);
-        refreshConv(); loadLeads();
-      });
     });
   }
   function renameLead(){

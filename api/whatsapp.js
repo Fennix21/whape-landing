@@ -155,7 +155,6 @@ module.exports = async (req, res) => {
       if (media && media.id) entry.media = media;
       lead.messages.push(entry);
       lead.status = autoStatus(lead.status, text, text === null); // clasifica solo (solo avanza)
-      if (deviceCode) lead.deviceCode = deviceCode; // guarda el código de equipo si lo mandó
       if (text && text.toLowerCase().indexOf('(academia)') >= 0) { // vino desde la academia: etiqueta
         if (!lead.tags) lead.tags = [];
         if (lead.tags.indexOf('academia') < 0) lead.tags.push('academia');
