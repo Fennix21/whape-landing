@@ -577,6 +577,7 @@ module.exports = async (req, res) => {
       const p = await loadPost((b.id || '').toString());
       if (!p) return res.status(404).json({ error: 'Esa publicación ya no existe.' });
       if (p.phone !== phone) return res.status(403).json({ error: 'Solo puedes borrar tus propias publicaciones.' });
+      if (p.approved) await bumpPoints(p.phone, -1); // si estaba aprobado, quita el punto
       await redis(['DEL', 'post:' + p.id]);
       await redis(['SREM', 'community:posts', p.id]);
       return res.status(200).json({ ok: true });
@@ -590,8 +591,8 @@ module.exports = async (req, res) => {
       p.likedBy = p.likedBy || [];
       const i = p.likedBy.indexOf(phone);
       let liked;
-      if (i >= 0) { p.likedBy.splice(i, 1); liked = false; if (p.phone !== phone) await bumpPoints(p.phone, -1); }
-      else { p.likedBy.push(phone); liked = true; if (p.phone !== phone) await bumpPoints(p.phone, 1); }
+      if (i >= 0) { p.likedBy.splice(i, 1); liked = false; }
+      else { p.likedBy.push(phone); liked = true; } // los likes NO dan puntos (los puntos son por participar)
       await savePost(p);
       return res.status(200).json({ ok: true, liked, likeCount: p.likedBy.length });
     }
@@ -609,6 +610,7 @@ module.exports = async (req, res) => {
       const c = { id: newId('c'), phone, name, avatar, body, ts: Date.now() };
       p.comments.push(c);
       await savePost(p);
+      await bumpPoints(phone, 1); pts += 1; // +1 punto por participar (comentar)
       return res.status(200).json({ ok: true, comment: { id: c.id, name: c.name, avatar: c.avatar, body: c.body, ts: c.ts, level: levelFromPoints(pts), mine: true } });
     }
 
@@ -623,6 +625,7 @@ module.exports = async (req, res) => {
       if (c.phone !== phone && p.phone !== phone) return res.status(403).json({ error: 'No puedes borrar este comentario.' });
       p.comments = (p.comments || []).filter((x) => x.id !== cid);
       await savePost(p);
+      await bumpPoints(c.phone, -1); // quita el punto del comentario borrado
       return res.status(200).json({ ok: true });
     }
 
@@ -793,6 +796,8 @@ module.exports = async (req, res) => {
       }
       if (sub === 'feeddel') {
         const id = (b.id || '').toString();
+        const p = await loadPost(id);
+        if (p && p.approved) await bumpPoints(p.phone, -1); // si estaba aprobado, quita el punto al rechazar/borrar
         await redis(['DEL', 'post:' + id]);
         await redis(['SREM', 'community:posts', id]);
         return res.status(200).json({ ok: true });
@@ -807,8 +812,7 @@ module.exports = async (req, res) => {
       if (sub === 'feedapprove') {
         const p = await loadPost((b.id || '').toString());
         if (!p) return res.status(404).json({ error: 'Esa publicación ya no existe.' });
-        p.approved = true;
-        await savePost(p);
+        if (!p.approved) { p.approved = true; await savePost(p); await bumpPoints(p.phone, 1); } // +1 punto por participar (post aprobado)
         return res.status(200).json({ ok: true });
       }
       if (sub === 'setcats') {

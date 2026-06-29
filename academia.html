@@ -919,7 +919,7 @@
   function renderMyLevel(me){
     var el=document.getElementById('myLevelCard'); if(!el||!me) return;
     var nm=LVL_NAMES[(me.level||1)-1]||'Miembro';
-    el.innerHTML='<div class="ml-row"><img src="'+esc((ACADEMY&&ACADEMY.avatar)||'logo.png')+'" class="ml-av" alt=""/><div><div class="ml-name">'+esc(NAME||'Tú')+'</div><div class="ml-lvl">Nivel '+(me.level||1)+' · '+nm+'</div></div></div><div class="ml-pts">'+(me.points||0)+' <span style="font-size:12px;color:var(--muted);font-weight:600">puntos</span></div><div class="ml-hint">Ganas puntos cuando le dan ❤ a tus publicaciones.</div>';
+    el.innerHTML='<div class="ml-row"><img src="'+esc((ACADEMY&&ACADEMY.avatar)||'logo.png')+'" class="ml-av" alt=""/><div><div class="ml-name">'+esc(NAME||'Tú')+'</div><div class="ml-lvl">Nivel '+(me.level||1)+' · '+nm+'</div></div></div><div class="ml-pts">'+(me.points||0)+' <span style="font-size:12px;color:var(--muted);font-weight:600">puntos</span></div><div class="ml-hint">Ganas puntos por participar: publica y comenta en la comunidad.</div>';
   }
   function loadLeaderboard(full){
     api('leaderboard',{token:TOKEN}).then(function(res){
