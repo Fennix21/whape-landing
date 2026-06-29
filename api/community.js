@@ -112,6 +112,7 @@ function publicPost(p, phone, levelMap) {
     comments: (p.comments || []).map((c) => ({ id: c.id, name: c.name, avatar: c.avatar || '', body: c.body, ts: c.ts, level: levelFromPoints(levelMap[c.phone] || 0), mine: c.phone === phone })),
     commentCount: (p.comments || []).length,
     mine: p.phone === phone,
+    pending: !p.approved,
   };
 }
 
@@ -534,6 +535,7 @@ module.exports = async (req, res) => {
       let posts = await getPosts();
       const cat = (b.cat || '').toString();
       if (cat && cat !== 'all') posts = posts.filter((p) => (p.cat || 'general') === cat);
+      posts = posts.filter((p) => p.approved || p.phone === phone); // solo lo aprobado (o tus propios posts en revisión)
       const want = {}; want[phone] = 1;
       posts.forEach((p) => { want[p.phone] = 1; (p.comments || []).forEach((c) => { want[c.phone] = 1; }); });
       const plist = Object.keys(want);
@@ -560,12 +562,13 @@ module.exports = async (req, res) => {
       if (!body && !title) return res.status(400).json({ error: 'Escribe algo para publicar.' });
       const mraw = await redis(['GET', 'member:' + phone]);
       let name = '', avatar = ''; if (mraw) { try { const mm = JSON.parse(mraw); name = mm.name || ''; avatar = mm.avatar || ''; } catch (e) {} }
-      const p = { id: newId('p'), phone, name, avatar, cat, title, body, ts: Date.now(), pinned: false, likedBy: [], comments: [] };
+      const p = { id: newId('p'), phone, name, avatar, cat, title, body, ts: Date.now(), pinned: false, approved: false, likedBy: [], comments: [] };
       await savePost(p);
       const ptype = await redis(['TYPE', 'community:posts']);
       if (ptype && ptype !== 'set' && ptype !== 'none') await redis(['DEL', 'community:posts']); // auto-repara si la clave quedó con tipo equivocado
       await redis(['SADD', 'community:posts', p.id]);
-      return res.status(200).json({ ok: true, id: p.id });
+      await notifyOwner('📝 *Nueva publicación* en la comunidad (pendiente de aprobar)\n👤 ' + (name || ('+' + phone)) + '\n🏷️ ' + cat + (title ? ('\n📌 ' + title) : '') + '\n💬 "' + body.slice(0, 250) + '"\n\nApruébala o recházala 👉 whape.club/panel (🗣️ Feed)', phone);
+      return res.status(200).json({ ok: true, id: p.id, pending: true });
     }
 
     if (b.action === 'feeddel') {
@@ -785,8 +788,8 @@ module.exports = async (req, res) => {
       }
       if (sub === 'feedlist') {
         const posts = await getPosts();
-        posts.sort((a, c) => { if (!!a.pinned !== !!c.pinned) return a.pinned ? -1 : 1; return c.ts - a.ts; });
-        return res.status(200).json({ ok: true, cats: await getCats(), posts: posts.map((p) => ({ id: p.id, name: p.name, cat: p.cat, title: p.title, body: (p.body || '').slice(0, 240), ts: p.ts, pinned: !!p.pinned, likes: (p.likedBy || []).length, comments: (p.comments || []).length })) });
+        posts.sort((a, c) => { if (!!a.approved !== !!c.approved) return a.approved ? 1 : -1; if (!!a.pinned !== !!c.pinned) return a.pinned ? -1 : 1; return c.ts - a.ts; });
+        return res.status(200).json({ ok: true, cats: await getCats(), posts: posts.map((p) => ({ id: p.id, name: p.name, cat: p.cat, title: p.title, body: (p.body || '').slice(0, 240), ts: p.ts, pinned: !!p.pinned, approved: !!p.approved, likes: (p.likedBy || []).length, comments: (p.comments || []).length })) });
       }
       if (sub === 'feeddel') {
         const id = (b.id || '').toString();
@@ -800,6 +803,13 @@ module.exports = async (req, res) => {
         p.pinned = !p.pinned;
         await savePost(p);
         return res.status(200).json({ ok: true, pinned: p.pinned });
+      }
+      if (sub === 'feedapprove') {
+        const p = await loadPost((b.id || '').toString());
+        if (!p) return res.status(404).json({ error: 'Esa publicación ya no existe.' });
+        p.approved = true;
+        await savePost(p);
+        return res.status(200).json({ ok: true });
       }
       if (sub === 'setcats') {
         let cats = b.cats;

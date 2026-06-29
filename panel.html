@@ -142,6 +142,9 @@
   .fa-actions{display:flex;flex-direction:column;gap:6px;flex:none}
   .fa-actions button{background:var(--surface2);border:1px solid var(--stroke);color:var(--text);border-radius:8px;padding:6px 10px;cursor:pointer;font-family:inherit;font-size:12px;font-weight:700;white-space:nowrap}
   .fa-actions .fa-del{color:#ff6b81;border-color:#ff6b81}
+  .fa-pend{color:#f0a500;font-weight:800;font-size:11px}
+  .fa-pendrow{border-color:#f0a500}
+  .fa-actions .fa-ok{color:#2BD9A6;border-color:#2BD9A6}
   .cmin{width:100%;padding:10px 12px;margin-bottom:0;border-radius:9px;border:1px solid var(--stroke);background:var(--bg);color:#fff;font-family:inherit;font-size:14px}
   .cmin:focus{outline:none;border-color:var(--accent)}
   .cm-stats{display:flex;gap:10px;margin-bottom:14px}
@@ -442,7 +445,7 @@
       <button class="pm-x" onclick="closeFeed()" aria-label="Cerrar">✕</button>
     </div>
     <div style="overflow-y:auto;max-height:74vh;padding:2px 2px 4px">
-      <p class="pm-hint">Modera el feed: fija lo importante 📌 o elimina lo que no corresponda.</p>
+      <p class="pm-hint">Aprueba ✅ o rechaza ✖ lo pendiente (aparece arriba). En lo aprobado puedes fijar 📌 o borrar 🗑.</p>
       <div id="feedAdminList"></div>
     </div>
   </div>
@@ -869,15 +872,20 @@
       var posts=res.d.posts||[];
       if(!posts.length){ el.innerHTML='<p class="pm-hint">Aún no hay publicaciones en la comunidad.</p>'; return; }
       el.innerHTML=posts.map(function(p){
-        return '<div class="fa-row" id="fa-'+p.id+'">'
-          +'<div class="fa-main"><div class="fa-t">'+(p.pinned?'📌 ':'')+esc(p.title||'(sin título)')+'</div>'
+        var badge=p.approved?'':'<span class="fa-pend">⏳ Pendiente</span> ';
+        var act=p.approved
+          ? '<button onclick="pinFeed(\''+p.id+'\')">'+(p.pinned?'📌 Quitar':'📌 Fijar')+'</button>'
+          : '<button class="fa-ok" onclick="approveFeed(\''+p.id+'\')">✅ Aprobar</button>';
+        return '<div class="fa-row'+(p.approved?'':' fa-pendrow')+'" id="fa-'+p.id+'">'
+          +'<div class="fa-main"><div class="fa-t">'+badge+(p.pinned?'📌 ':'')+esc(p.title||'(sin título)')+'</div>'
           +'<div class="fa-meta">'+esc(p.name||'Miembro')+' · '+esc(p.cat||'')+' · ❤ '+p.likes+' · 💬 '+p.comments+'</div>'
           +'<div class="fa-body">'+esc(p.body||'')+'</div></div>'
-          +'<div class="fa-actions"><button onclick="pinFeed(\''+p.id+'\')">'+(p.pinned?'📌 Quitar':'📌 Fijar')+'</button>'
-          +'<button class="fa-del" onclick="delFeed(\''+p.id+'\')">🗑 Borrar</button></div></div>';
+          +'<div class="fa-actions">'+act
+          +'<button class="fa-del" onclick="delFeed(\''+p.id+'\')">'+(p.approved?'🗑 Borrar':'✖ Rechazar')+'</button></div></div>';
       }).join('');
     });
   }
+  function approveFeed(id){ capi('feedapprove',{id:id}).then(function(res){ if(!res.ok){ alert((res.d&&res.d.error)||'No se pudo.'); return; } loadFeedAdmin(); }); }
   function pinFeed(id){ capi('feedpin',{id:id}).then(function(res){ if(!res.ok){ alert((res.d&&res.d.error)||'No se pudo.'); return; } loadFeedAdmin(); }); }
   function delFeed(id){ if(!confirm('¿Borrar esta publicación de la comunidad? No se puede deshacer.')) return; capi('feeddel',{id:id}).then(function(res){ if(!res.ok){ alert((res.d&&res.d.error)||'No se pudo.'); return; } var r=document.getElementById('fa-'+id); if(r) r.remove(); }); }
   // --- Academia (gestión de módulos → clases) ---
