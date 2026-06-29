@@ -562,6 +562,8 @@ module.exports = async (req, res) => {
       let name = '', avatar = ''; if (mraw) { try { const mm = JSON.parse(mraw); name = mm.name || ''; avatar = mm.avatar || ''; } catch (e) {} }
       const p = { id: newId('p'), phone, name, avatar, cat, title, body, ts: Date.now(), pinned: false, likedBy: [], comments: [] };
       await savePost(p);
+      const ptype = await redis(['TYPE', 'community:posts']);
+      if (ptype && ptype !== 'set' && ptype !== 'none') await redis(['DEL', 'community:posts']); // auto-repara si la clave quedó con tipo equivocado
       await redis(['SADD', 'community:posts', p.id]);
       return res.status(200).json({ ok: true, id: p.id });
     }
