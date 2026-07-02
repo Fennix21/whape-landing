@@ -104,6 +104,39 @@ async function weeklyRadar() {
   } catch (e) { console.error('weeklyRadar', e); return false; }
 }
 
+// Gimnasio del Copy: un reto diario al WhatsApp del dueño (rota 3 ejercicios y 10 temas).
+async function dailyGym() {
+  try {
+    if (!REDIS_URL || !REDIS_TOKEN) return false;
+    if ((await redis(['GET', 'config:gym'])) === '0') return false;
+    const peru = new Date(Date.now() - 5 * 3600000);
+    const key = peru.toISOString().slice(0, 10);
+    if ((await redis(['GET', 'gym:last'])) === key) return false;
+    const doy = Math.floor((peru - new Date(Date.UTC(peru.getUTCFullYear(), 0, 0))) / 86400000);
+    const TEMAS = [
+      'el espejo: cuánto le pagas al mes a las apps con tu vida',
+      'la trampa de la recompensa variable (el casino de bolsillo)',
+      'por qué la fuerza de voluntad siempre pierde',
+      'el bloque de 30 minutos que construye tu negocio',
+      'tu celular como empleado (consumo vs creación)',
+      'el valor de tu hora (dejar de cobrar por hora)',
+      'la cohorte de 21 días: solo 100 cupos',
+      'de consumidor a creador (cambio de identidad)',
+      'lo que cambia en una persona en 21 días',
+      'el entorno correcto multiplica tu energía',
+    ];
+    const tema = TEMAS[doy % TEMAS.length];
+    const tipo = doy % 3;
+    let msg;
+    if (tipo === 0) msg = '🏋️ *Gimnasio del Copy — Copywork (7 min)*\n\nHoy: copia A MANO (papel y lapicero) un copy que te haya vendido algo, o tu mejor pieza propia (el hero de whape.club, la clase 1 de "Dueño de tu Atención").\n\nLa mano le enseña el ritmo al cerebro. ✍️';
+    else if (tipo === 1) msg = '🏋️ *Gimnasio del Copy — 10 ganchos (7 min)*\n\nTema de hoy: *' + tema + '*\n\nEscribe 10 ganchos distintos (una línea cada uno). Los primeros 5 saldrán malos; el oro vive del 6 al 10.\n\nGuarda el mejor en tu 📂 Archivo (panel → ✍️ Copy).';
+    else msg = '🏋️ *Gimnasio del Copy — Reescritura (6 min)*\n\nToma UN mensaje real que enviaste ayer (CRM, plantilla o post) y reescríbelo aplicando UNA ley: especificidad (Hopkins) o una-sola-persona (Halbert).\n\nPásalo por tu 🥊 Entrenador (panel → ✍️ Copy) y compara.';
+    await notifyOwner(msg);
+    await redis(['SET', 'gym:last', key]);
+    return true;
+  } catch (e) { console.error('dailyGym', e); return false; }
+}
+
 // Vigila la misión activa: 3+ días sin check-in = en riesgo (se avisa UNA vez por caída).
 async function scanGroupRisk() {
   try {
@@ -153,7 +186,8 @@ module.exports = async (req, res) => {
     const fired = await flushDueReminders();
     const risk = await scanGroupRisk();
     const radar = await weeklyRadar();
-    return res.status(200).json({ ok: true, fired, risk, radar });
+    const gym = await dailyGym();
+    return res.status(200).json({ ok: true, fired, risk, radar, gym });
   } catch (e) {
     console.error('cron error', e);
     return res.status(500).json({ error: 'Error' });

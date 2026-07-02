@@ -147,8 +147,9 @@
   #lbClose{position:fixed;top:16px;right:16px;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.25)}
   #lbClose:hover{background:rgba(255,255,255,.26)}
   /* Editor del prompt del bot */
-  #promptModal,#statsModal,#tplModal,#wtplModal,#communityModal,#progressModal,#inboxModal,#feedModal,#gruposModal{display:none;position:fixed;inset:0;z-index:120;background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:18px}
-  #promptModal.open,#statsModal.open,#tplModal.open,#wtplModal.open,#communityModal.open,#progressModal.open,#inboxModal.open,#feedModal.open,#gruposModal.open{display:flex}
+  #promptModal,#statsModal,#tplModal,#wtplModal,#communityModal,#progressModal,#inboxModal,#feedModal,#gruposModal,#copyModal{display:none;position:fixed;inset:0;z-index:120;background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:18px}
+  #promptModal.open,#statsModal.open,#tplModal.open,#wtplModal.open,#communityModal.open,#progressModal.open,#inboxModal.open,#feedModal.open,#gruposModal.open,#copyModal.open{display:flex}
+  .cc-out{white-space:pre-wrap;word-break:break-word;background:var(--bg);border:1px solid var(--stroke);border-radius:10px;padding:13px;font-size:13px;line-height:1.6;margin-top:10px}
   .fa-row{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--stroke);border-radius:10px;padding:11px;margin-bottom:9px}
   .fa-main{flex:1;min-width:0}
   .fa-t{font-weight:700;font-size:14px;margin-bottom:3px}
@@ -334,6 +335,7 @@
     <button class="ref" onclick="openCommunity()" style="margin-right:8px">📚 Comunidad</button>
     <button class="ref" onclick="openFeed()" style="margin-right:8px">🗣️ Feed</button>
     <button class="ref" onclick="openGrupos()" style="margin-right:8px">🎯 Grupos</button>
+    <button class="ref" onclick="openCopy()" style="margin-right:8px">✍️ Copy</button>
     <button class="ref" onclick="openProgress()" style="margin-right:8px">📈 Progreso</button>
     <button class="ref" onclick="openInbox()" style="margin-right:8px;position:relative">📥 Bandeja<span id="inboxBadge" class="ibx-badge">0</span></button>
     <button class="ref" onclick="openPrompt()" style="margin-right:8px">⚙️ Bot</button>
@@ -452,6 +454,38 @@
       <button class="pm-x" onclick="closeProgress()" aria-label="Cerrar">✕</button>
     </div>
     <div id="progBody" style="overflow-y:auto;max-height:76vh;max-height:76dvh;padding:2px"></div>
+  </div>
+</div>
+
+<div id="copyModal">
+  <div class="pm-card" style="max-width:720px">
+    <div class="pm-head">
+      <strong>✍️ Copy · Entrenador y Archivo de oro</strong>
+      <button class="pm-x" onclick="closeCopy()" aria-label="Cerrar">✕</button>
+    </div>
+    <div style="overflow-y:auto;max-height:76vh;max-height:76dvh;padding:2px">
+      <p class="pm-hint"><strong>🥊 Entrenador.</strong> Pega tu borrador: la IA lo evalúa con el checklist (Schwartz, Halbert, Ogilvy, Hopkins, Sugarman) y te devuelve 2 variantes mejoradas.</p>
+      <select id="ccCtx" class="cmin" style="margin-bottom:8px">
+        <option value="reel de TikTok/Instagram">🎬 Reel (TikTok/IG)</option>
+        <option value="mensaje de WhatsApp de ventas">💬 Mensaje de WhatsApp</option>
+        <option value="post para la comunidad">🗣️ Post de comunidad</option>
+        <option value="texto de landing page">🧲 Landing</option>
+        <option value="anuncio pagado">📢 Anuncio</option>
+      </select>
+      <textarea id="ccDraft" class="cmin" style="min-height:110px;resize:vertical" placeholder="Pega aquí tu borrador…"></textarea>
+      <div class="cm-formbtns" style="margin-top:8px">
+        <button class="cm-save" onclick="copyCoach()">🥊 Entrenar</button>
+        <button class="cm-cancel" id="ccSave" style="display:none" onclick="ccSaveToSwipe()">💾 Guardar al archivo</button>
+      </div>
+      <div id="ccOut" class="cc-out" style="display:none"></div>
+      <hr class="pm-hr" />
+      <p class="pm-hint"><strong>📂 Archivo de oro.</strong> Guarda tus copys ganadores con su resultado. Consúltalos antes de escribir.</p>
+      <input id="swTitle" class="cmin" placeholder="Título (ej. Reel del espejo)" style="margin-bottom:8px" />
+      <textarea id="swBody" class="cmin" style="min-height:80px;resize:vertical" placeholder="El copy…"></textarea>
+      <input id="swResult" class="cmin" placeholder="Resultado (ej. 40 leads, 12k vistas)" style="margin:8px 0" />
+      <div class="cm-formbtns"><button class="cm-save" onclick="swipeSave()">💾 Guardar copy</button></div>
+      <div id="swList" style="margin-top:12px"></div>
+    </div>
   </div>
 </div>
 
@@ -946,6 +980,61 @@
   function approveFeed(id){ capi('feedapprove',{id:id}).then(function(res){ if(!res.ok){ alert((res.d&&res.d.error)||'No se pudo.'); return; } loadFeedAdmin(); }); }
   function pinFeed(id){ capi('feedpin',{id:id}).then(function(res){ if(!res.ok){ alert((res.d&&res.d.error)||'No se pudo.'); return; } loadFeedAdmin(); }); }
   function delFeed(id){ if(!confirm('¿Borrar esta publicación de la comunidad? No se puede deshacer.')) return; capi('feeddel',{id:id}).then(function(res){ if(!res.ok){ alert((res.d&&res.d.error)||'No se pudo.'); return; } var r=document.getElementById('fa-'+id); if(r) r.remove(); }); }
+  // --- Copy: entrenador + archivo de oro ---
+  var CC_LAST='', SW_ITEMS=[];
+  function openCopy(){ document.getElementById('copyModal').classList.add('open'); swipeLoad(); }
+  function closeCopy(){ document.getElementById('copyModal').classList.remove('open'); }
+  function copyCoach(){
+    var d=document.getElementById('ccDraft').value.trim();
+    var ctx=document.getElementById('ccCtx').value;
+    var out=document.getElementById('ccOut');
+    if(!d){ alert('Pega tu borrador primero.'); return; }
+    out.style.display='block'; out.textContent='🥊 Entrenando… (unos segundos)';
+    document.getElementById('ccSave').style.display='none';
+    capi('copycoach',{draft:d, ctx:ctx}).then(function(res){
+      if(!res.ok){ out.textContent=(res.d&&res.d.error)||'No se pudo. Intenta de nuevo.'; return; }
+      CC_LAST=res.d.out||''; out.textContent=CC_LAST;
+      document.getElementById('ccSave').style.display=CC_LAST?'inline-block':'none';
+    });
+  }
+  function ccSaveToSwipe(){
+    if(!CC_LAST) return;
+    var d=document.getElementById('ccDraft').value.trim();
+    capi('swipesave',{title:'Entrenamiento: '+d.slice(0,60), body:CC_LAST, result:''}).then(function(res){
+      if(!res.ok){ alert((res.d&&res.d.error)||'No se pudo guardar.'); return; }
+      alert('💾 Guardado en tu Archivo de oro.'); swipeLoad();
+    });
+  }
+  function swipeLoad(){
+    capi('swipelist').then(function(res){
+      var el=document.getElementById('swList'); if(!el) return;
+      if(!res.ok){ el.innerHTML=''; return; }
+      SW_ITEMS=res.d.items||[];
+      el.innerHTML=SW_ITEMS.length?SW_ITEMS.map(function(s){
+        return '<div class="fa-row" id="sw-'+s.id+'"><div class="fa-main"><div class="fa-t">'+esc(s.title||'(sin título)')+'</div>'
+          +(s.result?'<div class="fa-meta">📈 '+esc(s.result)+'</div>':'')
+          +'<div class="fa-body">'+esc(s.body||'')+'</div></div>'
+          +'<div class="fa-actions"><button onclick="swCopy(\''+s.id+'\')">📋 Copiar</button><button class="fa-del" onclick="swipeDel(\''+s.id+'\')">🗑</button></div></div>';
+      }).join(''):'<p class="pm-hint">Aún no guardas ningún copy. Cuando uno funcione, guárdalo aquí con su resultado.</p>';
+    });
+  }
+  function swCopy(id){
+    var s=SW_ITEMS.find(function(x){return x.id===id;}); if(!s) return;
+    navigator.clipboard.writeText(s.body||'').then(function(){ alert('📋 Copiado al portapapeles.'); },function(){ alert('No se pudo copiar.'); });
+  }
+  function swipeSave(){
+    var t=document.getElementById('swTitle').value.trim(), b=document.getElementById('swBody').value.trim(), r=document.getElementById('swResult').value.trim();
+    if(!b){ alert('Pega el copy primero.'); return; }
+    capi('swipesave',{title:t,body:b,result:r}).then(function(res){
+      if(!res.ok){ alert((res.d&&res.d.error)||'No se pudo.'); return; }
+      document.getElementById('swTitle').value=''; document.getElementById('swBody').value=''; document.getElementById('swResult').value='';
+      swipeLoad();
+    });
+  }
+  function swipeDel(id){
+    if(!confirm('¿Borrar este copy del archivo?')) return;
+    capi('swipedel',{id:id}).then(function(res){ if(res.ok){ var r=document.getElementById('sw-'+id); if(r) r.remove(); } });
+  }
   // --- Grupos (misiones por cohorte) ---
   var GADM=[];
   function openGrupos(){ document.getElementById('gruposModal').classList.add('open'); loadGrupos(); }

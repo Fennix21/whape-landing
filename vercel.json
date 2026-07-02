@@ -6,7 +6,8 @@
     { "source": "/comunidad", "destination": "/academia", "permanent": false }
   ],
   "functions": {
-    "api/whatsapp.js": { "maxDuration": 30 }
+    "api/whatsapp.js": { "maxDuration": 30 },
+    "api/community.js": { "maxDuration": 30 }
   },
   "crons": [
     { "path": "/api/cron", "schedule": "0 12 * * *" }

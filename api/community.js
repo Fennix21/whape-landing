@@ -1071,6 +1071,39 @@ module.exports = async (req, res) => {
         if (!p.approved) { p.approved = true; await savePost(p); await bumpPoints(p.phone, 1); } // +1 punto por participar (post aprobado)
         return res.status(200).json({ ok: true });
       }
+      if (sub === 'copycoach') {
+        const draft = (b.draft || '').toString().trim().slice(0, 3000);
+        if (!draft) return res.status(400).json({ error: 'Pega tu borrador primero.' });
+        const ctx = (b.ctx || '').toString().slice(0, 200);
+        const sys = 'Eres un coach de copywriting de respuesta directa entrenando al dueño de WHAPE (Perú), una plataforma que enseña a convertir problemas en negocios que venden por WhatsApp. Español peruano NEUTRO. Tu base: Schwartz (niveles de conciencia), Halbert (escribir a UNA persona), Ogilvy (el titular es el 80%), Hopkins (especificidad y prueba), Sugarman (el tobogán: cada frase vende la siguiente), Collier (entrar a la conversación en su mente). Sé exigente pero constructivo. NUNCA sugieras prometer ingresos garantizados ni inventar datos.';
+        const usr = 'Tipo de copy: ' + (ctx || 'no especificado') + '\n\nBORRADOR:\n"""\n' + draft + '\n"""\n\nResponde EXACTAMENTE con este formato:\n\n📊 PUNTAJE (1-10)\n• Gancho: X — <por qué, una frase>\n• Una sola idea: X — <una frase>\n• Especificidad: X — <una frase>\n• Emoción→lógica: X — <una frase>\n• CTA: X — <una frase>\n• Nivel de conciencia al que habla: <1-5 y por qué en una frase>\n\n🔧 EL ERROR #1\n<el problema más grave en máximo 2 líneas y cómo pensarlo distinto>\n\n✍️ VARIANTE A (mejora directa)\n<el copy reescrito, mismo ángulo>\n\n🅱️ VARIANTE B (ángulo distinto)\n<el copy con otro enfoque o nivel de conciencia>\n\n🧠 LECCIÓN DEL DÍA\n<un principio aplicado a este caso, 1 línea, citando al maestro>';
+        const out = await askAI(sys, usr, 900);
+        if (!out) return res.status(500).json({ error: 'La IA no respondió. Intenta de nuevo en un momento.' });
+        return res.status(200).json({ ok: true, out });
+      }
+      if (sub === 'swipelist') {
+        const raw = await redis(['GET', 'swipefile']);
+        let items = []; if (raw) { try { items = JSON.parse(raw); } catch (e) {} }
+        items.sort((a, c) => c.ts - a.ts);
+        return res.status(200).json({ ok: true, items });
+      }
+      if (sub === 'swipesave') {
+        const body = (b.body || '').toString().slice(0, 3000);
+        if (!body.trim()) return res.status(400).json({ error: 'Falta el copy.' });
+        const raw = await redis(['GET', 'swipefile']);
+        let items = []; if (raw) { try { items = JSON.parse(raw); } catch (e) {} }
+        items.push({ id: newId('s'), title: (b.title || '').toString().slice(0, 120), body, result: (b.result || '').toString().slice(0, 200), ts: Date.now() });
+        if (items.length > 200) items = items.slice(-200);
+        await redis(['SET', 'swipefile', JSON.stringify(items)]);
+        return res.status(200).json({ ok: true });
+      }
+      if (sub === 'swipedel') {
+        const raw = await redis(['GET', 'swipefile']);
+        let items = []; if (raw) { try { items = JSON.parse(raw); } catch (e) {} }
+        items = items.filter((x) => x.id !== (b.id || '').toString());
+        await redis(['SET', 'swipefile', JSON.stringify(items)]);
+        return res.status(200).json({ ok: true });
+      }
       if (sub === 'glist') {
         const groups = await getGroups();
         const out = [];
