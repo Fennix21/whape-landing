@@ -35,6 +35,35 @@ const DEFAULT_CATS = [
   { id: 'logros', label: '🏆 Logros' },
   { id: 'recursos', label: '📚 Recursos' },
 ];
+// Grupos (misiones por cohorte): plan por defecto de la Misión Fundadora.
+const DEFAULT_GROUP_PLAN = [
+  'Calcula el valor REAL de tu hora: ingreso mensual ÷ horas trabajadas al mes (incluye traslados). Publícalo en el grupo junto a tu compromiso.',
+  'Auditoría de un día: registra tus horas en 3 categorías — vendidas (trabajo), robadas (distracciones), tuyas (lo que elegiste hacer).',
+  'Identifica y ponle nombre a tu ladrón #1 de tiempo y energía. Compártelo en el grupo.',
+  'Lista 3 conocimientos o habilidades que ya tienes (o quieres adquirir) y que otras personas necesitan.',
+  'Elige EL problema que vas a aprender a resolver para otros. Uno solo. Escríbelo en una frase.',
+  'Encuentra 3 personas o negocios reales que sufren ese problema. Anota quiénes son.',
+  '🏁 DÍA DE DECISIÓN — Publica tu diagnóstico completo en el grupo (hito de la semana 1). Y decide: ¿pasas a la semana 2?',
+  'Define la transformación que venderás: ¿de qué punto A a qué punto B llevas a tu cliente?',
+  'Diseña tu solución mínima: el paso a paso que aplicarás con tu primer cliente.',
+  'Ponle precio por RESULTADO (no por hora): ¿cuánto vale llegar al punto B para tu cliente?',
+  'Escribe tu oferta en 3 líneas: para quién, qué resultado logra y en cuánto tiempo.',
+  'Crea tu guion de WhatsApp: cómo abres la conversación, qué preguntas y cómo ofreces.',
+  'Prepara tu prueba: qué harás gratis o con descuento para conseguir tu primer caso de éxito.',
+  '🏁 HITO — Publica tu oferta empaquetada en el grupo.',
+  'Contacta a la primera de tus 3 personas usando tu guion.',
+  'Contacta a la segunda. Ajusta tu guion con lo que aprendiste.',
+  'Contacta a la tercera. Registra sus respuestas y objeciones.',
+  'Haz seguimiento a los interesados (aquí es donde se cierran la mayoría de ventas).',
+  'Pide referidos: "¿Conoces a alguien más que tenga este problema?"',
+  'Cierra o agenda tu primer caso. Documenta todo el proceso.',
+  '🎓 GRADUACIÓN — Publica tu testimonio: cuánto vale tu hora ahora y qué cambió en ti.',
+];
+const DEFAULT_GROUPS = [{
+  id: 'valorhora', emoji: '🕐', title: 'El Valor de tu Hora',
+  problema: '21 días para dejar de vender horas y empezar a cobrar por resultados.',
+  cohortStart: '2026-07-06', duration: 21, active: true, plan: DEFAULT_GROUP_PLAN,
+}];
 
 async function redis(cmd) {
   const r = await fetch(REDIS_URL, {
@@ -115,6 +144,28 @@ function publicPost(p, phone, levelMap) {
     pending: !p.approved,
   };
 }
+
+// --- Grupos: helpers ---
+async function getGroups() {
+  const raw = await redis(['GET', 'config:groups']);
+  if (raw) { try { const g = JSON.parse(raw); if (Array.isArray(g) && g.length) return g; } catch (e) {} }
+  return DEFAULT_GROUPS;
+}
+async function saveGroups(g) { await redis(['SET', 'config:groups', JSON.stringify(g)]); }
+async function getGState(phone) {
+  const raw = await redis(['GET', 'gstate:' + phone]);
+  if (raw) { try { return JSON.parse(raw); } catch (e) {} }
+  return null;
+}
+async function saveGState(phone, s) { await redis(['SET', 'gstate:' + phone, JSON.stringify(s)]); }
+// Día de la cohorte en hora Perú (UTC-5): día 1 = fecha de inicio; <1 no empezó.
+function cohortDay(startStr) {
+  if (!startStr) return 0;
+  const start = Date.parse(startStr + 'T00:00:00-05:00');
+  if (isNaN(start)) return 0;
+  return Math.floor((Date.now() - start) / 86400000) + 1;
+}
+function weekOfDay(d) { return Math.ceil(Math.max(1, d) / 7); }
 
 async function getModules() {
   const raw = await redis(['GET', 'academy:modules']);
@@ -536,6 +587,7 @@ module.exports = async (req, res) => {
       const cat = (b.cat || '').toString();
       if (cat && cat !== 'all') posts = posts.filter((p) => (p.cat || 'general') === cat);
       posts = posts.filter((p) => p.approved || p.phone === phone); // solo lo aprobado (o tus propios posts en revisión)
+      if (!cat || cat === 'all') posts = posts.filter((p) => String(p.cat || '').indexOf('g:') !== 0); // el feed general no mezcla los grupos
       const want = {}; want[phone] = 1;
       posts.forEach((p) => { want[p.phone] = 1; (p.comments || []).forEach((c) => { want[c.phone] = 1; }); });
       const plist = Object.keys(want);
@@ -643,6 +695,103 @@ module.exports = async (req, res) => {
       const myPts = (rows.find((r) => r.phone === phone) || {}).points || 0;
       const top = rows.slice(0, 30).map((r, i) => ({ rank: i + 1, name: r.name, avatar: r.avatar, points: r.points, level: levelFromPoints(r.points), me: r.phone === phone }));
       return res.status(200).json({ ok: true, top, myRank, total: rows.length, me: { points: myPts, level: levelFromPoints(myPts) } });
+    }
+
+    // ---------- GRUPOS (misiones por cohorte) ----------
+    if (b.action === 'ggroup') {
+      const phone = verifyToken(b.token);
+      if (!phone) return res.status(401).json({ error: 'Tu sesión venció. Entra de nuevo. 🙏' });
+      const groups = await getGroups();
+      const g = groups.find((x) => x.active) || groups[0];
+      if (!g) return res.status(200).json({ ok: true, group: null });
+      const mraw = await redis(['GET', 'member:' + phone]);
+      let premium = false; if (mraw) { try { premium = JSON.parse(mraw).premium === true; } catch (e) {} }
+      const dur = Number(g.duration || 21);
+      const day = cohortDay(g.cohortStart);
+      const started = day >= 1, ended = day > dur;
+      const plan = [];
+      for (let i = 0; i < dur; i++) {
+        const dnum = i + 1;
+        const locked = dnum > 7 && !premium;
+        plan.push({ day: dnum, text: locked ? '' : ((g.plan || [])[i] || 'Avanza con tu misión y comparte tu progreso en el grupo.'), locked });
+      }
+      const st = await getGState(phone);
+      const joined = !!(st && st.groupId === g.id);
+      let mystate = null;
+      if (joined) {
+        mystate = {
+          streak: st.streak || 0,
+          checkins: Object.keys(st.checkins || {}).length,
+          checkedToday: started && !ended && st.lastCheckinDay === day,
+          graceAvailable: st.graceWeek !== weekOfDay(day),
+        };
+      }
+      let hasDiag = false, hourValue = 0;
+      const draw = await redis(['GET', 'diag:' + phone]);
+      if (draw) { try { const dj = JSON.parse(draw); hasDiag = true; hourValue = dj.hourValue || 0; } catch (e) {} }
+      return res.status(200).json({ ok: true, group: { id: g.id, emoji: g.emoji, title: g.title, problema: g.problema, duration: dur, cohortStart: g.cohortStart, day, started, ended, plan }, joined, state: mystate, premium, hasDiag, hourValue, feedCat: 'g:' + g.id });
+    }
+
+    if (b.action === 'gdiag') {
+      const phone = verifyToken(b.token);
+      if (!phone) return res.status(401).json({ error: 'Tu sesión venció. Entra de nuevo. 🙏' });
+      const answers = Array.isArray(b.answers) ? b.answers.slice(0, 10).map((x) => String(x).slice(0, 120)) : [];
+      const hourValue = Math.max(0, Math.min(9999, Number(b.hourValue) || 0));
+      await redis(['SET', 'diag:' + phone, JSON.stringify({ answers, hourValue, ts: Date.now() })]);
+      return res.status(200).json({ ok: true });
+    }
+
+    if (b.action === 'gjoin') {
+      const phone = verifyToken(b.token);
+      if (!phone) return res.status(401).json({ error: 'Tu sesión venció. Entra de nuevo. 🙏' });
+      const commitment = (b.commitment || '').toString().trim().slice(0, 1000);
+      if (commitment.length < 10) return res.status(400).json({ error: 'Escribe tu compromiso con tus propias palabras (unas líneas). Es tu punto de partida. 💪' });
+      const groups = await getGroups();
+      const g = groups.find((x) => x.active) || groups[0];
+      if (!g) return res.status(400).json({ error: 'Aún no hay una misión abierta.' });
+      const prev = await getGState(phone);
+      if (prev && prev.groupId === g.id) return res.status(400).json({ error: 'Ya estás dentro de esta misión. 🙌' });
+      const mraw = await redis(['GET', 'member:' + phone]);
+      let name = '', avatar = ''; if (mraw) { try { const mm = JSON.parse(mraw); name = mm.name || ''; avatar = mm.avatar || ''; } catch (e) {} }
+      const p = { id: newId('p'), phone, name, avatar, cat: 'g:' + g.id, title: '🔥 Mi compromiso', body: commitment, ts: Date.now(), pinned: false, approved: false, likedBy: [], comments: [] };
+      await savePost(p);
+      const ptype = await redis(['TYPE', 'community:posts']);
+      if (ptype && ptype !== 'set' && ptype !== 'none') await redis(['DEL', 'community:posts']);
+      await redis(['SADD', 'community:posts', p.id]);
+      await saveGState(phone, { groupId: g.id, joinedAt: Date.now(), commitmentPostId: p.id, streak: 0, lastCheckinDay: 0, graceWeek: 0, checkins: {} });
+      await notifyOwner('🎯 *' + (name || ('+' + phone)) + '* se unió a la misión "' + g.title + '"\n💬 Su compromiso: "' + commitment.slice(0, 200) + '"\n\nAprueba su post 👉 whape.club/panel (🗣️ Feed)', phone);
+      return res.status(200).json({ ok: true });
+    }
+
+    if (b.action === 'gcheckin') {
+      const phone = verifyToken(b.token);
+      if (!phone) return res.status(401).json({ error: 'Tu sesión venció. Entra de nuevo. 🙏' });
+      const groups = await getGroups();
+      const g = groups.find((x) => x.active) || groups[0];
+      if (!g) return res.status(400).json({ error: 'Aún no hay una misión abierta.' });
+      const st = await getGState(phone);
+      if (!st || st.groupId !== g.id) return res.status(400).json({ error: 'Primero únete a la misión. 🙂' });
+      const dur = Number(g.duration || 21);
+      const day = cohortDay(g.cohortStart);
+      if (day < 1) return res.status(400).json({ error: 'La misión aún no empieza. ¡Prepárate! 🔥' });
+      if (day > dur) return res.status(400).json({ error: 'Esta cohorte ya terminó. Pronto abre la siguiente. 🎓' });
+      if (st.lastCheckinDay === day) return res.status(400).json({ error: 'Ya hiciste tu check-in de hoy. ✅' });
+      if (day > 7) {
+        const mraw = await redis(['GET', 'member:' + phone]);
+        let premium = false; if (mraw) { try { premium = JSON.parse(mraw).premium === true; } catch (e) {} }
+        if (!premium) return res.status(403).json({ error: 'La semana ' + weekOfDay(day) + ' es parte del acceso Premium. 🚀' });
+      }
+      let graceUsed = false;
+      const prevDay = st.lastCheckinDay || 0;
+      if (prevDay === day - 1) st.streak = (st.streak || 0) + 1;
+      else if (prevDay === day - 2 && st.graceWeek !== weekOfDay(day)) { st.streak = (st.streak || 0) + 1; st.graceWeek = weekOfDay(day); graceUsed = true; }
+      else st.streak = 1;
+      if (!st.checkins) st.checkins = {};
+      st.checkins[day] = Date.now();
+      st.lastCheckinDay = day;
+      await saveGState(phone, st);
+      await bumpPoints(phone, 1); // participar suma
+      return res.status(200).json({ ok: true, streak: st.streak, day, graceUsed });
     }
 
     // ---------- ADMIN ----------
@@ -814,6 +963,63 @@ module.exports = async (req, res) => {
         if (!p) return res.status(404).json({ error: 'Esa publicación ya no existe.' });
         if (!p.approved) { p.approved = true; await savePost(p); await bumpPoints(p.phone, 1); } // +1 punto por participar (post aprobado)
         return res.status(200).json({ ok: true });
+      }
+      if (sub === 'glist') {
+        return res.status(200).json({ ok: true, groups: await getGroups() });
+      }
+      if (sub === 'gsave') {
+        const inp = b.group || {};
+        const groups = await getGroups();
+        const clean = {
+          id: (inp.id || '').toString().slice(0, 30) || newId('g'),
+          emoji: (inp.emoji || '🎯').toString().slice(0, 8),
+          title: (inp.title || '').toString().slice(0, 80),
+          problema: (inp.problema || '').toString().slice(0, 200),
+          cohortStart: (inp.cohortStart || '').toString().slice(0, 10),
+          duration: Math.max(7, Math.min(90, Number(inp.duration) || 21)),
+          active: !!inp.active,
+          plan: Array.isArray(inp.plan) ? inp.plan.slice(0, 90).map((x) => String(x).slice(0, 500)) : [],
+        };
+        if (!clean.title) return res.status(400).json({ error: 'Falta el título del grupo.' });
+        const i = groups.findIndex((x) => x.id === clean.id);
+        if (i >= 0) groups[i] = clean; else groups.push(clean);
+        if (clean.active) groups.forEach((x) => { if (x.id !== clean.id) x.active = false; }); // v1: una misión activa a la vez
+        await saveGroups(groups);
+        return res.status(200).json({ ok: true, groups });
+      }
+      if (sub === 'gdel') {
+        const groups = (await getGroups()).filter((x) => x.id !== (b.id || '').toString());
+        await saveGroups(groups);
+        return res.status(200).json({ ok: true, groups });
+      }
+      if (sub === 'gmembers') {
+        const groups = await getGroups();
+        const phones = (await redis(['SMEMBERS', 'members'])) || [];
+        const rows = [];
+        if (phones.length) {
+          const mraws = (await redis(['MGET', ...phones.map((p) => 'member:' + p)])) || [];
+          const graws = (await redis(['MGET', ...phones.map((p) => 'gstate:' + p)])) || [];
+          phones.forEach((p, i) => {
+            let m = null, st = null;
+            if (mraws[i]) { try { m = JSON.parse(mraws[i]); } catch (e) {} }
+            if (graws[i]) { try { st = JSON.parse(graws[i]); } catch (e) {} }
+            if (!m) return;
+            let day = 0, dur = 0;
+            if (st) { const g = groups.find((x) => x.id === st.groupId); if (g) { day = cohortDay(g.cohortStart); dur = Number(g.duration || 21); } }
+            rows.push({ phone: p, name: m.name || '', premium: m.premium === true, joined: !!st, day: Math.max(0, Math.min(day, dur)), streak: st ? (st.streak || 0) : 0, checkins: st ? Object.keys(st.checkins || {}).length : 0 });
+          });
+        }
+        rows.sort((a, c) => (c.checkins - a.checkins) || (c.streak - a.streak));
+        return res.status(200).json({ ok: true, rows });
+      }
+      if (sub === 'gsetpremium') {
+        const p = (b.phone || '').toString().replace(/\D/g, '');
+        const mraw = await redis(['GET', 'member:' + p]);
+        if (!mraw) return res.status(404).json({ error: 'No existe ese miembro.' });
+        let m; try { m = JSON.parse(mraw); } catch (e) { return res.status(500).json({ error: 'Registro dañado.' }); }
+        m.premium = !!b.premium;
+        await redis(['SET', 'member:' + p, JSON.stringify(m)]);
+        return res.status(200).json({ ok: true, premium: m.premium });
       }
       if (sub === 'setcats') {
         let cats = b.cats;
