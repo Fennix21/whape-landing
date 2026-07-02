@@ -147,8 +147,8 @@
   #lbClose{position:fixed;top:16px;right:16px;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.25)}
   #lbClose:hover{background:rgba(255,255,255,.26)}
   /* Editor del prompt del bot */
-  #promptModal,#statsModal,#tplModal,#wtplModal,#communityModal,#progressModal,#inboxModal,#feedModal{display:none;position:fixed;inset:0;z-index:120;background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:18px}
-  #promptModal.open,#statsModal.open,#tplModal.open,#wtplModal.open,#communityModal.open,#progressModal.open,#inboxModal.open,#feedModal.open{display:flex}
+  #promptModal,#statsModal,#tplModal,#wtplModal,#communityModal,#progressModal,#inboxModal,#feedModal,#gruposModal{display:none;position:fixed;inset:0;z-index:120;background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:18px}
+  #promptModal.open,#statsModal.open,#tplModal.open,#wtplModal.open,#communityModal.open,#progressModal.open,#inboxModal.open,#feedModal.open,#gruposModal.open{display:flex}
   .fa-row{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--stroke);border-radius:10px;padding:11px;margin-bottom:9px}
   .fa-main{flex:1;min-width:0}
   .fa-t{font-weight:700;font-size:14px;margin-bottom:3px}
@@ -333,6 +333,7 @@
     <button class="ref" onclick="openStats()" style="margin-right:8px">📊 Analíticas</button>
     <button class="ref" onclick="openCommunity()" style="margin-right:8px">📚 Comunidad</button>
     <button class="ref" onclick="openFeed()" style="margin-right:8px">🗣️ Feed</button>
+    <button class="ref" onclick="openGrupos()" style="margin-right:8px">🎯 Grupos</button>
     <button class="ref" onclick="openProgress()" style="margin-right:8px">📈 Progreso</button>
     <button class="ref" onclick="openInbox()" style="margin-right:8px;position:relative">📥 Bandeja<span id="inboxBadge" class="ibx-badge">0</span></button>
     <button class="ref" onclick="openPrompt()" style="margin-right:8px">⚙️ Bot</button>
@@ -451,6 +452,40 @@
       <button class="pm-x" onclick="closeProgress()" aria-label="Cerrar">✕</button>
     </div>
     <div id="progBody" style="overflow-y:auto;max-height:76vh;max-height:76dvh;padding:2px"></div>
+  </div>
+</div>
+
+<div id="gruposModal">
+  <div class="pm-card" style="max-width:680px">
+    <div class="pm-head">
+      <strong>🎯 Grupos · Misiones</strong>
+      <button class="pm-x" onclick="closeGrupos()" aria-label="Cerrar">✕</button>
+    </div>
+    <div style="overflow-y:auto;max-height:76vh;max-height:76dvh;padding:2px">
+      <p class="pm-hint">Cada grupo es una misión por cohorte. Solo una puede estar ACTIVA a la vez. El plan: una misión por línea (línea 1 = día 1).</p>
+      <div id="gaList"></div>
+      <div id="gaForm" class="cm-form" style="display:none">
+        <input type="hidden" id="gaId" />
+        <label class="cm-lbl">Emoji</label>
+        <input id="gaEmoji" class="cmin" maxlength="8" />
+        <label class="cm-lbl">Título</label>
+        <input id="gaTitle" class="cmin" placeholder="El Valor de tu Hora" />
+        <label class="cm-lbl">Problema (subtítulo)</label>
+        <input id="gaProb" class="cmin" placeholder="21 días para…" />
+        <label class="cm-lbl">Inicio de la cohorte</label>
+        <input id="gaStart" class="cmin" type="date" />
+        <label class="cm-lbl">Duración (días)</label>
+        <input id="gaDur" class="cmin" type="number" min="7" max="90" />
+        <label class="cm-pin"><input type="checkbox" id="gaActive" /> ● Misión ACTIVA (la que ven los miembros)</label>
+        <label class="cm-lbl">Plan · una misión por línea (línea 1 = día 1)</label>
+        <textarea id="gaPlan" class="cmin" style="min-height:180px;resize:vertical"></textarea>
+        <div class="cm-formbtns">
+          <button class="cm-save" onclick="saveGrupo()">💾 Guardar</button>
+          <button class="cm-cancel" onclick="document.getElementById('gaForm').style.display='none'">Cancelar</button>
+        </div>
+      </div>
+      <div id="gaMembers"></div>
+    </div>
   </div>
 </div>
 
@@ -911,6 +946,65 @@
   function approveFeed(id){ capi('feedapprove',{id:id}).then(function(res){ if(!res.ok){ alert((res.d&&res.d.error)||'No se pudo.'); return; } loadFeedAdmin(); }); }
   function pinFeed(id){ capi('feedpin',{id:id}).then(function(res){ if(!res.ok){ alert((res.d&&res.d.error)||'No se pudo.'); return; } loadFeedAdmin(); }); }
   function delFeed(id){ if(!confirm('¿Borrar esta publicación de la comunidad? No se puede deshacer.')) return; capi('feeddel',{id:id}).then(function(res){ if(!res.ok){ alert((res.d&&res.d.error)||'No se pudo.'); return; } var r=document.getElementById('fa-'+id); if(r) r.remove(); }); }
+  // --- Grupos (misiones por cohorte) ---
+  var GADM=[];
+  function openGrupos(){ document.getElementById('gruposModal').classList.add('open'); loadGrupos(); }
+  function closeGrupos(){ document.getElementById('gruposModal').classList.remove('open'); }
+  function loadGrupos(){
+    document.getElementById('gaList').innerHTML='<p class="pm-hint">Cargando…</p>';
+    document.getElementById('gaForm').style.display='none';
+    capi('glist').then(function(res){
+      if(!res.ok){ document.getElementById('gaList').innerHTML='<p class="pm-hint">'+esc((res.d&&res.d.error)||'Error al cargar.')+'</p>'; return; }
+      GADM=res.d.groups||[];
+      document.getElementById('gaList').innerHTML=GADM.map(function(g){
+        return '<div class="fa-row"><div class="fa-main"><div class="fa-t">'+esc(g.emoji||'🎯')+' '+esc(g.title)+(g.active?' <span style="color:var(--success);font-size:11px;font-weight:800">● ACTIVA</span>':'')+'</div>'
+          +'<div class="fa-meta">Cohorte: '+esc(g.cohortStart||'sin fecha')+' · '+(g.duration||21)+' días · '+((g.plan||[]).length)+' misiones</div></div>'
+          +'<div class="fa-actions"><button onclick="editGrupo(\''+g.id+'\')">✎ Editar</button><button class="fa-del" onclick="delGrupo(\''+g.id+'\')">🗑</button></div></div>';
+      }).join('') + '<button class="cm-new" onclick="editGrupo(\'\')" style="margin-top:6px">➕ Nueva misión</button>';
+      loadGMembers();
+    });
+  }
+  function editGrupo(id){
+    var g=GADM.find(function(x){return x.id===id;})||{emoji:'🎯',title:'',problema:'',cohortStart:'',duration:21,active:false,plan:[]};
+    document.getElementById('gaId').value=g.id||'';
+    document.getElementById('gaEmoji').value=g.emoji||'🎯';
+    document.getElementById('gaTitle').value=g.title||'';
+    document.getElementById('gaProb').value=g.problema||'';
+    document.getElementById('gaStart').value=g.cohortStart||'';
+    document.getElementById('gaDur').value=g.duration||21;
+    document.getElementById('gaActive').checked=!!g.active;
+    document.getElementById('gaPlan').value=(g.plan||[]).join('\n');
+    document.getElementById('gaForm').style.display='block';
+    document.getElementById('gaForm').scrollIntoView({behavior:'smooth'});
+  }
+  function saveGrupo(){
+    var plan=document.getElementById('gaPlan').value.split('\n').map(function(x){return x.trim();}).filter(Boolean);
+    var group={ id:document.getElementById('gaId').value, emoji:document.getElementById('gaEmoji').value, title:document.getElementById('gaTitle').value.trim(), problema:document.getElementById('gaProb').value.trim(), cohortStart:document.getElementById('gaStart').value, duration:Number(document.getElementById('gaDur').value)||21, active:document.getElementById('gaActive').checked, plan:plan };
+    if(!group.title){ alert('Ponle un título a la misión.'); return; }
+    capi('gsave',{group:group}).then(function(res){ if(!res.ok){ alert((res.d&&res.d.error)||'No se pudo guardar.'); return; } loadGrupos(); });
+  }
+  function delGrupo(id){
+    if(!confirm('¿Eliminar esta misión? Los miembros que estaban dentro quedarían sin grupo.')) return;
+    capi('gdel',{id:id}).then(function(res){ if(!res.ok){ alert((res.d&&res.d.error)||'No se pudo.'); return; } loadGrupos(); });
+  }
+  function loadGMembers(){
+    capi('gmembers').then(function(res){
+      var el=document.getElementById('gaMembers'); if(!el) return;
+      if(!res.ok){ el.innerHTML=''; return; }
+      var rows=res.d.rows||[];
+      el.innerHTML='<h4 style="margin:16px 0 10px">👥 Miembros ('+rows.filter(function(r){return r.joined;}).length+' en misión)</h4>'
+        + (rows.length? rows.map(function(r){
+          return '<div class="fa-row"><div class="fa-main"><div class="fa-t">'+esc(r.name||('+'+r.phone))+(r.premium?' <span style="color:var(--gold);font-size:11px;font-weight:800">⭐ PREMIUM</span>':'')+'</div>'
+            +'<div class="fa-meta">+'+esc(r.phone)+' · '+(r.joined?('Día '+r.day+' · 🔥 '+r.streak+' · ✅ '+r.checkins+' check-ins'):'Sin misión aún')+'</div></div>'
+            +'<div class="fa-actions"><button onclick="gPremium(\''+r.phone+'\','+(r.premium?'false':'true')+')">'+(r.premium?'Quitar ⭐':'Dar ⭐ Premium')+'</button></div></div>';
+        }).join('') : '<p class="pm-hint">Aún no hay miembros registrados.</p>');
+    });
+  }
+  function gPremium(phone, val){
+    var on=(val===true||val==='true');
+    if(!confirm(on?'¿Activar Premium para este miembro? (verifica su pago de S/99 primero)':'¿Quitar el Premium a este miembro?')) return;
+    capi('gsetpremium',{phone:phone,premium:on}).then(function(res){ if(!res.ok){ alert((res.d&&res.d.error)||'No se pudo.'); return; } loadGMembers(); });
+  }
   // --- Academia (gestión de módulos → clases) ---
   var CM_TREE=[], CM_MEMBERS=0, CM_CUR=null, CM_CFG={groupLink:'',waText:''}, CM_CURLES=null;
   function capi(sub, extra){
