@@ -156,8 +156,9 @@
   .cp-card{background:var(--bg);border:1px solid var(--stroke);border-radius:10px;padding:13px;margin-bottom:10px}
   .cp-uso{color:var(--muted);font-size:12.5px;margin-bottom:8px;line-height:1.5}
   .cp-est{white-space:pre-wrap;word-break:break-word;font-size:13px;line-height:1.55;background:var(--surface2);border-radius:8px;padding:11px;margin-bottom:8px}
-  .cp-ej{white-space:pre-wrap;word-break:break-word;font-size:12.5px;line-height:1.55;color:#E7E3F4;border-left:2px solid var(--accent);padding-left:10px;margin:10px 0}
-  .cp-ej b{color:var(--gold)}
+  .cp-ej{white-space:pre-wrap;word-break:break-word;font-size:12.5px;line-height:1.55;color:#E7E3F4;border-left:2px solid var(--accent);padding-left:10px;margin:2px 0 12px}
+  .cp-ejbtn{display:block;width:100%;text-align:left;font-family:inherit;font-size:12.5px;font-weight:700;padding:9px 12px;border-radius:9px;border:1px solid var(--stroke);background:var(--surface2);color:var(--text);cursor:pointer;margin-bottom:7px}
+  .cp-ejbtn.on{border-color:var(--accent)}
   .fa-row{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--stroke);border-radius:10px;padding:11px;margin-bottom:9px}
   .fa-main{flex:1;min-width:0}
   .fa-t{font-weight:700;font-size:14px;margin-bottom:3px}
@@ -1088,14 +1089,31 @@
     var el=document.getElementById('cpChips'); if(!el||el.childNodes.length) return;
     el.innerHTML=PLANTILLAS.map(function(p,i){ return '<button class="cpchip" id="cpc-'+i+'" onclick="cpShow('+i+')">'+esc(p.n)+'</button>'; }).join('');
   }
+  var CP_CUR=-1;
   function cpShow(i){
+    var v=document.getElementById('cpView');
+    if(CP_CUR===i && v.style.display==='block'){ cpClose(); return; } // tocar la misma la cierra
+    CP_CUR=i;
     var p=PLANTILLAS[i]; if(!p) return;
     for(var j=0;j<PLANTILLAS.length;j++){ var c=document.getElementById('cpc-'+j); if(c) c.classList.toggle('on', j===i); }
-    var v=document.getElementById('cpView'); v.style.display='block';
+    v.style.display='block';
     v.innerHTML='<div class="cp-card"><div class="fa-t">'+esc(p.n)+'</div><div class="cp-uso">📌 <strong>Cuándo usarla:</strong> '+esc(p.uso)+'</div>'
       +'<div class="cp-est">'+esc(p.e)+'</div>'
-      +p.ej.map(function(x){ return '<div class="cp-ej"><b>'+esc(x.c)+'</b>\n'+esc(x.t)+'</div>'; }).join('')
-      +'<div class="cm-formbtns"><button class="cm-save" onclick="cpUse('+i+')">📥 Usar en el entrenador</button><button class="cm-cancel" onclick="document.getElementById(\'cpView\').style.display=\'none\'">Cerrar</button></div></div>';
+      +'<div class="cp-uso" style="margin-bottom:6px">Ejemplos — toca para abrir; vuelve a tocar para cerrar:</div>'
+      +p.ej.map(function(x,j){ return '<button class="cp-ejbtn" id="cpeb-'+j+'" onclick="cpEj('+j+')">'+esc(x.c)+' ▾</button><div class="cp-ej" id="cpe-'+j+'" style="display:none">'+esc(x.t)+'</div>'; }).join('')
+      +'<div class="cm-formbtns"><button class="cm-save" onclick="cpUse('+i+')">📥 Usar en el entrenador</button><button class="cm-cancel" onclick="cpClose()">Cerrar</button></div></div>';
+  }
+  function cpEj(j){
+    var d=document.getElementById('cpe-'+j), b=document.getElementById('cpeb-'+j); if(!d||!b) return;
+    var open=d.style.display!=='none';
+    d.style.display=open?'none':'block';
+    b.classList.toggle('on', !open);
+    b.textContent=b.textContent.replace(open?' ▴':' ▾', open?' ▾':' ▴');
+  }
+  function cpClose(){
+    document.getElementById('cpView').style.display='none';
+    if(CP_CUR>=0){ var c=document.getElementById('cpc-'+CP_CUR); if(c) c.classList.remove('on'); }
+    CP_CUR=-1;
   }
   function cpUse(i){
     var p=PLANTILLAS[i]; if(!p) return;
