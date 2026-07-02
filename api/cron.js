@@ -129,8 +129,8 @@ async function dailyGym() {
     const tipo = doy % 3;
     let msg;
     if (tipo === 0) msg = '🏋️ *Gimnasio del Copy — Copywork (7 min)*\n\nHoy: copia A MANO (papel y lapicero) un copy que te haya vendido algo, o tu mejor pieza propia (el hero de whape.club, la clase 1 de "Dueño de tu Atención").\n\nLa mano le enseña el ritmo al cerebro. ✍️';
-    else if (tipo === 1) msg = '🏋️ *Gimnasio del Copy — 10 ganchos (7 min)*\n\nTema de hoy: *' + tema + '*\n\nEscribe 10 ganchos distintos (una línea cada uno). Los primeros 5 saldrán malos; el oro vive del 6 al 10.\n\nGuarda el mejor en tu 📂 Archivo (panel → ✍️ Copy).';
-    else msg = '🏋️ *Gimnasio del Copy — Reescritura (6 min)*\n\nToma UN mensaje real que enviaste ayer (CRM, plantilla o post) y reescríbelo aplicando UNA ley: especificidad (Hopkins) o una-sola-persona (Halbert).\n\nPásalo por tu 🥊 Entrenador (panel → ✍️ Copy) y compara.';
+    else if (tipo === 1) msg = '🏋️ *Gimnasio del Copy — 10 ganchos (7 min)*\n\nTema de hoy: *' + tema + '*\n\nEscribe 10 ganchos distintos (una línea cada uno). Los primeros 5 saldrán malos; el oro vive del 6 al 10.\n\nRespóndeme aquí: "maestro: mis 10 ganchos…" y te los corrijo. 🎓';
+    else msg = '🏋️ *Gimnasio del Copy — Reescritura (6 min)*\n\nToma UN mensaje real que enviaste ayer (CRM, plantilla o post) y reescríbelo aplicando UNA ley: especificidad (Hopkins) o una-sola-persona (Halbert).\n\nRespóndeme aquí: "copy: [tu versión]" y te la evalúo. 🥊';
     await notifyOwner(msg);
     await redis(['SET', 'gym:last', key]);
     return true;

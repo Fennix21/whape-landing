@@ -118,13 +118,13 @@ async function notifyOwner(text, from) {
 }
 
 // IA cruda para clasificar (Haiku). Devuelve '' si falla: la captura nunca se rompe por la IA.
-async function askAIRaw(system, user) {
+async function askAIRaw(system, user, maxTok) {
   if (!process.env.ANTHROPIC_API_KEY) return '';
   try {
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
-      body: JSON.stringify({ model: process.env.WHAPE_AI_MODEL || 'claude-haiku-4-5-20251001', max_tokens: 300, system, messages: [{ role: 'user', content: user }] }),
+      body: JSON.stringify({ model: process.env.WHAPE_AI_MODEL || 'claude-haiku-4-5-20251001', max_tokens: maxTok || 300, system, messages: [{ role: 'user', content: user }] }),
     });
     const data = await r.json();
     if (!r.ok) return '';
@@ -189,6 +189,34 @@ module.exports = async (req, res) => {
         if (ideas.length > 500) ideas = ideas.slice(-500);
         await redis(['SET', 'ideas', JSON.stringify(ideas)]);
         await sendWhatsApp(from, '💡 *Idea guardada*\n📌 ' + title + '\n🏷️ ' + cat + (next ? '\n➡️ ' + next : '') + '\n\nLa tienes en tu panel → 💡 Ideas');
+        return res.status(200).send('ok');
+      }
+    }
+
+    // 🎓 Maestro de Copy del DUEÑO: "copy: <borrador>" lo evalúa; "maestro: <pregunta>" enseña.
+    const copyM = text && text.match(/^\s*copy\b[:,]?\s*([\s\S]*)$/i);
+    const maestroM = text && text.match(/^\s*maestro\b[:,]?\s*([\s\S]*)$/i);
+    if (HAS_REDIS && (copyM || maestroM)) {
+      const owner = ((await redis(['GET', 'config:ownerphone'])) || process.env.WHAPE_OWNER_PHONE || '').replace(/\D/g, '');
+      if (owner && from.replace(/\D/g, '') === owner) {
+        const MASTER_SYS = 'Eres el "Maestro de Copy" de WHAPE: el consejo de los más grandes copywriters de la historia respondiendo por WhatsApp — Eugene Schwartz (el deseo no se crea, se canaliza; niveles de conciencia), Gary Halbert (escribe a UNA persona; el mercado hambriento), David Ogilvy (el titular es el 80%), Claude Hopkins (especificidad y prueba), Joe Sugarman (el tobogán: cada frase vende la siguiente), Robert Collier (entra a la conversación que ya ocurre en su mente), John Caples (testear > opinar), Gary Bencivenga (prueba > promesa). Tu alumno: Martín, dueño de WHAPE (Perú), plataforma que enseña a convertir problemas en negocios que venden por WhatsApp; su audiencia: peruanos cansados que pierden horas en el celular y quieren multiplicar el valor de su hora. Español peruano NEUTRO. Formato WhatsApp: compacto (máx ~12 líneas), usa *negritas*, ejemplos aplicados a SU negocio, y cita al maestro cuando enseñes un principio. Si pide ganchos o copys, entrégalos listos para usar. Sé exigente y directo, como buen maestro. NUNCA sugieras prometer ingresos garantizados.';
+        let reply = '';
+        if (copyM) {
+          const draft = (copyM[1] || '').trim().slice(0, 3000);
+          if (!draft) reply = '🥊 Mándame tu borrador así:\n"copy: [tu texto]"\n\nY te lo devuelvo con puntaje, error #1 y 2 variantes.';
+          else {
+            const out = await askAIRaw(MASTER_SYS, 'BORRADOR DEL ALUMNO:\n"""\n' + draft + '\n"""\n\nEvalúalo compacto para WhatsApp:\n📊 *Puntaje 1-10*: Gancho, Una idea, Especificidad, Emoción→lógica, CTA (una línea cada uno) + a qué nivel de conciencia habla (1-5).\n🔧 *Error #1* (máx 2 líneas).\n✍️ *Variante A* (mejora directa).\n🅱️ *Variante B* (otro ángulo).\n🧠 *Lección* (1 línea, citando al maestro).', 900);
+            reply = out || '😮‍💨 El maestro tuvo un problema técnico. Intenta de nuevo en un momento.';
+          }
+        } else {
+          const q = (maestroM[1] || '').trim().slice(0, 1000);
+          if (!q) reply = '🎓 *Maestro de Copy* — úsame así:\n\n• "maestro: [pregunta o pedido]"\n  (ej. "dame 5 ganchos sobre el valor de la hora")\n• "copy: [tu borrador]" → puntaje + error #1 + 2 variantes\n• "idea: …" → guardo tus ideas\n\nEl consejo: Schwartz, Halbert, Ogilvy, Hopkins, Sugarman, Collier, Caples y Bencivenga. 🧠';
+          else {
+            const out = await askAIRaw(MASTER_SYS, q, 700);
+            reply = out || '😮‍💨 El maestro tuvo un problema técnico. Intenta de nuevo en un momento.';
+          }
+        }
+        await sendWhatsApp(from, reply.slice(0, 3900));
         return res.status(200).send('ok');
       }
     }
