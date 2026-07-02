@@ -100,6 +100,12 @@ async function weeklyRadar() {
     if (!out) return false;
     await notifyOwner('🧠 *Radar semanal — ' + (g.title || 'tu misión') + '*\n\n' + out);
     await redis(['SET', 'radar:last', wkKey]);
+    // guarda el historial (lo lee el puente a Obsidian)
+    const rraw = await redis(['GET', 'radars']);
+    let rlist = []; if (rraw) { try { rlist = JSON.parse(rraw); } catch (e) {} }
+    rlist.push({ date: wkKey, title: g.title || '', text: out });
+    if (rlist.length > 12) rlist = rlist.slice(-12);
+    await redis(['SET', 'radars', JSON.stringify(rlist)]);
     return true;
   } catch (e) { console.error('weeklyRadar', e); return false; }
 }

@@ -1071,6 +1071,11 @@ module.exports = async (req, res) => {
         if (!p.approved) { p.approved = true; await savePost(p); await bumpPoints(p.phone, 1); } // +1 punto por participar (post aprobado)
         return res.status(200).json({ ok: true });
       }
+      if (sub === 'radarlist') {
+        const raw = await redis(['GET', 'radars']);
+        let items = []; if (raw) { try { items = JSON.parse(raw); } catch (e) {} }
+        return res.status(200).json({ ok: true, items });
+      }
       if (sub === 'idealist') {
         const raw = await redis(['GET', 'ideas']);
         let items = []; if (raw) { try { items = JSON.parse(raw); } catch (e) {} }
