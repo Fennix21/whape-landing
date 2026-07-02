@@ -150,6 +150,20 @@ async function getMentorSet() {
   ((await redis(['SMEMBERS', 'mentors'])) || []).forEach((p) => { set[p] = 1; });
   return set;
 }
+// IA liviana (Haiku) para lecturas de diagnóstico. Falla en silencio: la web nunca se rompe por la IA.
+async function askAI(system, user, maxTok) {
+  if (!process.env.ANTHROPIC_API_KEY) return '';
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({ model: process.env.WHAPE_AI_MODEL || 'claude-haiku-4-5-20251001', max_tokens: maxTok || 400, system, messages: [{ role: 'user', content: user }] }),
+    });
+    const data = await r.json();
+    if (!r.ok) { console.error('askAI', JSON.stringify(data)); return ''; }
+    return ((data.content && data.content[0] && data.content[0].text) || '').trim();
+  } catch (e) { console.error('askAI', e); return ''; }
+}
 
 // --- Grupos: helpers ---
 async function getGroups() {
@@ -738,9 +752,9 @@ module.exports = async (req, res) => {
         };
       }
       const isMentor = Number((await redis(['SISMEMBER', 'mentors', phone])) || 0) === 1;
-      let hasDiag = false, hourValue = 0;
+      let hasDiag = false, hourValue = 0, diagReading = '';
       const draw = await redis(['GET', 'diag:' + phone]);
-      if (draw) { try { const dj = JSON.parse(draw); hasDiag = true; hourValue = dj.hourValue || 0; } catch (e) {} }
+      if (draw) { try { const dj = JSON.parse(draw); hasDiag = true; hourValue = dj.hourValue || 0; diagReading = dj.reading || ''; } catch (e) {} }
       const upcoming = [];
       for (const x of groups) {
         if (x.id === g.id) continue;
@@ -748,7 +762,7 @@ module.exports = async (req, res) => {
         const inWait = Number((await redis(['SISMEMBER', 'waitlist:' + x.id, phone])) || 0) === 1;
         upcoming.push({ id: x.id, emoji: x.emoji, title: x.title, problema: x.problema, cohortStart: x.cohortStart || '', waiting, inWait });
       }
-      return res.status(200).json({ ok: true, group: { id: g.id, emoji: g.emoji, title: g.title, problema: g.problema, duration: dur, cohortStart: g.cohortStart, day, started, ended, plan }, joined, state: mystate, premium, hasDiag, hourValue, feedCat: 'g:' + g.id, upcoming, mentor: isMentor });
+      return res.status(200).json({ ok: true, group: { id: g.id, emoji: g.emoji, title: g.title, problema: g.problema, duration: dur, cohortStart: g.cohortStart, day, started, ended, plan }, joined, state: mystate, premium, hasDiag, hourValue, diagReading, feedCat: 'g:' + g.id, upcoming, mentor: isMentor });
     }
 
     if (b.action === 'ggraduate') {
@@ -817,8 +831,20 @@ module.exports = async (req, res) => {
       if (!phone) return res.status(401).json({ error: 'Tu sesión venció. Entra de nuevo. 🙏' });
       const answers = Array.isArray(b.answers) ? b.answers.slice(0, 10).map((x) => String(x).slice(0, 120)) : [];
       const hourValue = Math.max(0, Math.min(9999, Number(b.hourValue) || 0));
-      await redis(['SET', 'diag:' + phone, JSON.stringify({ answers, hourValue, ts: Date.now() })]);
-      return res.status(200).json({ ok: true });
+      const freeText = (b.freeText || '').toString().trim().slice(0, 600);
+      let reading = '', category = '';
+      if (freeText) {
+        const sys = 'Eres el mentor de WHAPE, una comunidad peruana que entrena a convertir problemas en negocios que venden por WhatsApp. Hablas español peruano NEUTRO, cálido y directo. NUNCA prometas ingresos ni resultados garantizados.';
+        const usr = 'Diagnóstico de un nuevo miembro:\n- Respuestas: ' + answers.join(' | ') + '\n- Valor actual de su hora: S/' + hourValue + '\n- Su problema en sus palabras: "' + freeText + '"\n\nResponde EXACTAMENTE en este formato:\nCATEGORIA: <una palabra: ventas|clientes|foco|energia|empleo|otro>\n\n<2 párrafos cortos (máx 45 palabras cada uno), hablándole de TÚ: (1) espejo de su situación nombrando SU problema con sus propias palabras, mostrando que lo entendiste; (2) por qué su problema es un síntoma del valor de su tiempo y cómo la misión de 21 días ataca esa raíz. Sin saludos, sin despedidas.>';
+        const out = await askAI(sys, usr, 350);
+        if (out) {
+          const m = out.match(/^CATEGORIA:\s*(\w+)/i);
+          if (m) { category = m[1].toLowerCase(); reading = out.replace(/^CATEGORIA:[^\n]*\n?/i, '').trim(); }
+          else reading = out;
+        }
+      }
+      await redis(['SET', 'diag:' + phone, JSON.stringify({ answers, hourValue, freeText, reading, category, ts: Date.now() })]);
+      return res.status(200).json({ ok: true, reading });
     }
 
     if (b.action === 'gjoin') {

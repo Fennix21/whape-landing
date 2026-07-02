@@ -1057,16 +1057,34 @@
     GDIAG.answers.push(q.q+' → '+o.t);
     GDIAG.i++;
     if(GDIAG.i<GQ.length){ gRenderQ(); return; }
+    gRenderFree();
+  }
+  function gRenderFree(){
+    gEl().innerHTML='<div class="g-card"><div class="g-sub">Diagnóstico · último paso</div><div class="g-q">Cuéntame con tus palabras: ¿cuál es el problema que más te frena hoy?</div>'
+      +'<div class="g-compose"><textarea id="gFreeText" maxlength="600" placeholder="Ej.: trabajo 10 horas y llego muerto; quiero vender lo que sé pero no sé por dónde empezar…"></textarea></div>'
+      +'<div class="g-btns"><button class="g-btn pri" onclick="gFinishDiag(true)">🧠 Analizar mi diagnóstico</button><button class="g-btn sec" onclick="gFinishDiag(false)">Omitir este paso</button></div>'
+      +'<div class="g-cta-note">Con esto la IA te da una lectura personalizada de tu situación.</div></div>';
+    window.scrollTo(0,0);
+  }
+  function gFinishDiag(withText){
+    var ft=''; if(withText){ var t=document.getElementById('gFreeText'); ft=t?t.value.trim():''; if(!ft){ alert('Escribe tu problema con tus palabras, o toca "Omitir este paso".'); return; } }
     var hv=Math.max(1,Math.round(GDIAG.income/((GDIAG.hours||9)*26)));
-    api('gdiag',{token:TOKEN,answers:GDIAG.answers,hourValue:hv}).then(function(){ GDATA.hasDiag=true; GDATA.hourValue=hv; GVIEW='result'; gRender(); });
+    gEl().innerHTML='<div class="g-card" style="text-align:center"><div class="g-emoji" style="margin-bottom:10px">🧠</div><div class="g-q">Analizando tu diagnóstico…</div><div class="g-sub">Unos segundos.</div></div>';
+    api('gdiag',{token:TOKEN,answers:GDIAG.answers,hourValue:hv,freeText:ft}).then(function(res){
+      GDATA.hasDiag=true; GDATA.hourValue=hv;
+      GDATA.diagReading=(res.ok && res.d && res.d.reading)||'';
+      GVIEW='result'; gRender();
+    });
   }
   function gResultHtml(){
     var g=GDATA.group; var hv=GDATA.hourValue||0;
     var when=g.started?('Entras en el día '+Math.min(g.day,g.duration)+' de '+g.duration+'. Aún estás a tiempo.'):('La cohorte arranca el '+gFmtDate(g.cohortStart)+'. Entras hoy y empiezas con todos.');
     var hvHtml=hv?('<div class="g-sub">Hoy tu hora vale aproximadamente</div><div class="g-hour">S/ '+hv+'</div><div class="g-mission">Ese número no es tu techo: es tu punto de partida. En 21 días vas a aprender a multiplicarlo dejando de cobrar por hora y empezando a cobrar por resultados.</div>'):('<div class="g-mission">Tu problema de hoy es un síntoma. La raíz es el valor de tu tiempo — y eso es exactamente lo que vamos a entrenar durante 21 días.</div>');
+    var reading=GDATA.diagReading?'<div class="g-card" style="border-color:var(--accent);box-shadow:0 0 0 1px rgba(142,45,226,.25)"><div class="g-q">🧠 Lectura de tu diagnóstico</div><div class="g-mission">'+esc(GDATA.diagReading).replace(/\n/g,'<br>')+'</div></div>':'';
     return '<div class="g-card"><div class="g-head"><div class="g-emoji">'+esc(g.emoji)+'</div><div><div class="g-title">'+esc(g.title)+'</div><div class="g-sub">'+esc(g.problema)+'</div></div></div>'
       +'<div style="margin-top:14px">'+hvHtml+'</div>'
       +'<div class="g-sub">'+when+' · Semana 1 gratis · 🔥 Solo 100 cupos</div></div>'
+      +reading
       +'<div class="g-card"><div class="g-q">✍️ Tu compromiso</div><div class="g-sub" style="margin-bottom:10px">Escríbelo con tus palabras. Será tu primer post en el grupo: tu punto de partida público.</div>'
       +'<div class="g-compose"><textarea id="gCommit" maxlength="1000" placeholder="Me comprometo a darle [tiempo] durante 21 días porque quiero [tu porqué]…"></textarea></div>'
       +'<div class="g-btns"><button class="g-btn gold" onclick="gJoin()">🔥 Me comprometo y entro</button><button class="g-btn sec" onclick="gTogglePlan()">📋 '+(GPLANOPEN?'Ocultar el plan':'Ver el plan de 21 días')+'</button></div>'

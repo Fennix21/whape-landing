@@ -38,6 +38,72 @@ async function notifyOwner(text) {
   } catch (e) { console.error('cron notifyOwner', e); }
 }
 
+async function askAI(system, user, maxTok) {
+  if (!process.env.ANTHROPIC_API_KEY) return '';
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({ model: process.env.WHAPE_AI_MODEL || 'claude-haiku-4-5-20251001', max_tokens: maxTok || 500, system, messages: [{ role: 'user', content: user }] }),
+    });
+    const data = await r.json();
+    if (!r.ok) { console.error('askAI', JSON.stringify(data)); return ''; }
+    return ((data.content && data.content[0] && data.content[0].text) || '').trim();
+  } catch (e) { console.error('askAI', e); return ''; }
+}
+
+// Radar semanal (lunes, hora Perú): la IA resume la semana del grupo y sugiere UNA acción.
+async function weeklyRadar() {
+  try {
+    if (!REDIS_URL || !REDIS_TOKEN || !process.env.ANTHROPIC_API_KEY) return false;
+    const peru = new Date(Date.now() - 5 * 3600000);
+    if (peru.getUTCDay() !== 1) return false; // solo lunes
+    const wkKey = peru.toISOString().slice(0, 10);
+    if ((await redis(['GET', 'radar:last'])) === wkKey) return false; // ya se envió esta semana
+    let groups = [];
+    const raw = await redis(['GET', 'config:groups']);
+    if (raw) { try { groups = JSON.parse(raw); } catch (e) {} }
+    const g = (Array.isArray(groups) && groups.find((x) => x.active)) || (groups && groups[0]);
+    if (!g) return false;
+    const day = cohortDay(g.cohortStart);
+    if (day < 2) return false; // recién hay algo que resumir desde la primera semana
+    // Datos de la semana: miembros y posts del grupo
+    const phones = (await redis(['SMEMBERS', 'members'])) || [];
+    let joined = 0, risky = 0, grads = 0, checkinsWeek = 0;
+    if (phones.length) {
+      const graws = (await redis(['MGET', ...phones.map((p) => 'gstate:' + p)])) || [];
+      graws.forEach((r) => {
+        if (!r) return; let st; try { st = JSON.parse(r); } catch (e) { return; }
+        if (st.groupId !== g.id) return;
+        joined++;
+        if (st.riskDay) risky++;
+        if (st.graduated) grads++;
+        Object.keys(st.checkins || {}).forEach((d) => { if (Number(d) > day - 8) checkinsWeek++; });
+      });
+    }
+    if (!joined) return false;
+    const ids = (await redis(['SMEMBERS', 'community:posts'])) || [];
+    let postsTxt = [];
+    if (ids.length) {
+      const raws = (await redis(['MGET', ...ids.map((id) => 'post:' + id)])) || [];
+      const weekAgo = Date.now() - 7 * 86400000;
+      raws.forEach((r) => {
+        if (!r) return; let p; try { p = JSON.parse(r); } catch (e) { return; }
+        if (p.cat !== 'g:' + g.id || p.ts < weekAgo) return;
+        postsTxt.push((p.name || 'Miembro') + ': ' + (p.title ? p.title + ' — ' : '') + (p.body || '').slice(0, 200));
+      });
+      postsTxt = postsTxt.slice(-30);
+    }
+    const sys = 'Eres el analista de una comunidad peruana de emprendedores. Español peruano neutro, directo, sin relleno.';
+    const usr = 'Misión "' + (g.title || '') + '", día ' + day + ' de ' + (g.duration || 21) + '.\nMiembros en misión: ' + joined + ' · check-ins esta semana: ' + checkinsWeek + ' · en riesgo: ' + risky + ' · graduados: ' + grads + '\n\nPublicaciones de la semana:\n' + (postsTxt.length ? postsTxt.join('\n') : '(no hubo publicaciones)') + '\n\nDame un radar semanal para el dueño en máximo 10 líneas: 1) pulso del grupo en una frase, 2) obstáculos comunes que se mencionan, 3) a quién felicitar públicamente y por qué, 4) UNA acción concreta para esta semana. Sin encabezados largos, usa viñetas cortas.';
+    const out = await askAI(sys, usr, 500);
+    if (!out) return false;
+    await notifyOwner('🧠 *Radar semanal — ' + (g.title || 'tu misión') + '*\n\n' + out);
+    await redis(['SET', 'radar:last', wkKey]);
+    return true;
+  } catch (e) { console.error('weeklyRadar', e); return false; }
+}
+
 // Vigila la misión activa: 3+ días sin check-in = en riesgo (se avisa UNA vez por caída).
 async function scanGroupRisk() {
   try {
@@ -86,7 +152,8 @@ module.exports = async (req, res) => {
   try {
     const fired = await flushDueReminders();
     const risk = await scanGroupRisk();
-    return res.status(200).json({ ok: true, fired, risk });
+    const radar = await weeklyRadar();
+    return res.status(200).json({ ok: true, fired, risk, radar });
   } catch (e) {
     console.error('cron error', e);
     return res.status(500).json({ error: 'Error' });
