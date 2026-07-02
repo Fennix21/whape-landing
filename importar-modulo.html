@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>WHAPE — Importador de módulo (uso único)</title>
+<meta name="robots" content="noindex" />
+<link rel="icon" href="logo.png" />
+<style>
+  body{font-family:system-ui,Arial,sans-serif;background:#0F0C1C;color:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;padding:20px}
+  .card{background:#1A1630;border:1px solid #332C52;border-radius:16px;padding:26px;max-width:460px;width:100%}
+  h1{font-size:19px;margin:0 0 6px}
+  p{color:#ABA4C7;font-size:13.5px;line-height:1.5}
+  input{width:100%;box-sizing:border-box;padding:12px 14px;border-radius:10px;border:1px solid #332C52;background:#0F0C1C;color:#fff;font-size:15px;margin:10px 0}
+  button{width:100%;padding:13px;border:0;border-radius:10px;font-weight:800;font-size:15px;cursor:pointer;background:linear-gradient(120deg,#8E2DE2,#4A00E0);color:#fff}
+  #st{margin-top:12px;font-size:13.5px;line-height:1.5}
+  .ok{color:#2BD9A6}.err{color:#ff7a90}
+</style>
+</head>
+<body>
+<div class="card">
+  <h1>📥 Importar módulo: 🧭 Dueño de tu Atención</h1>
+  <p>Crea en tu academia el módulo con sus <b>7 clases</b> (sistema de niveles de conciencia: celular/redes). <b>Úsalo UNA sola vez</b> — si lo corres dos veces, el módulo se duplica.</p>
+  <input id="pass" type="password" placeholder="Tu contraseña de admin (la del panel)" />
+  <button onclick="go()">📥 Importar módulo (7 clases)</button>
+  <div id="st"></div>
+</div>
+<script>
+var MOD = {
+  title: '🧭 Dueño de tu Atención',
+  desc: 'Recupera las horas que el celular te roba y conviértelas en tu materia prima. 7 clases: de la conciencia a la acción.',
+  lockDays: 0,
+  lockWa: false,
+  lessons: [
+  { title: '1. El espejo: la cuenta que nadie quiere hacer', body:
+'🧠 EL PRINCIPIO\nTu atención es la materia prima de todo lo que quieres: aprender, crear, vender, cambiar tu vida. El celular no te roba "tiempo libre": te roba la materia prima con la que ibas a construir tu futuro.\n\n📱 LA CUENTA\nAbre los ajustes de tu celular y busca "Tiempo de pantalla" (iPhone) o "Bienestar digital" (Android). Mira el número real de esta semana. No el que crees: el real.\n\nAhora haz esta cuenta:\n• Horas de pantalla al día × 365 = horas al año.\n• Ese total ÷ 16 horas que pasas despierto = DÍAS COMPLETOS de tu vida al año.\n\nEjemplo real: 4 horas diarias = 1,460 horas al año = 91 días despierto. TRES MESES de tu año, scrolleando.\n\n💸 EN PLATA\nSi ya hiciste el diagnóstico de la misión, sabes cuánto vale tu hora. Multiplica: valor de tu hora × horas de pantalla al día × 30. Ese es el "alquiler" mensual que le pagas a las apps con tu vida.\n\n✅ TU EJERCICIO DE HOY\n1) Toma captura de tu tiempo de pantalla de esta semana.\n2) Haz las dos cuentas (días al año y soles al mes).\n3) Publica tu número en la comunidad con el título "Mi espejo 📱". Sin vergüenza: aquí nadie se burla, todos estamos saliendo del mismo pozo.\n\nEn la siguiente clase te muestro por qué ese número NO es tu culpa.' },
+  { title: '2. No es tu culpa: te diseñaron la trampa', body:
+'🧠 EL PRINCIPIO\nLas apps que usas son gratis porque TÚ no eres el cliente: eres el producto. Su negocio es vender tu atención a los anunciantes. Cada minuto tuyo = dinero para ellos. Por eso, equipos de miles de ingenieros y psicólogos trabajan para que no puedas soltar el celular.\n\n🎰 LAS 4 TRAMPAS\n1) Recompensa variable: no sabes qué viene en el siguiente scroll (a veces oro, casi siempre basura). Es EXACTAMENTE el mecanismo de las tragamonedas. Tu cerebro no se engancha al premio: se engancha al "quizás".\n2) Scroll infinito: no existe el "final". Tu cerebro nunca recibe la señal de "ya terminaste", así que sigue.\n3) Validación social: los likes y las vistas activan la misma zona del cerebro que la aprobación de tu tribu. Es hambre de pertenencia, embotellada.\n4) Notificaciones: interrupciones diseñadas. Cada "ping" es un anzuelo que te saca de tu vida y te devuelve a la máquina.\n\n⚖️ LA CONCLUSIÓN HONESTA\nTú, solo con tu fuerza de voluntad, contra miles de ingenieros pagados para vencerte. Esa pelea no la pierdes por débil: la pierdes porque está arreglada.\n\nDeja de culparte. La culpa gasta la poca energía que te queda y no cambia nada. Lo que sí cambia todo: entender el diseño de la trampa para diseñar tu salida.\n\n✅ TU EJERCICIO DE HOY\nDetecta TU trampa principal: ¿cuál de las 4 te atrapa más? Obsérvate hoy una vez cayendo (sin juzgarte, solo mira). Publícalo en la comunidad: "Mi trampa es la #X porque…".' },
+  { title: '3. Por qué la fuerza de voluntad siempre pierde', body:
+'🧠 EL PRINCIPIO\nLa fuerza de voluntad es como una batería: se gasta con cada decisión del día. A las 9 pm, después del trabajo, los traslados y los problemas, tu batería está en 2%. Y justo ahí aparece el celular: placer inmediato, fricción cero. Resultado conocido.\n\n❌ POR ESO FALLARON TUS INTENTOS\n• "Borré TikTok"… y lo reinstalaste en una semana (o te mudaste a otra app: la necesidad seguía ahí).\n• "Detox de fin de semana"… y el lunes scrolleaste el doble (efecto rebote: prohibición sin sustituto).\n• "Solo 30 minutos al día"… una decisión que dependía de tu batería, y tu batería llega vacía.\n\nEl patrón: todos esos métodos pelean CONTRA el impulso usando voluntad. Y la voluntad es justo lo que no tienes cuando más la necesitas.\n\n🔑 LA SALIDA (adelanto)\nLos que salen de esto no tienen más disciplina que tú. Cambiaron DOS cosas:\n1) El ENTORNO: hicieron difícil caer y fácil crear (siguiente clase).\n2) El SUSTITUTO: le dieron a su cerebro otra fuente de lo que buscaba en el scroll (clase 5).\n\n✅ TU EJERCICIO DE HOY\nEscribe tus 2 o 3 intentos fallidos de controlar el celular. Al lado de cada uno: ¿dependía de tu fuerza de voluntad? Vas a ver el patrón. Compártelo en la comunidad si te animas: "Yo ya intenté X y me pasó Y".' },
+  { title: '4. El método del entorno: invierte la fricción', body:
+'🧠 EL PRINCIPIO\nNo decides con voluntad: decides con fricción. Haces lo fácil y evitas lo difícil, como el agua baja por la pendiente. Entonces el juego es: SUBIR la fricción de caer y BAJAR la fricción de crear.\n\n🛠️ PROTOCOLO DE FRICCIÓN (elige 3 hoy)\nPara subir la fricción del scroll:\n1) Pantalla en escala de grises (Bienestar digital → sin color, las apps pierden la mitad de su magia).\n2) Saca las apps-trampa de tu pantalla de inicio (que abrirlas requiera buscarlas).\n3) Cierra sesión después de usarlas (escribir la contraseña = 30 segundos de conciencia).\n4) Notificaciones: apaga TODAS menos llamadas y WhatsApp de personas (las de apps son anzuelos, no información).\n5) El celular duerme FUERA de tu cuarto (compra un despertador de S/15; te devuelve la primera y la última hora de tu día).\n\nPara bajar la fricción de crear:\n6) En tu pantalla de inicio deja solo herramientas: notas, cámara, WhatsApp, tu academia.\n7) Deja "preparado" lo que quieres hacer: la nota abierta, el material listo. Que empezar tome 10 segundos.\n\n⚠️ CLAVE: no intentes los 7 a la vez. Elige 3. La perfección es enemiga del cambio.\n\n✅ TU EJERCICIO DE HOY\nAplica 3 cambios AHORA (no después de la clase: ahora, toma 5 minutos). Publica en la comunidad cuáles elegiste: "Mi entorno nuevo: 1… 2… 3…".' },
+  { title: '5. No quites: sustituye', body:
+'🧠 EL PRINCIPIO\nEl scroll no es el problema: es tu solución actual a necesidades reales. Descanso. Novedad. Conexión. Escape. Si solo lo quitas, dejas un hueco — y el hueco siempre gana. La jugada no es quitar: es SUSTITUIR con algo que cubra la misma necesidad y te construya en vez de vaciarte.\n\n🔄 EL MAPA DE SUSTITUCIÓN\nPregúntate: ¿qué busco cuando abro la app sin pensar?\n• ¿Descanso mental? → sustituto: 10 min de caminata, música sin pantalla, un café mirando por la ventana. (El scroll NO descansa: fatiga.)\n• ¿Novedad y curiosidad? → sustituto: una clase de esta academia, aprender la habilidad de tu misión.\n• ¿Conexión? → sustituto: un audio de WhatsApp a alguien real, participar en esta comunidad (aquí las conversaciones te construyen).\n• ¿Escape del estrés? → sustituto: crear algo pequeño. El escape más poderoso no es consumir otra vida: es construir la tuya.\n\n⏱️ EL BLOQUE DE 30\nElige UNA franja diaria (la misma hora siempre) de 30 minutos que antes era scroll y conviértela en tu "bloque de creación": avanzar tu misión, aprender tu habilidad, crear tu oferta. 30 minutos × 30 días = 15 horas construyendo. Con eso se empiezan negocios.\n\n✅ TU EJERCICIO DE HOY\n1) Identifica TU necesidad principal (descanso, novedad, conexión o escape).\n2) Elige su sustituto y tu bloque de 30 (hora exacta).\n3) Publícalo: "Cambio scroll de [hora] por [sustituto]".' },
+  { title: '6. Tu celular, tu empleado', body:
+'🧠 EL PRINCIPIO\nEl celular es neutro. Es una dirección, no un destino: en modo CONSUMO te cuesta horas y plata; en modo CREACIÓN es la herramienta de negocios más barata de la historia. La misma pantalla con la que hoy regalas 3 meses al año es con la que otros venden, cobran por Yape, atienden clientes por WhatsApp y aprenden habilidades que multiplican el valor de su hora.\n\n🔁 LA INVERSIÓN DE PAPELES\nHasta hoy: tú trabajas GRATIS para las apps (tu atención = su dinero).\nDesde hoy: las apps trabajan para TI:\n• WhatsApp deja de ser distracción → es tu canal de ventas y cobros.\n• La cámara deja de ser para historias que mueren en 24 h → documenta lo que construyes.\n• El tiempo de pantalla deja de ser scroll → es tu academia, tu misión, tu bloque de creación.\n• Las redes dejan de ser donde miras la vida de otros → son donde otros descubren lo que TÚ haces.\n\nRegla simple para cada desbloqueo del celular: ¿estoy CONSUMIENDO o CREANDO? No necesitas ser perfecto: necesitas mover el porcentaje. 90/10 hoy → 70/30 este mes → 50/50 después. Cada punto que muevas es valor que regresa a tu vida.\n\n✅ TU EJERCICIO DE HOY\nHaz UNA acción de creación desde tu celular, hoy: escribe la primera nota de tu oferta, manda el primer mensaje a un posible cliente, o graba 60 segundos contando qué estás construyendo. Publica en la comunidad qué hiciste: "Hoy mi celular trabajó para mí: …".' },
+  { title: '7. Tu plan de 7 días (y tu compromiso)', body:
+'🧠 EL SISTEMA COMPLETO (resumen)\n1) CONCIENCIA: ya viste el espejo y conoces la trampa (clases 1-2).\n2) SIN CULPA: no era falta de voluntad; era diseño (clase 3).\n3) ENTORNO: fricción en contra del scroll, a favor de crear (clase 4).\n4) SUSTITUCIÓN: cada necesidad con su reemplazo + tu bloque de 30 (clase 5).\n5) DIRECCIÓN: de consumidor a creador; el celular como empleado (clase 6).\n\n📅 TU PLAN DE 7 DÍAS\n• Día 1: captura tu tiempo de pantalla (tu punto de partida) + aplica tus 3 cambios de entorno.\n• Días 2 al 7: cumple tu bloque de 30 a la misma hora + regla "¿consumo o creo?" en cada desbloqueo.\n• Cada noche (30 segundos): anota ✅ o ❌ del bloque. Sin drama, solo datos.\n• Día 7: nueva captura de pantalla. Compara. Publica tu antes/después en la comunidad.\n\n🎯 LA VERDAD FINAL\nLa meta nunca fue usar menos el celular. La meta es que recuperes tu materia prima —tu atención— para construir algo tuyo. Por eso este módulo termina donde empieza tu historia: la misión de 21 días, donde esa atención recuperada se convierte en tu primer negocio. Entra a la pestaña GRUPOS y haz tu diagnóstico.\n\n✅ TU COMPROMISO PÚBLICO\nPublica en la comunidad: "🧭 Semana 1: mi pantalla marcó [X], mi bloque de 30 es a las [hora], y voy con todo". Lo público compromete — y aquí, en vez de burlas, vas a encontrar gente empujando contigo. Nos vemos adentro. 🔥' }
+  ]
+};
+function go(){
+  var pass = document.getElementById('pass').value;
+  var st = document.getElementById('st');
+  if(!pass){ st.innerHTML='<span class="err">Escribe tu contraseña de admin.</span>'; return; }
+  st.textContent='Importando…';
+  fetch('/api/community', { method:'POST', headers:{'content-type':'application/json'},
+    body: JSON.stringify({ action:'admin', pass:pass, sub:'savemod', mod:MOD }) })
+  .then(function(r){ return r.json().then(function(d){ return {ok:r.ok, d:d}; }); })
+  .then(function(res){
+    if(!res.ok){ st.innerHTML='<span class="err">'+((res.d&&res.d.error)||'No se pudo importar.')+'</span>'; return; }
+    st.innerHTML='<span class="ok">✅ ¡Listo! El módulo "🧭 Dueño de tu Atención" ya está en tu academia con sus 7 clases.<br><br>Revísalo en whape.club/academia (pestaña Academia) o edítalo desde tu panel → 📚 Comunidad.<br><br>⚠️ No vuelvas a tocar el botón (se duplicaría). Avísale a Claude para eliminar esta página.</span>';
+  })
+  .catch(function(){ st.innerHTML='<span class="err">Error de conexión.</span>'; });
+}
+</script>
+</body>
+</html>
