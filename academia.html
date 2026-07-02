@@ -908,7 +908,7 @@
     el.innerHTML=posts.map(postCard).join('');
   }
   function postCard(p){
-    var lvl='<span class="lvl">Nv '+(p.authorLevel||1)+'</span>';
+    var lvl='<span class="lvl">Nv '+(p.authorLevel||1)+'</span>'+(p.mentor?' <span class="lvl" style="color:#2BD9A6;border-color:rgba(43,217,166,.5)">🧑‍🏫 Mentor</span>':'');
     var pin=p.pinned?'<span class="pin">📌 Fijado</span>':'';
     var pend=p.pending?'<span class="pend">⏳ En revisión</span>':'';
     var del=p.mine?'<button class="pdel" onclick="delPost(\''+p.id+'\')" title="Borrar">🗑</button>':'';
@@ -925,7 +925,7 @@
   function commentsHtml(p){
     var list=(p.comments||[]).map(function(c){
       var del=c.mine?'<button class="cdel" onclick="delComment(\''+p.id+'\',\''+c.id+'\')" title="Borrar">🗑</button>':'';
-      return '<div class="cm"><img src="'+esc(c.avatar||'logo.png')+'" class="cm-av" alt=""/><div class="cm-b"><span class="cm-n">'+esc(c.name||'Miembro')+' <span class="lvl sm">Nv '+(c.level||1)+'</span></span>'+esc(c.body).replace(/\n/g,'<br>')+'<div class="cm-t">'+timeAgo(c.ts)+'</div></div>'+del+'</div>';
+      return '<div class="cm"><img src="'+esc(c.avatar||'logo.png')+'" class="cm-av" alt=""/><div class="cm-b"><span class="cm-n">'+esc(c.name||'Miembro')+' <span class="lvl sm">Nv '+(c.level||1)+'</span>'+(c.mentor?' <span class="lvl sm" style="color:#2BD9A6">🧑‍🏫</span>':'')+'</span>'+esc(c.body).replace(/\n/g,'<br>')+'<div class="cm-t">'+timeAgo(c.ts)+'</div></div>'+del+'</div>';
     }).join('');
     return '<div class="cm-list">'+list+'</div><div class="cm-add"><input id="ci-'+p.id+'" placeholder="Escribe un comentario…" onkeydown="if(event.key===\'Enter\'){event.preventDefault();addComment(\''+p.id+'\');}"/><button onclick="addComment(\''+p.id+'\')">➤</button></div>';
   }
@@ -967,7 +967,7 @@
       if(!rows.length){ el.innerHTML='<div class="lb-empty">Aún sin participación. ¡Empieza tú!</div>'; return; }
       el.innerHTML=rows.map(function(r){
         var medal=r.rank===1?'🥇':r.rank===2?'🥈':r.rank===3?'🥉':'<span class="lb-rk">'+r.rank+'</span>';
-        return '<div class="lb-row'+(r.me?' me':'')+'">'+medal+'<img src="'+esc(r.avatar||'logo.png')+'" class="lb-av" alt=""/><span class="lb-nm">'+esc(r.name||'Miembro')+'</span><span class="lb-pt">'+r.points+'</span></div>';
+        return '<div class="lb-row'+(r.me?' me':'')+'">'+medal+'<img src="'+esc(r.avatar||'logo.png')+'" class="lb-av" alt=""/><span class="lb-nm">'+esc(r.name||'Miembro')+(r.mentor?' 🧑‍🏫':'')+'</span><span class="lb-pt">'+r.points+'</span></div>';
       }).join('');
     });
   }
@@ -1087,12 +1087,13 @@
     var g=GDATA.group, st=GDATA.state||{};
     var curDay=Math.min(Math.max(g.day,1),g.duration);
     var pct=g.started?Math.round(Math.min(g.day,g.duration)/g.duration*100):0;
-    var head='<div class="g-card"><div class="g-head"><div class="g-emoji">'+esc(g.emoji)+'</div><div style="flex:1"><div class="g-title">'+esc(g.title)+'</div><div class="g-sub">'+(g.ended?'🎓 Cohorte terminada':(g.started?('Día '+curDay+' de '+g.duration):('🚀 Empieza el '+gFmtDate(g.cohortStart))))+'</div></div></div>'
+    var myBadge=GDATA.mentor?' <span style="font-size:14px">🧑‍🏫</span>':(st.graduated?' <span style="font-size:14px">🎓</span>':'');
+    var head='<div class="g-card"><div class="g-head"><div class="g-emoji">'+esc(g.emoji)+'</div><div style="flex:1"><div class="g-title">'+esc(g.title)+myBadge+'</div><div class="g-sub">'+(g.ended?'🎓 Cohorte terminada':(g.started?('Día '+curDay+' de '+g.duration):('🚀 Empieza el '+gFmtDate(g.cohortStart))))+'</div></div></div>'
       +'<div class="g-meta"><div class="g-bar"><i style="width:'+pct+'%"></i></div><div class="g-streak">🔥 '+(st.streak||0)+'</div></div>'
       +'<div class="g-cta-note">'+(st.graceAvailable?'🛟 Comodín de la semana disponible: si fallas un día, tu racha se salva una vez.':'🛟 Comodín de esta semana ya usado. ¡No sueltes!')+'</div></div>';
     var mission='';
     if(g.ended){
-      mission='<div class="g-card"><div class="g-q">🎓 ¡Cohorte completada!</div><div class="g-mission">Hiciste '+(st.checkins||0)+' check-ins. Publica tu testimonio en el grupo: cuánto vale tu hora ahora y qué cambió en ti. Pronto abre la siguiente misión.</div></div>';
+      mission='<div class="g-card"><div class="g-q">🎓 ¡Cohorte completada!</div><div class="g-mission">Hiciste '+(st.checkins||0)+' check-ins en estos '+g.duration+' días. Lo que sigue está aquí abajo. 👇</div></div>';
     } else if(!g.started){
       var falta=Math.max(0,1-g.day);
       mission='<div class="g-card"><div class="g-q">🚀 Falta'+(falta===1?'':'n')+' '+falta+' día'+(falta===1?'':'s')+'</div><div class="g-mission">La misión arranca el '+gFmtDate(g.cohortStart)+'. Mientras tanto: preséntate en el grupo 👇 y cuenta qué te trajo aquí.</div>'
@@ -1113,7 +1114,41 @@
     var feed='<div class="g-card"><div class="g-q">💬 El grupo</div><div class="g-compose"><textarea id="gPostText" maxlength="4000" placeholder="Comparte tu avance de hoy…"></textarea></div>'
       +'<div class="g-btns"><button class="g-btn pri" onclick="gPost()">Publicar en el grupo</button><button class="g-btn sec" onclick="var x=document.getElementById(\'gPostText\'); if(x) x.value=\'\'">Borrar</button></div></div>'
       +'<div id="gFeedList"></div>';
-    return head+mission+gUpcomingHtml()+feed+gChangeLink();
+    var grad=(g.started && g.day>=g.duration)?gGradHtml():'';
+    return head+mission+grad+gUpcomingHtml()+feed+gChangeLink();
+  }
+  function gGradHtml(){
+    var g=GDATA.group, st=GDATA.state||{};
+    if(st.graduated){
+      var mentorBit;
+      if(GDATA.mentor) mentorBit='<div class="g-mission">🧑‍🏫 Eres <b>mentor</b> de esta misión. Tu ejemplo guía a la siguiente cohorte. 💜</div>';
+      else if(st.mentorApplied) mentorBit='<div class="g-mission">🙌 Tu postulación a mentor está en revisión. Te avisaremos.</div>';
+      else mentorBit='<div class="g-mission">Ya resolviste este problema. ¿Quieres acompañar a la siguiente cohorte y ganar el rango 🧑‍🏫 Mentor?</div><div class="g-btns"><button class="g-btn pri" onclick="gMentor()">🧑‍🏫 Postular a mentor</button><button class="g-btn sec" onclick="this.closest(\'.g-card\').style.display=\'none\'">Ahora no</button></div>';
+      return '<div class="g-card" style="border-color:#2BD9A6;box-shadow:0 0 0 1px rgba(43,217,166,.2)"><div class="g-q">🎓 ¡Graduado!</div>'+mentorBit+'</div>';
+    }
+    var minCk=Math.ceil(g.duration/3), ck=st.checkins||0;
+    if(ck<minCk) return '<div class="g-card"><div class="g-q">🎓 Graduación</div><div class="g-mission">Para graduarte necesitas al menos '+minCk+' check-ins y llevas '+ck+'. Todavía puedes lograrlo: comparte tu avance en el grupo. 💪</div></div>';
+    return '<div class="g-card g-wall"><div class="g-q">🎓 Tu graduación</div><div class="g-sub" style="margin-bottom:10px">Publica tu testimonio: ¿cuánto vale tu hora ahora y qué cambió en ti? Es tu diploma público (+5 puntos 🏆).</div>'
+      +'<div class="g-compose"><textarea id="gGradText" maxlength="2000" placeholder="Cuando empecé, mi hora valía… Hoy…"></textarea></div>'
+      +'<div class="g-btns"><button class="g-btn gold" onclick="gGraduate()">🎓 Publicar y graduarme</button><button class="g-btn sec" onclick="gTogglePlan()">📋 Plan</button></div>'
+      +'<div id="gGradErr" style="color:#ff6b81;font-size:13px;margin-top:8px"></div></div>';
+  }
+  function gGraduate(){
+    var t=document.getElementById('gGradText'); var v=t?t.value.trim():'';
+    var err=document.getElementById('gGradErr'); if(err) err.textContent='';
+    if(v.length<20){ if(err) err.textContent='Cuéntalo con tus palabras (unas líneas): es tu diploma público.'; return; }
+    api('ggraduate',{token:TOKEN,testimony:v}).then(function(res){
+      if(!res.ok){ if(err) err.textContent=(res.d&&res.d.error)||'No se pudo.'; return; }
+      alert('🎓 ¡FELICIDADES! Te graduaste. Tu testimonio se publicará cuando el equipo lo apruebe. +5 puntos 🏆');
+      GDATA=null; gInit();
+    });
+  }
+  function gMentor(){
+    api('gmentor',{token:TOKEN}).then(function(res){
+      if(!res.ok){ alert((res.d&&res.d.error)||'No se pudo.'); return; }
+      alert('🙌 ¡Postulación enviada! Te avisaremos cuando sea aprobada.');
+      GDATA=null; gInit();
+    });
   }
   function gTogglePlan(){ GPLANOPEN=!GPLANOPEN; gRender(); }
   function gCheckin(){

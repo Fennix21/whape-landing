@@ -129,20 +129,26 @@ async function bumpPoints(phone, delta) {
   m.points = Math.max(0, (m.points || 0) + delta);
   await redis(['SET', 'member:' + phone, JSON.stringify(m)]);
 }
-function publicPost(p, phone, levelMap) {
-  levelMap = levelMap || {};
+function publicPost(p, phone, levelMap, mentorSet) {
+  levelMap = levelMap || {}; mentorSet = mentorSet || {};
   return {
     id: p.id, name: p.name, avatar: p.avatar || '',
     authorLevel: levelFromPoints(levelMap[p.phone] || 0),
+    mentor: !!mentorSet[p.phone],
     cat: p.cat || 'general', title: p.title || '', body: p.body || '',
     ts: p.ts, pinned: !!p.pinned,
     likeCount: (p.likedBy || []).length,
     liked: (p.likedBy || []).indexOf(phone) >= 0,
-    comments: (p.comments || []).map((c) => ({ id: c.id, name: c.name, avatar: c.avatar || '', body: c.body, ts: c.ts, level: levelFromPoints(levelMap[c.phone] || 0), mine: c.phone === phone })),
+    comments: (p.comments || []).map((c) => ({ id: c.id, name: c.name, avatar: c.avatar || '', body: c.body, ts: c.ts, level: levelFromPoints(levelMap[c.phone] || 0), mentor: !!mentorSet[c.phone], mine: c.phone === phone })),
     commentCount: (p.comments || []).length,
     mine: p.phone === phone,
     pending: !p.approved,
   };
+}
+async function getMentorSet() {
+  const set = {};
+  ((await redis(['SMEMBERS', 'mentors'])) || []).forEach((p) => { set[p] = 1; });
+  return set;
 }
 
 // --- Grupos: helpers ---
@@ -600,7 +606,8 @@ module.exports = async (req, res) => {
         if (sort === 'top') return ((c.likedBy || []).length - (a.likedBy || []).length) || (c.ts - a.ts);
         return c.ts - a.ts;
       });
-      const out = posts.map((p) => publicPost(p, phone, levelMap));
+      const mentorSet = await getMentorSet();
+      const out = posts.map((p) => publicPost(p, phone, levelMap, mentorSet));
       const myPoints = levelMap[phone] || 0;
       return res.status(200).json({ ok: true, posts: out, cats, me: { points: myPoints, level: levelFromPoints(myPoints) } });
     }
@@ -693,7 +700,8 @@ module.exports = async (req, res) => {
       rows.sort((a, c) => c.points - a.points);
       const myRank = rows.findIndex((r) => r.phone === phone) + 1;
       const myPts = (rows.find((r) => r.phone === phone) || {}).points || 0;
-      const top = rows.slice(0, 30).map((r, i) => ({ rank: i + 1, name: r.name, avatar: r.avatar, points: r.points, level: levelFromPoints(r.points), me: r.phone === phone }));
+      const mentorSet = await getMentorSet();
+      const top = rows.slice(0, 30).map((r, i) => ({ rank: i + 1, name: r.name, avatar: r.avatar, points: r.points, level: levelFromPoints(r.points), mentor: !!mentorSet[r.phone], me: r.phone === phone }));
       return res.status(200).json({ ok: true, top, myRank, total: rows.length, me: { points: myPts, level: levelFromPoints(myPts) } });
     }
 
@@ -725,8 +733,11 @@ module.exports = async (req, res) => {
           days: Object.keys(st.checkins || {}).map(Number),
           checkedToday: started && !ended && st.lastCheckinDay === day,
           graceAvailable: st.graceWeek !== weekOfDay(day),
+          graduated: !!st.graduated,
+          mentorApplied: !!st.mentorApplied,
         };
       }
+      const isMentor = Number((await redis(['SISMEMBER', 'mentors', phone])) || 0) === 1;
       let hasDiag = false, hourValue = 0;
       const draw = await redis(['GET', 'diag:' + phone]);
       if (draw) { try { const dj = JSON.parse(draw); hasDiag = true; hourValue = dj.hourValue || 0; } catch (e) {} }
@@ -737,7 +748,54 @@ module.exports = async (req, res) => {
         const inWait = Number((await redis(['SISMEMBER', 'waitlist:' + x.id, phone])) || 0) === 1;
         upcoming.push({ id: x.id, emoji: x.emoji, title: x.title, problema: x.problema, cohortStart: x.cohortStart || '', waiting, inWait });
       }
-      return res.status(200).json({ ok: true, group: { id: g.id, emoji: g.emoji, title: g.title, problema: g.problema, duration: dur, cohortStart: g.cohortStart, day, started, ended, plan }, joined, state: mystate, premium, hasDiag, hourValue, feedCat: 'g:' + g.id, upcoming });
+      return res.status(200).json({ ok: true, group: { id: g.id, emoji: g.emoji, title: g.title, problema: g.problema, duration: dur, cohortStart: g.cohortStart, day, started, ended, plan }, joined, state: mystate, premium, hasDiag, hourValue, feedCat: 'g:' + g.id, upcoming, mentor: isMentor });
+    }
+
+    if (b.action === 'ggraduate') {
+      const phone = verifyToken(b.token);
+      if (!phone) return res.status(401).json({ error: 'Tu sesión venció. Entra de nuevo. 🙏' });
+      const testimony = (b.testimony || '').toString().trim().slice(0, 2000);
+      if (testimony.length < 20) return res.status(400).json({ error: 'Cuenta tu experiencia con tus palabras (unas líneas): es tu diploma público. 🎓' });
+      const groups = await getGroups();
+      const g = groups.find((x) => x.active) || groups[0];
+      if (!g) return res.status(400).json({ error: 'Aún no hay una misión abierta.' });
+      const st = await getGState(phone);
+      if (!st || st.groupId !== g.id) return res.status(400).json({ error: 'Primero únete a la misión. 🙂' });
+      if (st.graduated) return res.status(400).json({ error: 'Ya te graduaste. 🎓' });
+      const dur = Number(g.duration || 21);
+      const day = cohortDay(g.cohortStart);
+      if (day < dur) return res.status(400).json({ error: 'La graduación se abre el último día de la misión. ¡Sigue sumando check-ins! 💪' });
+      const minCk = Math.ceil(dur / 3);
+      const ck = Object.keys(st.checkins || {}).length;
+      if (ck < minCk) return res.status(400).json({ error: 'Para graduarte necesitas al menos ' + minCk + ' check-ins y llevas ' + ck + '.' });
+      const mraw = await redis(['GET', 'member:' + phone]);
+      let name = '', avatar = ''; if (mraw) { try { const mm = JSON.parse(mraw); name = mm.name || ''; avatar = mm.avatar || ''; } catch (e) {} }
+      const p = { id: newId('p'), phone, name, avatar, cat: 'g:' + g.id, title: '🎓 Mi testimonio', body: testimony, ts: Date.now(), pinned: false, approved: false, likedBy: [], comments: [] };
+      await savePost(p);
+      const ptype = await redis(['TYPE', 'community:posts']);
+      if (ptype && ptype !== 'set' && ptype !== 'none') await redis(['DEL', 'community:posts']);
+      await redis(['SADD', 'community:posts', p.id]);
+      st.graduated = { ts: Date.now(), postId: p.id };
+      await saveGState(phone, st);
+      await bumpPoints(phone, 5); // graduarse vale más
+      await notifyOwner('🎓 *' + (name || ('+' + phone)) + '* se GRADUÓ de "' + g.title + '" (' + ck + ' check-ins)\n💬 Su testimonio: "' + testimony.slice(0, 200) + '"\n\nApruébalo 👉 whape.club/panel (🗣️ Feed)', phone);
+      return res.status(200).json({ ok: true });
+    }
+
+    if (b.action === 'gmentor') {
+      const phone = verifyToken(b.token);
+      if (!phone) return res.status(401).json({ error: 'Tu sesión venció. Entra de nuevo. 🙏' });
+      const st = await getGState(phone);
+      if (!st || !st.graduated) return res.status(400).json({ error: 'Primero gradúate de la misión. 🎓' });
+      const isMentor = Number((await redis(['SISMEMBER', 'mentors', phone])) || 0) === 1;
+      if (isMentor) return res.status(400).json({ error: 'Ya eres mentor. 🧑‍🏫' });
+      if (st.mentorApplied) return res.status(400).json({ error: 'Tu postulación ya está en revisión. Te avisaremos. 🙌' });
+      st.mentorApplied = Date.now();
+      await saveGState(phone, st);
+      const mraw = await redis(['GET', 'member:' + phone]);
+      let name = ''; if (mraw) { try { name = JSON.parse(mraw).name || ''; } catch (e) {} }
+      await notifyOwner('🧑‍🏫 *' + (name || ('+' + phone)) + '* postula a MENTOR.\nApruébalo en el panel 👉 whape.club/panel (🎯 Grupos)', phone);
+      return res.status(200).json({ ok: true });
     }
 
     if (b.action === 'gwait') {
@@ -1030,6 +1088,7 @@ module.exports = async (req, res) => {
         const groups = await getGroups();
         const phones = (await redis(['SMEMBERS', 'members'])) || [];
         const rows = [];
+        const mentorSet = await getMentorSet();
         if (phones.length) {
           const mraws = (await redis(['MGET', ...phones.map((p) => 'member:' + p)])) || [];
           const graws = (await redis(['MGET', ...phones.map((p) => 'gstate:' + p)])) || [];
@@ -1040,11 +1099,22 @@ module.exports = async (req, res) => {
             if (!m) return;
             let day = 0, dur = 0;
             if (st) { const g = groups.find((x) => x.id === st.groupId); if (g) { day = cohortDay(g.cohortStart); dur = Number(g.duration || 21); } }
-            rows.push({ phone: p, name: m.name || '', premium: m.premium === true, joined: !!st, day: Math.max(0, Math.min(day, dur)), streak: st ? (st.streak || 0) : 0, checkins: st ? Object.keys(st.checkins || {}).length : 0, gap: (st && day >= 1) ? Math.max(0, Math.min(day, dur) - (st.lastCheckinDay || 0)) : 0, risk: !!(st && st.riskDay) });
+            rows.push({ phone: p, name: m.name || '', premium: m.premium === true, joined: !!st, day: Math.max(0, Math.min(day, dur)), streak: st ? (st.streak || 0) : 0, checkins: st ? Object.keys(st.checkins || {}).length : 0, gap: (st && day >= 1) ? Math.max(0, Math.min(day, dur) - (st.lastCheckinDay || 0)) : 0, risk: !!(st && st.riskDay), graduated: !!(st && st.graduated), mentorApplied: !!(st && st.mentorApplied), mentor: !!mentorSet[p] });
           });
         }
         rows.sort((a, c) => (c.checkins - a.checkins) || (c.streak - a.streak));
         return res.status(200).json({ ok: true, rows });
+      }
+      if (sub === 'gmentorset') {
+        const p = (b.phone || '').toString().replace(/\D/g, '');
+        if (!p) return res.status(400).json({ error: 'Falta el teléfono.' });
+        if (b.mentor) await redis(['SADD', 'mentors', p]);
+        else {
+          await redis(['SREM', 'mentors', p]);
+          const st = await getGState(p);
+          if (st && st.mentorApplied) { delete st.mentorApplied; await saveGState(p, st); }
+        }
+        return res.status(200).json({ ok: true, mentor: !!b.mentor });
       }
       if (sub === 'gsetpremium') {
         const p = (b.phone || '').toString().replace(/\D/g, '');

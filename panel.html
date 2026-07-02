@@ -995,12 +995,21 @@
       el.innerHTML='<h4 style="margin:16px 0 10px">👥 Miembros ('+rows.filter(function(r){return r.joined;}).length+' en misión)</h4>'
         + (rows.length? rows.map(function(r){
           var risk=(r.joined && r.gap>=3)?' · <span style="color:#ff8aa0;font-weight:800">⚠️ '+r.gap+' días sin check-in</span>':'';
+          var badges=(r.premium?' <span style="color:var(--gold);font-size:11px;font-weight:800">⭐ PREMIUM</span>':'')
+            +(r.graduated?' <span style="color:var(--success);font-size:11px;font-weight:800">🎓 GRADUADO</span>':'')
+            +(r.mentor?' <span style="color:#c89bff;font-size:11px;font-weight:800">🧑‍🏫 MENTOR</span>':((r.mentorApplied)?' <span style="color:var(--gold);font-size:11px;font-weight:800">🙋 POSTULA A MENTOR</span>':''));
           var quitar=r.joined?'<button class="fa-del" onclick="gReset(\''+r.phone+'\')">✖ Quitar</button>':'';
-          return '<div class="fa-row"><div class="fa-main"><div class="fa-t">'+esc(r.name||('+'+r.phone))+(r.premium?' <span style="color:var(--gold);font-size:11px;font-weight:800">⭐ PREMIUM</span>':'')+'</div>'
+          var mentorBtn=r.graduated?('<button onclick="gMentorSet(\''+r.phone+'\','+(r.mentor?'false':'true')+')">'+(r.mentor?'Quitar 🧑‍🏫':'Hacer 🧑‍🏫')+'</button>'):'';
+          return '<div class="fa-row"><div class="fa-main"><div class="fa-t">'+esc(r.name||('+'+r.phone))+badges+'</div>'
             +'<div class="fa-meta">+'+esc(r.phone)+' · '+(r.joined?('Día '+r.day+' · 🔥 '+r.streak+' · ✅ '+r.checkins+' check-ins'):'Sin misión aún')+risk+'</div></div>'
-            +'<div class="fa-actions"><button onclick="gPremium(\''+r.phone+'\','+(r.premium?'false':'true')+')">'+(r.premium?'Quitar ⭐':'Dar ⭐ Premium')+'</button>'+quitar+'</div></div>';
+            +'<div class="fa-actions"><button onclick="gPremium(\''+r.phone+'\','+(r.premium?'false':'true')+')">'+(r.premium?'Quitar ⭐':'Dar ⭐ Premium')+'</button>'+mentorBtn+quitar+'</div></div>';
         }).join('') : '<p class="pm-hint">Aún no hay miembros registrados.</p>');
     });
+  }
+  function gMentorSet(phone, val){
+    var on=(val===true||val==='true');
+    if(!confirm(on?'¿Nombrar MENTOR a este miembro? Su insignia 🧑‍🏫 se verá en todos sus posts y comentarios.':'¿Quitar el rango de mentor a este miembro?')) return;
+    capi('gmentorset',{phone:phone,mentor:on}).then(function(res){ if(!res.ok){ alert((res.d&&res.d.error)||'No se pudo.'); return; } loadGMembers(); });
   }
   function gReset(phone){
     if(!confirm('¿Quitar a este miembro de la misión? Perderá su racha y sus check-ins (sus puntos se mantienen). Podrá volver a entrar con un nuevo compromiso.')) return;
