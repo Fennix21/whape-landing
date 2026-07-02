@@ -958,7 +958,7 @@
       GADM=res.d.groups||[];
       document.getElementById('gaList').innerHTML=GADM.map(function(g){
         return '<div class="fa-row"><div class="fa-main"><div class="fa-t">'+esc(g.emoji||'🎯')+' '+esc(g.title)+(g.active?' <span style="color:var(--success);font-size:11px;font-weight:800">● ACTIVA</span>':'')+'</div>'
-          +'<div class="fa-meta">Cohorte: '+esc(g.cohortStart||'sin fecha')+' · '+(g.duration||21)+' días · '+((g.plan||[]).length)+' misiones</div></div>'
+          +'<div class="fa-meta">Cohorte: '+esc(g.cohortStart||'sin fecha')+' · '+(g.duration||21)+' días · '+((g.plan||[]).length)+' misiones'+(g.waiting?(' · 🔔 '+g.waiting+' en espera'):'')+'</div></div>'
           +'<div class="fa-actions"><button onclick="editGrupo(\''+g.id+'\')">✎ Editar</button><button class="fa-del" onclick="delGrupo(\''+g.id+'\')">🗑</button></div></div>';
       }).join('') + '<button class="cm-new" onclick="editGrupo(\'\')" style="margin-top:6px">➕ Nueva misión</button>';
       loadGMembers();
@@ -994,11 +994,17 @@
       var rows=res.d.rows||[];
       el.innerHTML='<h4 style="margin:16px 0 10px">👥 Miembros ('+rows.filter(function(r){return r.joined;}).length+' en misión)</h4>'
         + (rows.length? rows.map(function(r){
+          var risk=(r.joined && r.gap>=3)?' · <span style="color:#ff8aa0;font-weight:800">⚠️ '+r.gap+' días sin check-in</span>':'';
+          var quitar=r.joined?'<button class="fa-del" onclick="gReset(\''+r.phone+'\')">✖ Quitar</button>':'';
           return '<div class="fa-row"><div class="fa-main"><div class="fa-t">'+esc(r.name||('+'+r.phone))+(r.premium?' <span style="color:var(--gold);font-size:11px;font-weight:800">⭐ PREMIUM</span>':'')+'</div>'
-            +'<div class="fa-meta">+'+esc(r.phone)+' · '+(r.joined?('Día '+r.day+' · 🔥 '+r.streak+' · ✅ '+r.checkins+' check-ins'):'Sin misión aún')+'</div></div>'
-            +'<div class="fa-actions"><button onclick="gPremium(\''+r.phone+'\','+(r.premium?'false':'true')+')">'+(r.premium?'Quitar ⭐':'Dar ⭐ Premium')+'</button></div></div>';
+            +'<div class="fa-meta">+'+esc(r.phone)+' · '+(r.joined?('Día '+r.day+' · 🔥 '+r.streak+' · ✅ '+r.checkins+' check-ins'):'Sin misión aún')+risk+'</div></div>'
+            +'<div class="fa-actions"><button onclick="gPremium(\''+r.phone+'\','+(r.premium?'false':'true')+')">'+(r.premium?'Quitar ⭐':'Dar ⭐ Premium')+'</button>'+quitar+'</div></div>';
         }).join('') : '<p class="pm-hint">Aún no hay miembros registrados.</p>');
     });
+  }
+  function gReset(phone){
+    if(!confirm('¿Quitar a este miembro de la misión? Perderá su racha y sus check-ins (sus puntos se mantienen). Podrá volver a entrar con un nuevo compromiso.')) return;
+    capi('greset',{phone:phone}).then(function(res){ if(!res.ok){ alert((res.d&&res.d.error)||'No se pudo.'); return; } loadGMembers(); });
   }
   function gPremium(phone, val){
     var on=(val===true||val==='true');

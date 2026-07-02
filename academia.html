@@ -1008,7 +1008,25 @@
       +'<div class="g-sub" style="margin-top:12px">'+when+' · Semana 1 gratis · 🔥 Solo 100 cupos</div>'
       +'<div class="g-mission">Antes de entrar, descubre cuánto vale tu hora hoy y cuál es tu verdadero cuello de botella. Toma 60 segundos.</div>'
       +'<div class="g-btns"><button class="g-btn pri" onclick="gStartDiag()">🚀 Hacer mi diagnóstico</button><button class="g-btn sec" onclick="gTogglePlan()">📋 '+(GPLANOPEN?'Ocultar el plan':'Ver el plan')+'</button></div>'
-      +(GPLANOPEN?gPlanHtml(true):'')+'</div>';
+      +(GPLANOPEN?gPlanHtml(true):'')+'</div>'+gUpcomingHtml();
+  }
+  function gUpcomingHtml(){
+    var up=(GDATA&&GDATA.upcoming)||[]; if(!up.length) return '';
+    return '<div class="g-card"><div class="g-q">🔭 Próximas misiones</div>'+up.map(function(u){
+      return '<div style="display:flex;gap:11px;align-items:center;margin-bottom:11px"><div style="font-size:24px;flex:none">'+esc(u.emoji||'🎯')+'</div>'
+        +'<div style="flex:1;min-width:0"><div style="font-weight:700;font-size:14px">'+esc(u.title)+'</div><div style="font-size:12px;color:var(--muted)">'+esc(u.problema||'')+(u.waiting?(' · 🔔 '+u.waiting+' esperando'):'')+'</div></div>'
+        +'<button class="g-btn '+(u.inWait?'ok':'sec')+'" style="flex:none;min-width:0;padding:9px 12px;font-size:12px" onclick="gWait(\''+u.id+'\')">'+(u.inWait?'🔔 En tu lista':'🔔 Avisarme')+'</button></div>';
+    }).join('')+'<div class="g-cta-note">Te avisaremos cuando abra su cohorte.</div></div>';
+  }
+  function gWait(id){
+    api('gwait',{token:TOKEN,id:id}).then(function(res){
+      if(!res.ok){ alert((res.d&&res.d.error)||'No se pudo.'); return; }
+      (GDATA.upcoming||[]).forEach(function(u){ if(u.id===id){ u.inWait=res.d.inWait; u.waiting=res.d.waiting; } });
+      gRender();
+    });
+  }
+  function gChangeLink(){
+    return '<div class="g-cta-note" style="text-align:center;margin-top:2px">¿Necesitas cambiar o pausar tu misión? <a style="color:#c89bff;font-weight:700" href="https://wa.me/51983427614?text='+encodeURIComponent('Hola, necesito cambiar o pausar mi misión (cambio de misión)')+'" target="_blank" rel="noopener">Escríbenos</a></div>';
   }
   function gPlanHtml(preview){
     var g=GDATA.group; var st=GDATA.state||{}; var done=st.days||[];
@@ -1095,7 +1113,7 @@
     var feed='<div class="g-card"><div class="g-q">💬 El grupo</div><div class="g-compose"><textarea id="gPostText" maxlength="4000" placeholder="Comparte tu avance de hoy…"></textarea></div>'
       +'<div class="g-btns"><button class="g-btn pri" onclick="gPost()">Publicar en el grupo</button><button class="g-btn sec" onclick="var x=document.getElementById(\'gPostText\'); if(x) x.value=\'\'">Borrar</button></div></div>'
       +'<div id="gFeedList"></div>';
-    return head+mission+feed;
+    return head+mission+gUpcomingHtml()+feed+gChangeLink();
   }
   function gTogglePlan(){ GPLANOPEN=!GPLANOPEN; gRender(); }
   function gCheckin(){

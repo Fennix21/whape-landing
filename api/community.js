@@ -730,7 +730,28 @@ module.exports = async (req, res) => {
       let hasDiag = false, hourValue = 0;
       const draw = await redis(['GET', 'diag:' + phone]);
       if (draw) { try { const dj = JSON.parse(draw); hasDiag = true; hourValue = dj.hourValue || 0; } catch (e) {} }
-      return res.status(200).json({ ok: true, group: { id: g.id, emoji: g.emoji, title: g.title, problema: g.problema, duration: dur, cohortStart: g.cohortStart, day, started, ended, plan }, joined, state: mystate, premium, hasDiag, hourValue, feedCat: 'g:' + g.id });
+      const upcoming = [];
+      for (const x of groups) {
+        if (x.id === g.id) continue;
+        const waiting = Number((await redis(['SCARD', 'waitlist:' + x.id])) || 0);
+        const inWait = Number((await redis(['SISMEMBER', 'waitlist:' + x.id, phone])) || 0) === 1;
+        upcoming.push({ id: x.id, emoji: x.emoji, title: x.title, problema: x.problema, cohortStart: x.cohortStart || '', waiting, inWait });
+      }
+      return res.status(200).json({ ok: true, group: { id: g.id, emoji: g.emoji, title: g.title, problema: g.problema, duration: dur, cohortStart: g.cohortStart, day, started, ended, plan }, joined, state: mystate, premium, hasDiag, hourValue, feedCat: 'g:' + g.id, upcoming });
+    }
+
+    if (b.action === 'gwait') {
+      const phone = verifyToken(b.token);
+      if (!phone) return res.status(401).json({ error: 'Tu sesión venció. Entra de nuevo. 🙏' });
+      const id = (b.id || '').toString();
+      const groups = await getGroups();
+      const g = groups.find((x) => x.id === id);
+      if (!g) return res.status(404).json({ error: 'Esa misión no existe.' });
+      if (g.active) return res.status(400).json({ error: 'Esa misión ya está abierta: entra directo. 🙂' });
+      const inNow = Number((await redis(['SISMEMBER', 'waitlist:' + id, phone])) || 0) === 1;
+      if (inNow) await redis(['SREM', 'waitlist:' + id, phone]); else await redis(['SADD', 'waitlist:' + id, phone]);
+      const waiting = Number((await redis(['SCARD', 'waitlist:' + id])) || 0);
+      return res.status(200).json({ ok: true, inWait: !inNow, waiting });
     }
 
     if (b.action === 'gdiag') {
@@ -790,6 +811,7 @@ module.exports = async (req, res) => {
       if (!st.checkins) st.checkins = {};
       st.checkins[day] = Date.now();
       st.lastCheckinDay = day;
+      delete st.riskDay; // volvió: sale de la lista de riesgo
       await saveGState(phone, st);
       await bumpPoints(phone, 1); // participar suma
       return res.status(200).json({ ok: true, streak: st.streak, day, graceUsed });
@@ -966,7 +988,18 @@ module.exports = async (req, res) => {
         return res.status(200).json({ ok: true });
       }
       if (sub === 'glist') {
-        return res.status(200).json({ ok: true, groups: await getGroups() });
+        const groups = await getGroups();
+        const out = [];
+        for (const x of groups) {
+          const waiting = Number((await redis(['SCARD', 'waitlist:' + x.id])) || 0);
+          out.push(Object.assign({}, x, { waiting }));
+        }
+        return res.status(200).json({ ok: true, groups: out });
+      }
+      if (sub === 'greset') {
+        const p = (b.phone || '').toString().replace(/\D/g, '');
+        await redis(['DEL', 'gstate:' + p]);
+        return res.status(200).json({ ok: true });
       }
       if (sub === 'gsave') {
         const inp = b.group || {};
@@ -1007,7 +1040,7 @@ module.exports = async (req, res) => {
             if (!m) return;
             let day = 0, dur = 0;
             if (st) { const g = groups.find((x) => x.id === st.groupId); if (g) { day = cohortDay(g.cohortStart); dur = Number(g.duration || 21); } }
-            rows.push({ phone: p, name: m.name || '', premium: m.premium === true, joined: !!st, day: Math.max(0, Math.min(day, dur)), streak: st ? (st.streak || 0) : 0, checkins: st ? Object.keys(st.checkins || {}).length : 0 });
+            rows.push({ phone: p, name: m.name || '', premium: m.premium === true, joined: !!st, day: Math.max(0, Math.min(day, dur)), streak: st ? (st.streak || 0) : 0, checkins: st ? Object.keys(st.checkins || {}).length : 0, gap: (st && day >= 1) ? Math.max(0, Math.min(day, dur) - (st.lastCheckinDay || 0)) : 0, risk: !!(st && st.riskDay) });
           });
         }
         rows.sort((a, c) => (c.checkins - a.checkins) || (c.streak - a.streak));
