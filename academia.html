@@ -274,7 +274,41 @@
   .lb-more{margin-top:10px;background:transparent;border:1px solid var(--stroke);color:var(--muted);border-radius:9px;padding:7px;width:100%;cursor:pointer;font-family:inherit;font-weight:700;font-size:12.5px}
   .lb-empty{color:var(--muted);font-size:12.5px}
   @media(max-width:760px){ .feed-wrap{grid-template-columns:1fr} .feed-side{position:static} }
-  @media(max-width:560px){ .top img{display:none} .top .ti{font-size:14px} .seg button{padding:6px 9px;font-size:12px} }
+  @media(max-width:560px){ .top img{display:none} .top .ti{font-size:14px} .seg button{padding:6px 8px;font-size:11.5px} }
+  /* ===== Grupos (misiones) ===== */
+  .g-card{background:var(--surface);border:1px solid var(--stroke);border-radius:16px;padding:20px;margin-bottom:14px}
+  .g-head{display:flex;gap:12px;align-items:center}
+  .g-emoji{font-size:34px;flex:none}
+  .g-title{font-size:19px;font-weight:800}
+  .g-sub{color:var(--muted);font-size:13px;margin-top:3px}
+  .g-meta{display:flex;gap:14px;align-items:center;margin-top:14px;flex-wrap:wrap}
+  .g-bar{height:8px;background:var(--surface2);border-radius:999px;overflow:hidden;flex:1;min-width:120px}
+  .g-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),#2BD9A6)}
+  .g-streak{font-weight:800;font-size:16px;color:#FFD24A}
+  .g-q{font-size:18px;font-weight:800;line-height:1.3;margin-bottom:12px}
+  .g-opts{display:flex;flex-direction:column;gap:9px}
+  .g-opt{display:flex;align-items:center;gap:10px;text-align:left;background:#2C2552;border:1.5px solid var(--accent);color:#fff;font-family:inherit;font-size:14.5px;font-weight:700;padding:13px 15px;border-radius:12px;cursor:pointer;transition:transform .12s,background .12s}
+  .g-opt:hover{background:linear-gradient(120deg,var(--accent),#4A00E0);transform:translateX(3px)}
+  body.light .g-opt{background:#efeafd;color:#2a2350}
+  body.light .g-opt:hover{color:#fff}
+  .g-mission{font-size:15.5px;line-height:1.65;margin:12px 0}
+  .g-btns{display:flex;gap:9px;flex-wrap:wrap;margin-top:10px}
+  .g-btn{flex:1;min-width:140px;padding:13px;border-radius:12px;font-weight:800;font-family:inherit;font-size:14.5px;cursor:pointer;border:0}
+  .g-btn.pri{background:linear-gradient(120deg,var(--accent),#4A00E0);color:#fff}
+  .g-btn.sec{background:var(--surface2);border:1px solid var(--stroke);color:var(--text)}
+  .g-btn.gold{background:linear-gradient(120deg,#FFD24A,#ff9d2e);color:#241a00}
+  .g-btn.ok{background:#2BD9A6;color:#06241B}
+  .g-btn:disabled{opacity:.65;cursor:default}
+  .g-plan{margin-top:14px;border-top:1px solid var(--stroke);padding-top:12px;display:flex;flex-direction:column;gap:8px}
+  .g-pd{display:flex;gap:10px;font-size:13.5px;color:var(--muted);line-height:1.45}
+  .g-pd b{flex:none;width:34px;color:var(--text)}
+  .g-pd.done{opacity:.55}
+  .g-pd.today{color:var(--text);font-weight:600}
+  .g-pd.today b{color:#FFD24A}
+  .g-hour{font-size:clamp(30px,8vw,42px);font-weight:800;margin:4px 0;color:#FFD24A}
+  .g-wall{border-color:#FFD24A;box-shadow:0 0 0 1px rgba(255,210,74,.2)}
+  .g-cta-note{color:var(--muted);font-size:12.5px;margin-top:10px}
+  .g-compose textarea{width:100%;min-height:80px;background:var(--surface2);border:1px solid var(--stroke);color:var(--text);border-radius:10px;padding:10px 12px;font-family:inherit;font-size:14px;resize:vertical}
   .iconbtn:hover{border-color:var(--accent)}
   .ls-search{width:100%;padding:11px 14px;font-size:14px;border-radius:11px;border:1px solid var(--stroke);background:var(--surface);color:var(--text);font-family:inherit;margin-bottom:12px}
   .ls-search:focus{outline:none;border-color:var(--accent)}
@@ -371,7 +405,7 @@
     <img src="logo.png" alt="WHAPE" />
     <span class="ti" id="topTitle">Comunidad WHAPE</span>
     <div class="topright">
-      <div class="seg"><button id="segCom" class="on" onclick="goSection('comunidad')">Comunidad</button><button id="segAca" onclick="goSection('academia')">Academia</button></div>
+      <div class="seg"><button id="segGru" onclick="goSection('grupos')">Grupos</button><button id="segCom" class="on" onclick="goSection('comunidad')">Comunidad</button><button id="segAca" onclick="goSection('academia')">Academia</button></div>
       <button class="iconbtn" id="bellBtn" onclick="toggleNotif(event)" title="Avisos" style="position:relative">🔔<span id="bellBadge" class="bell-badge">0</span></button>
       <button class="iconbtn" id="themeBtn" onclick="toggleTheme()" title="Cambiar tema">🌙</button>
       <button class="acct-btn" id="acctBtn" onclick="toggleAcctMenu(event)"><img id="acctAvatar" src="logo.png" class="acct-av" alt="" /><span class="acct-name" id="meName"></span><span class="acct-caret">▾</span></button>
@@ -380,6 +414,8 @@
     </div>
   </div>
   <div class="wrap">
+    <!-- ===== GRUPOS (misiones por cohorte) ===== -->
+    <div id="sectionGrupos" style="display:none"><div id="gBody"></div></div>
     <!-- ===== COMUNIDAD (feed estilo Skool) ===== -->
     <div id="sectionComunidad" style="display:none">
       <div class="feed-wrap">
@@ -820,19 +856,22 @@
   var CURSEC='comunidad', CURCAT='all', FEEDCATS=[], FEEDMAP={};
   var LVL_NAMES=['Novato','Aprendiz','Constructor','Vendedor','Experto','Líder','Maestro','Leyenda','Élite'];
   function goSection(s){
-    if(s!=='comunidad' && s!=='academia') s='comunidad';
+    if(s!=='comunidad' && s!=='academia' && s!=='grupos') s='grupos';
     CURSEC=s; try{ localStorage.setItem('whape_section', s); }catch(e){}
-    var sc=document.getElementById('sectionComunidad'), sa=document.getElementById('sectionAcademia');
+    var sg=document.getElementById('sectionGrupos'), sc=document.getElementById('sectionComunidad'), sa=document.getElementById('sectionAcademia');
+    if(sg) sg.style.display = s==='grupos'?'block':'none';
     if(sc) sc.style.display = s==='comunidad'?'block':'none';
     if(sa) sa.style.display = s==='academia'?'block':'none';
-    var t=document.getElementById('topTitle'); if(t) t.textContent=(s==='comunidad'?'Comunidad':'Academia')+' WHAPE';
-    var bc=document.getElementById('segCom'), ba=document.getElementById('segAca');
+    var t=document.getElementById('topTitle'); if(t) t.textContent=(s==='grupos'?'Grupos':(s==='comunidad'?'Comunidad':'Academia'))+' WHAPE';
+    var bg=document.getElementById('segGru'), bc=document.getElementById('segCom'), ba=document.getElementById('segAca');
+    if(bg) bg.classList.toggle('on', s==='grupos');
     if(bc) bc.classList.toggle('on', s==='comunidad'); if(ba) ba.classList.toggle('on', s==='academia');
     window.scrollTo(0,0);
     if(s==='comunidad'){ var cv=document.getElementById('cmpAvatar'); if(cv) cv.src=(ACADEMY&&ACADEMY.avatar)||'logo.png'; loadFeed(); loadLeaderboard(); }
+    if(s==='grupos'){ gInit(); }
   }
-  function initSection(){ var s=''; try{ s=localStorage.getItem('whape_section')||''; }catch(e){} goSection(s||'comunidad'); }
-  function catLabel(id){ for(var i=0;i<FEEDCATS.length;i++){ if(FEEDCATS[i].id===id) return esc(FEEDCATS[i].label); } return '💬 General'; }
+  function initSection(){ var s=''; try{ s=localStorage.getItem('whape_section')||''; }catch(e){} goSection(s||'grupos'); }
+  function catLabel(id){ if(String(id).indexOf('g:')===0) return '🎯 Misión'; for(var i=0;i<FEEDCATS.length;i++){ if(FEEDCATS[i].id===id) return esc(FEEDCATS[i].label); } return '💬 General'; }
   function loadFeed(){
     var sortEl=document.getElementById('feedSort'); var sort=sortEl?sortEl.value:'recent';
     api('feed',{token:TOKEN, cat:CURCAT, sort:sort}).then(function(res){
@@ -933,6 +972,157 @@
     });
   }
   function openLeaderboard(){ loadLeaderboard(true); }
+
+  // ===== Grupos (misiones por cohorte) =====
+  var GDATA=null, GVIEW='', GPLANOPEN=false;
+  var GDIAG={i:0,answers:[],income:0,hours:0};
+  var GQ=[
+    {q:'Para calcular el valor real de tu hora: ¿cuánto ganas al mes, aprox.?', k:'income', opts:[{t:'Menos de S/ 1,200',v:1000},{t:'S/ 1,200 – 2,500',v:1800},{t:'S/ 2,500 – 5,000',v:3500},{t:'Más de S/ 5,000',v:6000}]},
+    {q:'¿Cuántas horas al día le das al trabajo (con traslados)?', k:'hours', opts:[{t:'Menos de 8',v:7},{t:'8 a 10',v:9},{t:'10 a 12',v:11},{t:'Más de 12',v:13}]},
+    {q:'¿Qué te frena MÁS hoy?', opts:[{t:'No sé qué vender'},{t:'No consigo clientes'},{t:'Procrastino / el celular me gana'},{t:'El cansancio: no me queda energía'}]},
+    {q:'Con el método y el entorno correcto, ¿cuánto tiempo real le meterías?', opts:[{t:'30 min al día'},{t:'1 hora al día'},{t:'2+ horas al día'}]},
+    {q:'¿Qué buscas PRIMERO?', opts:[{t:'Una habilidad de alto valor'},{t:'Un ingreso extra ya'},{t:'Construir mi propio negocio'}]}
+  ];
+  function gEl(){ return document.getElementById('gBody'); }
+  function gInit(){
+    var el=gEl(); if(!el) return;
+    if(!GDATA) el.innerHTML='<div class="empty2">Cargando tu misión…</div>';
+    api('ggroup',{token:TOKEN}).then(function(res){
+      if(!res.ok){ if(res.d && /sesión/i.test(res.d.error||'')){ logout(); return; } gEl().innerHTML='<div class="empty2">No se pudo cargar. Intenta de nuevo.</div>'; return; }
+      GDATA=res.d; gRender();
+    });
+  }
+  function gFmtDate(s){ try{ return new Date(s+'T12:00:00-05:00').toLocaleDateString('es-PE',{weekday:'long',day:'numeric',month:'long'}); }catch(e){ return s; } }
+  function gRender(){
+    var el=gEl(); if(!el) return;
+    if(!GDATA || !GDATA.group){ el.innerHTML='<div class="empty2">🎯 Pronto abrimos la primera misión. ¡Mantente atento!</div>'; return; }
+    if(GDATA.joined){ el.innerHTML=gHomeHtml(); gLoadFeed(); return; }
+    if(GVIEW==='diag'){ gRenderQ(); return; }
+    if(GDATA.hasDiag || GVIEW==='result'){ el.innerHTML=gResultHtml(); return; }
+    el.innerHTML=gIntroHtml();
+  }
+  function gIntroHtml(){
+    var g=GDATA.group;
+    var when = g.started ? ('Día '+Math.min(g.day,g.duration)+' de '+g.duration) : ('🚀 La cohorte empieza el '+gFmtDate(g.cohortStart));
+    return '<div class="g-card"><div class="g-head"><div class="g-emoji">'+esc(g.emoji)+'</div><div><div class="g-title">'+esc(g.title)+'</div><div class="g-sub">'+esc(g.problema)+'</div></div></div>'
+      +'<div class="g-sub" style="margin-top:12px">'+when+' · Semana 1 gratis · 🔥 Solo 100 cupos</div>'
+      +'<div class="g-mission">Antes de entrar, descubre cuánto vale tu hora hoy y cuál es tu verdadero cuello de botella. Toma 60 segundos.</div>'
+      +'<div class="g-btns"><button class="g-btn pri" onclick="gStartDiag()">🚀 Hacer mi diagnóstico</button><button class="g-btn sec" onclick="gTogglePlan()">📋 '+(GPLANOPEN?'Ocultar el plan':'Ver el plan')+'</button></div>'
+      +(GPLANOPEN?gPlanHtml(true):'')+'</div>';
+  }
+  function gPlanHtml(preview){
+    var g=GDATA.group; var st=GDATA.state||{}; var done=st.days||[];
+    var rows=g.plan.map(function(m){
+      if(preview && m.day>7) return '';
+      var cls='', icon='';
+      if(GDATA.joined){
+        if(done.indexOf(m.day)>=0){ cls=' done'; icon='✅ '; }
+        else if(g.started && !g.ended && m.day===Math.min(g.day,g.duration)){ cls=' today'; icon='👉 '; }
+      }
+      var txt=m.locked?'🔒 Se desbloquea con Premium':esc(m.text);
+      return '<div class="g-pd'+cls+'"><b>D'+m.day+'</b><span>'+icon+txt+'</span></div>';
+    }).join('');
+    var note=preview?'<div class="g-cta-note">Los días 8–21 se muestran al entrar. La semana 1 es gratis; las semanas 2 y 3 son Premium.</div>':'';
+    return '<div class="g-plan">'+rows+note+'</div>';
+  }
+  function gStartDiag(){ GVIEW='diag'; GDIAG={i:0,answers:[],income:0,hours:0}; gRenderQ(); }
+  function gRenderQ(){
+    var q=GQ[GDIAG.i];
+    var opts=q.opts.map(function(o,idx){ return '<button class="g-opt" onclick="gAnswer('+idx+')">'+esc(o.t)+'</button>'; }).join('');
+    gEl().innerHTML='<div class="g-card"><div class="g-sub">Diagnóstico · '+(GDIAG.i+1)+' de '+GQ.length+'</div><div class="g-q">'+esc(q.q)+'</div><div class="g-opts">'+opts+'</div></div>';
+    window.scrollTo(0,0);
+  }
+  function gAnswer(idx){
+    var q=GQ[GDIAG.i]; var o=q.opts[idx];
+    if(q.k==='income') GDIAG.income=o.v;
+    if(q.k==='hours') GDIAG.hours=o.v;
+    GDIAG.answers.push(q.q+' → '+o.t);
+    GDIAG.i++;
+    if(GDIAG.i<GQ.length){ gRenderQ(); return; }
+    var hv=Math.max(1,Math.round(GDIAG.income/((GDIAG.hours||9)*26)));
+    api('gdiag',{token:TOKEN,answers:GDIAG.answers,hourValue:hv}).then(function(){ GDATA.hasDiag=true; GDATA.hourValue=hv; GVIEW='result'; gRender(); });
+  }
+  function gResultHtml(){
+    var g=GDATA.group; var hv=GDATA.hourValue||0;
+    var when=g.started?('Entras en el día '+Math.min(g.day,g.duration)+' de '+g.duration+'. Aún estás a tiempo.'):('La cohorte arranca el '+gFmtDate(g.cohortStart)+'. Entras hoy y empiezas con todos.');
+    var hvHtml=hv?('<div class="g-sub">Hoy tu hora vale aproximadamente</div><div class="g-hour">S/ '+hv+'</div><div class="g-mission">Ese número no es tu techo: es tu punto de partida. En 21 días vas a aprender a multiplicarlo dejando de cobrar por hora y empezando a cobrar por resultados.</div>'):('<div class="g-mission">Tu problema de hoy es un síntoma. La raíz es el valor de tu tiempo — y eso es exactamente lo que vamos a entrenar durante 21 días.</div>');
+    return '<div class="g-card"><div class="g-head"><div class="g-emoji">'+esc(g.emoji)+'</div><div><div class="g-title">'+esc(g.title)+'</div><div class="g-sub">'+esc(g.problema)+'</div></div></div>'
+      +'<div style="margin-top:14px">'+hvHtml+'</div>'
+      +'<div class="g-sub">'+when+' · Semana 1 gratis · 🔥 Solo 100 cupos</div></div>'
+      +'<div class="g-card"><div class="g-q">✍️ Tu compromiso</div><div class="g-sub" style="margin-bottom:10px">Escríbelo con tus palabras. Será tu primer post en el grupo: tu punto de partida público.</div>'
+      +'<div class="g-compose"><textarea id="gCommit" maxlength="1000" placeholder="Me comprometo a darle [tiempo] durante 21 días porque quiero [tu porqué]…"></textarea></div>'
+      +'<div class="g-btns"><button class="g-btn gold" onclick="gJoin()">🔥 Me comprometo y entro</button><button class="g-btn sec" onclick="gTogglePlan()">📋 '+(GPLANOPEN?'Ocultar el plan':'Ver el plan de 21 días')+'</button></div>'
+      +(GPLANOPEN?gPlanHtml(true):'')
+      +'<div id="gErr" style="color:#ff6b81;font-size:13px;margin-top:8px"></div></div>';
+  }
+  function gJoin(){
+    var t=document.getElementById('gCommit'); var v=t?t.value.trim():'';
+    var err=document.getElementById('gErr'); if(err) err.textContent='';
+    if(v.length<10){ if(err) err.textContent='Escribe tu compromiso con tus propias palabras (unas líneas).'; return; }
+    api('gjoin',{token:TOKEN,commitment:v}).then(function(res){
+      if(!res.ok){ if(err) err.textContent=(res.d&&res.d.error)||'No se pudo. Intenta de nuevo.'; return; }
+      alert('🎯 ¡Estás dentro! Tu compromiso se publicará en el grupo cuando el equipo lo apruebe.');
+      GVIEW=''; GPLANOPEN=false; GDATA=null; gInit();
+    });
+  }
+  function gHomeHtml(){
+    var g=GDATA.group, st=GDATA.state||{};
+    var curDay=Math.min(Math.max(g.day,1),g.duration);
+    var pct=g.started?Math.round(Math.min(g.day,g.duration)/g.duration*100):0;
+    var head='<div class="g-card"><div class="g-head"><div class="g-emoji">'+esc(g.emoji)+'</div><div style="flex:1"><div class="g-title">'+esc(g.title)+'</div><div class="g-sub">'+(g.ended?'🎓 Cohorte terminada':(g.started?('Día '+curDay+' de '+g.duration):('🚀 Empieza el '+gFmtDate(g.cohortStart))))+'</div></div></div>'
+      +'<div class="g-meta"><div class="g-bar"><i style="width:'+pct+'%"></i></div><div class="g-streak">🔥 '+(st.streak||0)+'</div></div>'
+      +'<div class="g-cta-note">'+(st.graceAvailable?'🛟 Comodín de la semana disponible: si fallas un día, tu racha se salva una vez.':'🛟 Comodín de esta semana ya usado. ¡No sueltes!')+'</div></div>';
+    var mission='';
+    if(g.ended){
+      mission='<div class="g-card"><div class="g-q">🎓 ¡Cohorte completada!</div><div class="g-mission">Hiciste '+(st.checkins||0)+' check-ins. Publica tu testimonio en el grupo: cuánto vale tu hora ahora y qué cambió en ti. Pronto abre la siguiente misión.</div></div>';
+    } else if(!g.started){
+      var falta=Math.max(0,1-g.day);
+      mission='<div class="g-card"><div class="g-q">🚀 Falta'+(falta===1?'':'n')+' '+falta+' día'+(falta===1?'':'s')+'</div><div class="g-mission">La misión arranca el '+gFmtDate(g.cohortStart)+'. Mientras tanto: preséntate en el grupo 👇 y cuenta qué te trajo aquí.</div>'
+        +'<div class="g-btns"><button class="g-btn sec" onclick="gTogglePlan()">📋 '+(GPLANOPEN?'Ocultar el plan':'Ver el plan de 21 días')+'</button></div>'+(GPLANOPEN?gPlanHtml(false):'')+'</div>';
+    } else {
+      var m=g.plan[curDay-1]||{};
+      if(m.locked){
+        mission='<div class="g-card g-wall"><div class="g-q">🚀 La semana '+Math.ceil(curDay/7)+' es Premium</div><div class="g-mission">Completaste la semana gratis. Para seguir con el método completo (semanas 2 y 3 + todas las misiones futuras), el acceso Premium es un pago único de S/ 99, de por vida.</div>'
+          +'<div class="g-btns"><a class="g-btn gold" style="text-align:center;text-decoration:none;display:block;line-height:1.4" href="https://wa.me/51983427614?text='+encodeURIComponent('Hola, quiero el ACCESO PREMIUM de WHAPE (S/99) (premium)')+'" target="_blank" rel="noopener">⭐ Quiero mi acceso Premium</a>'
+          +'<a class="g-btn sec" style="text-align:center;text-decoration:none;display:block;line-height:1.4" href="https://wa.me/51983427614?text='+encodeURIComponent('Hola, tengo una duda sobre el Premium (web)')+'" target="_blank" rel="noopener">💬 Tengo una duda</a></div></div>';
+      } else {
+        var btn = st.checkedToday
+          ? '<button class="g-btn ok" disabled>✅ Hecho hoy · 🔥 '+(st.streak||0)+'</button>'
+          : '<button class="g-btn pri" onclick="gCheckin()">✅ Ya lo hice — check-in</button>';
+        mission='<div class="g-card"><div class="g-sub">Misión de hoy · Día '+curDay+' · Semana '+Math.ceil(curDay/7)+'</div><div class="g-mission">'+esc(m.text||'')+'</div><div class="g-btns">'+btn+'<button class="g-btn sec" onclick="gTogglePlan()">📋 Plan</button></div>'+(GPLANOPEN?gPlanHtml(false):'')+'</div>';
+      }
+    }
+    var feed='<div class="g-card"><div class="g-q">💬 El grupo</div><div class="g-compose"><textarea id="gPostText" maxlength="4000" placeholder="Comparte tu avance de hoy…"></textarea></div>'
+      +'<div class="g-btns"><button class="g-btn pri" onclick="gPost()">Publicar en el grupo</button><button class="g-btn sec" onclick="var x=document.getElementById(\'gPostText\'); if(x) x.value=\'\'">Borrar</button></div></div>'
+      +'<div id="gFeedList"></div>';
+    return head+mission+feed;
+  }
+  function gTogglePlan(){ GPLANOPEN=!GPLANOPEN; gRender(); }
+  function gCheckin(){
+    api('gcheckin',{token:TOKEN}).then(function(res){
+      if(!res.ok){ alert((res.d&&res.d.error)||'No se pudo.'); return; }
+      if(GDATA&&GDATA.state){ GDATA.state.streak=res.d.streak; GDATA.state.checkedToday=true; GDATA.state.checkins=(GDATA.state.checkins||0)+1; if(GDATA.state.days) GDATA.state.days.push(res.d.day); if(res.d.graceUsed) GDATA.state.graceAvailable=false; }
+      gRender();
+      alert('✅ Check-in del día '+res.d.day+' · racha 🔥 '+res.d.streak+(res.d.graceUsed?'\n🛟 Usaste tu comodín de la semana. ¡No sueltes!':''));
+    });
+  }
+  function gPost(){
+    var t=document.getElementById('gPostText'); if(!t) return; var v=t.value.trim();
+    if(!v){ alert('Escribe algo primero. 🙂'); return; }
+    api('feedpost',{token:TOKEN,cat:GDATA.feedCat,title:'',body:v}).then(function(res){
+      if(!res.ok){ alert((res.d&&res.d.error)||'No se pudo publicar.'); return; }
+      t.value=''; alert('✅ ¡Enviado! Se verá en el grupo cuando el equipo lo apruebe.'); gLoadFeed();
+    });
+  }
+  function gLoadFeed(){
+    if(!GDATA || !GDATA.feedCat) return;
+    api('feed',{token:TOKEN,cat:GDATA.feedCat,sort:'recent'}).then(function(res){
+      var el=document.getElementById('gFeedList'); if(!el||!res.ok) return;
+      var posts=res.d.posts||[];
+      posts.forEach(function(p){ FEEDMAP[p.id]=p; });
+      el.innerHTML=posts.length?posts.map(postCard).join(''):'<div class="empty2">Aún no hay publicaciones del grupo. Rompe el hielo 💬</div>';
+    });
+  }
   function loadLessonExtras(){
     document.getElementById('rateBox').innerHTML='';
     resetFeedback();

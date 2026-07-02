@@ -722,6 +722,7 @@ module.exports = async (req, res) => {
         mystate = {
           streak: st.streak || 0,
           checkins: Object.keys(st.checkins || {}).length,
+          days: Object.keys(st.checkins || {}).map(Number),
           checkedToday: started && !ended && st.lastCheckinDay === day,
           graceAvailable: st.graceWeek !== weekOfDay(day),
         };
