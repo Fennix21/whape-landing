@@ -117,6 +117,21 @@ async function notifyOwner(text, from) {
   } catch (e) { console.error('notifyOwner error', e); }
 }
 
+// IA cruda para clasificar (Haiku). Devuelve '' si falla: la captura nunca se rompe por la IA.
+async function askAIRaw(system, user) {
+  if (!process.env.ANTHROPIC_API_KEY) return '';
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-api-key': process.env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({ model: process.env.WHAPE_AI_MODEL || 'claude-haiku-4-5-20251001', max_tokens: 300, system, messages: [{ role: 'user', content: user }] }),
+    });
+    const data = await r.json();
+    if (!r.ok) return '';
+    return ((data.content && data.content[0] && data.content[0].text) || '').trim();
+  } catch (e) { return ''; }
+}
+
 module.exports = async (req, res) => {
   // Verificación del webhook
   if (req.method === 'GET') {
@@ -143,6 +158,35 @@ module.exports = async (req, res) => {
     let media = null, caption = '';
     if (msg.type === 'image') { media = { id: msg.image?.id, type: 'image' }; caption = msg.image?.caption || ''; }
     else if (msg.type === 'document') { media = { id: msg.document?.id, type: 'document' }; caption = msg.document?.caption || ''; }
+
+    // 💡 Captura de ideas del DUEÑO: mensajes que empiezan con "idea" o 💡 desde su número.
+    if (HAS_REDIS && text && /^\s*(💡|idea\b[:,]?)/i.test(text)) {
+      const owner = ((await redis(['GET', 'config:ownerphone'])) || process.env.WHAPE_OWNER_PHONE || '').replace(/\D/g, '');
+      if (owner && from.replace(/\D/g, '') === owner) {
+        const raw = text.replace(/^\s*(💡|idea\b[:,]?)\s*/i, '').trim().slice(0, 1500);
+        if (!raw) { await sendWhatsApp(from, '💡 Dime la idea después de la palabra "idea". Ej: "idea: un reto de 7 días para bodegueras".'); return res.status(200).send('ok'); }
+        let title = raw.slice(0, 60), cat = 'otra', next = '';
+        const out = await askAIRaw(
+          'Clasificas ideas de negocio del dueño de WHAPE (plataforma peruana: comunidad + academia + CRM + bot de WhatsApp que enseña a convertir problemas en negocios). Respondes SOLO un JSON válido, sin texto extra.',
+          'Idea: "' + raw + '"\n\nResponde: {"titulo":"máx 8 palabras","categoria":"contenido|producto|comunidad|ventas|copy|otra","siguiente":"el primer paso concreto para implementarla, en 1 línea"}'
+        );
+        if (out) {
+          try {
+            const j = JSON.parse(out.replace(/```json|```/g, '').trim());
+            if (j.titulo) title = String(j.titulo).slice(0, 80);
+            if (j.categoria) cat = String(j.categoria).toLowerCase().slice(0, 20);
+            if (j.siguiente) next = String(j.siguiente).slice(0, 200);
+          } catch (e) {}
+        }
+        const rawList = await redis(['GET', 'ideas']);
+        let ideas = []; if (rawList) { try { ideas = JSON.parse(rawList); } catch (e) {} }
+        ideas.push({ id: 'i' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), raw, title, cat, next, ts: Date.now(), done: false });
+        if (ideas.length > 500) ideas = ideas.slice(-500);
+        await redis(['SET', 'ideas', JSON.stringify(ideas)]);
+        await sendWhatsApp(from, '💡 *Idea guardada*\n📌 ' + title + '\n🏷️ ' + cat + (next ? '\n➡️ ' + next : '') + '\n\nLa tienes en tu panel → 💡 Ideas');
+        return res.status(200).send('ok');
+      }
+    }
 
     let lead = null;
     if (HAS_REDIS) {

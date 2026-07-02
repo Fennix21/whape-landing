@@ -1071,6 +1071,27 @@ module.exports = async (req, res) => {
         if (!p.approved) { p.approved = true; await savePost(p); await bumpPoints(p.phone, 1); } // +1 punto por participar (post aprobado)
         return res.status(200).json({ ok: true });
       }
+      if (sub === 'idealist') {
+        const raw = await redis(['GET', 'ideas']);
+        let items = []; if (raw) { try { items = JSON.parse(raw); } catch (e) {} }
+        items.sort((a, c) => (a.done === c.done ? c.ts - a.ts : (a.done ? 1 : -1)));
+        return res.status(200).json({ ok: true, items });
+      }
+      if (sub === 'ideadone') {
+        const raw = await redis(['GET', 'ideas']);
+        let items = []; if (raw) { try { items = JSON.parse(raw); } catch (e) {} }
+        const it = items.find((x) => x.id === (b.id || '').toString());
+        if (it) it.done = !it.done;
+        await redis(['SET', 'ideas', JSON.stringify(items)]);
+        return res.status(200).json({ ok: true, done: it ? it.done : false });
+      }
+      if (sub === 'ideadel') {
+        const raw = await redis(['GET', 'ideas']);
+        let items = []; if (raw) { try { items = JSON.parse(raw); } catch (e) {} }
+        items = items.filter((x) => x.id !== (b.id || '').toString());
+        await redis(['SET', 'ideas', JSON.stringify(items)]);
+        return res.status(200).json({ ok: true });
+      }
       if (sub === 'copycoach') {
         const draft = (b.draft || '').toString().trim().slice(0, 3000);
         if (!draft) return res.status(400).json({ error: 'Pega tu borrador primero.' });
