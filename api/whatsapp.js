@@ -159,11 +159,14 @@ module.exports = async (req, res) => {
     if (msg.type === 'image') { media = { id: msg.image?.id, type: 'image' }; caption = msg.image?.caption || ''; }
     else if (msg.type === 'document') { media = { id: msg.document?.id, type: 'document' }; caption = msg.document?.caption || ''; }
 
-    // 💡 Captura de ideas del DUEÑO: mensajes que empiezan con "idea" o 💡 desde su número.
-    if (HAS_REDIS && text && /^\s*(💡|idea\b[:,]?)/i.test(text)) {
+    // 💡 Captura de ideas del DUEÑO: "idea…", "anota…", "apunta…", "guarda…", 💡, o "whapi, …idea…".
+    if (HAS_REDIS && text && /^\s*(💡|whapi\b[:,]?\s*)?(💡|idea\b|anota\b|apunta\b|guarda\b)/i.test(text)) {
       const owner = ((await redis(['GET', 'config:ownerphone'])) || process.env.WHAPE_OWNER_PHONE || '').replace(/\D/g, '');
       if (owner && from.replace(/\D/g, '') === owner) {
-        const raw = text.replace(/^\s*(💡|idea\b[:,]?)\s*/i, '').trim().slice(0, 1500);
+        const raw = text
+          .replace(/^\s*(💡\s*)?(whapi\b[:,]?\s*)?(💡\s*)?(idea|anota|apunta|guarda)\b[:,]?\s*/i, '')
+          .replace(/^(esta\s+idea|una\s+idea|idea|esto)\b[:,]?\s*/i, '')
+          .trim().slice(0, 1500);
         if (!raw) { await sendWhatsApp(from, '💡 Dime la idea después de la palabra "idea". Ej: "idea: un reto de 7 días para bodegueras".'); return res.status(200).send('ok'); }
         let title = raw.slice(0, 60), cat = 'otra', next = '';
         const out = await askAIRaw(
