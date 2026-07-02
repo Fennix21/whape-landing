@@ -150,6 +150,14 @@
   #promptModal,#statsModal,#tplModal,#wtplModal,#communityModal,#progressModal,#inboxModal,#feedModal,#gruposModal,#copyModal{display:none;position:fixed;inset:0;z-index:120;background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:18px}
   #promptModal.open,#statsModal.open,#tplModal.open,#wtplModal.open,#communityModal.open,#progressModal.open,#inboxModal.open,#feedModal.open,#gruposModal.open,#copyModal.open{display:flex}
   .cc-out{white-space:pre-wrap;word-break:break-word;background:var(--bg);border:1px solid var(--stroke);border-radius:10px;padding:13px;font-size:13px;line-height:1.6;margin-top:10px}
+  .cpchips{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:10px}
+  .cpchip{font-family:inherit;font-size:12px;font-weight:700;padding:7px 11px;border-radius:999px;border:1px solid var(--stroke);background:var(--surface2);color:var(--text);cursor:pointer}
+  .cpchip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .cp-card{background:var(--bg);border:1px solid var(--stroke);border-radius:10px;padding:13px;margin-bottom:10px}
+  .cp-uso{color:var(--muted);font-size:12.5px;margin-bottom:8px;line-height:1.5}
+  .cp-est{white-space:pre-wrap;word-break:break-word;font-size:13px;line-height:1.55;background:var(--surface2);border-radius:8px;padding:11px;margin-bottom:8px}
+  .cp-ej{white-space:pre-wrap;word-break:break-word;font-size:12.5px;line-height:1.55;color:#E7E3F4;border-left:2px solid var(--accent);padding-left:10px;margin:10px 0}
+  .cp-ej b{color:var(--gold)}
   .fa-row{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--stroke);border-radius:10px;padding:11px;margin-bottom:9px}
   .fa-main{flex:1;min-width:0}
   .fa-t{font-weight:700;font-size:14px;margin-bottom:3px}
@@ -478,6 +486,10 @@
         <button class="cm-cancel" id="ccSave" style="display:none" onclick="ccSaveToSwipe()">💾 Guardar al archivo</button>
       </div>
       <div id="ccOut" class="cc-out" style="display:none"></div>
+      <hr class="pm-hr" />
+      <p class="pm-hint"><strong>📐 Estructuras para modelar.</strong> Toca una para ver cuándo usarla y sus ejemplos. "Usar" la carga al entrenador: solo rellenas los huecos [ ].</p>
+      <div class="cpchips" id="cpChips"></div>
+      <div id="cpView" style="display:none"></div>
       <hr class="pm-hr" />
       <p class="pm-hint"><strong>📂 Archivo de oro.</strong> Guarda tus copys ganadores con su resultado. Consúltalos antes de escribir.</p>
       <input id="swTitle" class="cmin" placeholder="Título (ej. Reel del espejo)" style="margin-bottom:8px" />
@@ -982,7 +994,7 @@
   function delFeed(id){ if(!confirm('¿Borrar esta publicación de la comunidad? No se puede deshacer.')) return; capi('feeddel',{id:id}).then(function(res){ if(!res.ok){ alert((res.d&&res.d.error)||'No se pudo.'); return; } var r=document.getElementById('fa-'+id); if(r) r.remove(); }); }
   // --- Copy: entrenador + archivo de oro ---
   var CC_LAST='', SW_ITEMS=[];
-  function openCopy(){ document.getElementById('copyModal').classList.add('open'); swipeLoad(); }
+  function openCopy(){ document.getElementById('copyModal').classList.add('open'); renderCpChips(); swipeLoad(); }
   function closeCopy(){ document.getElementById('copyModal').classList.remove('open'); }
   function copyCoach(){
     var d=document.getElementById('ccDraft').value.trim();
@@ -1034,6 +1046,62 @@
   function swipeDel(id){
     if(!confirm('¿Borrar este copy del archivo?')) return;
     capi('swipedel',{id:id}).then(function(res){ if(res.ok){ var r=document.getElementById('sw-'+id); if(r) r.remove(); } });
+  }
+  // --- Estructuras de copy para modelar (biblioteca fija, cero fricción) ---
+  var PLANTILLAS=[
+  { n:'🪞 Espejo WHAPE', uso:'Tu fórmula madre. Sirve para casi todo: reels, posts, landings. Úsala cuando dudes cuál elegir. Niveles de conciencia 1-4.',
+    e:'[GANCHO — una frase que no pueda ignorar: dolor específico o contradicción]\n\n[ESPEJO — describe SU escena exacta, que piense "me habla a mí"]\n\n[GIRO — rompe la creencia: "no es tu culpa / la raíz es otra"]\n\n[PRUEBA — un número, una pantalla, tu historia]\n\n[PUERTA — UNA sola acción, pequeña y clara]',
+    ej:[
+    {c:'🎬 Reel', t:'Hoy le pagaste S/24 a TikTok y ni cuenta te diste.\n\nLlegas del trabajo muerto, te echas, y "5 minutitos" se vuelven 2 horas.\n\nNo es falta de voluntad: es que peleas contra ingenieros pagados para vencerte.\n\nYo hice la cuenta: 4 horas al día son 91 días al año. TRES MESES scrolleando.\n\nSígueme — estoy enseñando a recuperar esas horas.'},
+    {c:'💬 WhatsApp', t:'Hola [nombre] 👋 ¿Te pasa que llegas a la noche sin energía ni para lo que te gusta?\n\nTrabajas todo el día y las únicas horas tuyas se van en el celular.\n\nEl problema no eres tú: es que nadie te enseñó a hacer que tus horas valgan más.\n\nNosotros lo estamos haciendo en la misión de 21 días (ya somos [N]).\n\n¿Te mando el enlace para que empieces gratis?'}]},
+  { n:'⚡ PAS', uso:'Problema · Agitación · Solución. El caballo de batalla del copy directo. Úsala cuando el lector YA siente el dolor pero no actúa (niveles 2-3). Ideal para WhatsApp y anuncios.',
+    e:'[PROBLEMA — nómbralo en SUS palabras, 1 línea]\n\n[AGITACIÓN — el costo real de no resolverlo: números, escenas, cómo se ve su futuro si nada cambia]\n\n[SOLUCIÓN — tu camino + UNA acción]',
+    ej:[
+    {c:'📢 Anuncio', t:'Trabajas 10 horas y tu sueldo no alcanza.\n\nY el plan de "aguantar hasta fin de año" ya lo probaste: el año pasado. Y el anterior. La cuenta no cambia: mismas horas, mismo sueldo, más cansancio.\n\nLo que cambia la cuenta es que tu hora valga más. Eso se aprende. Test de 2 minutos: whape.club'},
+    {c:'💬 WhatsApp (seguimiento)', t:'[Nombre], la semana pasada me dijiste que se te va el día sin avanzar en lo tuyo.\n\nDesde entonces pasaron ~28 horas de celular. Un medio tiempo completo, trabajado gratis… para otros.\n\nLa misión arranca el lunes y la semana 1 es gratis. ¿Te guardo tu lugar?'}]},
+  { n:'🎯 AIDA', uso:'Atención · Interés · Deseo · Acción. La clásica para público FRÍO que no te conoce: anuncios pagados y primeros reels. Primero gana la mirada, después vende.',
+    e:'[ATENCIÓN — gancho imposible de ignorar]\n\n[INTERÉS — dato o historia que abre curiosidad]\n\n[DESEO — cómo se vería SU vida con esto, en concreto]\n\n[ACCIÓN — un paso claro y pequeño]',
+    ej:[
+    {c:'📢 Anuncio', t:'Tu hora vale S/6. Y se la regalas a TikTok.\n\nUn peruano promedio pasa 4 horas al día en el celular: 91 días completos al año.\n\nImagina solo 30 de esos minutos construyendo algo tuyo: en 21 días tendrías tu primera oferta lista para vender por WhatsApp.\n\nHaz el test de 2 minutos → whape.club'},
+    {c:'🎬 Reel', t:'¿Sabes cuánto cuesta ser "el que siempre responde al toque"?\n\nCada notificación te saca de tu vida 23 minutos (lo que tarda tu cabeza en volver a concentrarse).\n\nCon 3 cambios en tu celular recuperas 2 horas al día — te muestro cómo en mi perfil.\n\nSígueme y activa la campanita 🔔'}]},
+  { n:'🌉 Antes · Después · Puente', uso:'BAB: vende la transformación sin sonar a vendedor. Perfecta para build in public y para convertir los testimonios de tus graduados en contenido (niveles 3-4).',
+    e:'[ANTES — la escena de dolor, específica y con detalles]\n\n[DESPUÉS — la misma persona, la escena lograda]\n\n[PUENTE — qué lo hizo posible + acción]',
+    ej:[
+    {c:'🎬 Reel (build in public)', t:'Hace 3 meses mi celular me quitaba 4 horas al día.\n\nHoy esas mismas horas atienden mi negocio: un bot responde, cobra y agenda mientras yo trabajo.\n\nLa diferencia no fue disciplina. Fue un sistema — y lo estoy enseñando en el enlace de mi perfil.'},
+    {c:'🗣️ Post (testimonio de graduado)', t:'Cuando [nombre] empezó la misión, su hora valía S/5 y llegaba a casa "solo para scrollear".\n\n21 días después: su primera oferta publicada y sus 2 primeros clientes por WhatsApp.\n\n¿El puente? 30 minutos al día con un plan y una comunidad que empuja. La siguiente cohorte abre pronto: comenta CUPO.'}]},
+  { n:'🪝 Taller de ganchos (4U)', uso:'Para tu drill diario de 10 ganchos. Un buen gancho tiene 2+ U: Urgente, Único, Útil, Ultra-específico. Estas 5 fórmulas generan infinitos.',
+    e:'FÓRMULAS (elige una y genera variantes):\n1) ¿[pregunta que duele]? → "¿Cuántos años llevas diciendo \'el próximo año sí\'?"\n2) [Número específico] + [pérdida invisible] → "S/720 al mes: eso le pagas a TikTok con tu vida."\n3) Deja de [consejo común]. Haz [contraintuitivo] → "Deja de borrar apps. Cambia la dirección."\n4) Cómo [resultado] sin [la objeción] → "Cómo empezar tu negocio sin renunciar ni invertir."\n5) [Confesión vulnerable] → "Yo también scrolleaba hasta las 2 am odiándome."\n\nMI TEMA DE HOY: [tema]\nMIS 10 GANCHOS:\n1)\n2)\n3)…',
+    ej:[
+    {c:'🎬 5 ganchos de muestra', t:'1) Tu jefe descansa los domingos. Tu cansancio no.\n2) 91 días al año: eso scrolleas. Un embarazo entero, mirando vidas ajenas.\n3) No necesitas más tiempo. Necesitas que tu hora deje de valer S/6.\n4) La app es gratis porque el producto eres tú.\n5) Nadie te enseñó esto en el colegio — y por eso sigues cobrando por hora.'}]},
+  { n:'📖 Historia mínima', uso:'Personaje · Lucha · Descubrimiento · Lección. Los datos se olvidan; las historias se comparten. Úsala 1 de cada 3 publicaciones para conectar (niveles 1-4).',
+    e:'[PERSONAJE — tú o un cliente, presentado en 1 línea con detalle real]\n\n[LUCHA — el intento que falló, con honestidad]\n\n[DESCUBRIMIENTO — el giro que lo cambió]\n\n[LECCIÓN — en una frase + acción suave]',
+    ej:[
+    {c:'🎬 Reel', t:'Rosa atiende su bodega 11 horas al día.\n\nProbó vender por WhatsApp, pero responder mensajes a las 11 pm la estaba matando. Casi lo deja.\n\nHasta que entendió que no necesitaba más horas: necesitaba que sus horas valieran más. Automatizó las respuestas y ahora cierra ventas mientras atiende la caja.\n\nTu problema no es el tiempo: es el sistema. Comenta SISTEMA y te cuento cómo lo hizo.'},
+    {c:'🗣️ Post (tu historia)', t:'Hace un año me bloquearon la cuenta publicitaria y pensé que era el final.\n\nProbé de todo para revivirla. Nada.\n\nHasta que entendí que el problema era depender de una sola puerta: construí mi propio sistema — web, bot, comunidad — que nadie me puede bloquear.\n\nEl problema más grande que tuve se volvió lo que hoy enseño. ¿Cuál es el tuyo?'}]},
+  { n:'🔥 Oferta directa', uso:'Qué · Para quién · Por qué ahora · Riesgo invertido · Acción. SOLO para audiencia caliente (nivel 5): ya te sigue o ya entró al funnel. Máximo 1 de cada 4-5 publicaciones.',
+    e:'[QUÉ — qué es, en 1 línea, sin poesía]\n\n[PARA QUIÉN — es para ti si… / NO es para ti si…]\n\n[POR QUÉ AHORA — cupos, cohorte, fecha real (nunca urgencia falsa)]\n\n[RIESGO INVERTIDO — cómo puede probar sin perder]\n\n[ACCIÓN — el paso exacto]',
+    ej:[
+    {c:'🗣️ Post / Story', t:'Abro la misión "El Valor de tu Hora": 21 días para dejar de cobrar por hora y empezar a cobrar por resultados.\n\nEs para ti si quieres construir un ingreso con el mismo celular que hoy te distrae. NO es para ti si buscas plata sin trabajar.\n\nEmpezamos el lunes y solo entran 100 personas.\n\nLa semana 1 es completamente gratis: si no es para ti, te vas sin perder un sol.\n\nEntra: whape.club/academia → pestaña Grupos → haz tu diagnóstico.'},
+    {c:'💬 WhatsApp (lead caliente)', t:'[Nombre], quedan [N] cupos y arrancamos el lunes 🚀\n\nTu semana 1 es gratis: diagnóstico + plan + comunidad. Si el día 7 sientes que no es para ti, lo dejas y listo.\n\n¿Te activo tu acceso?'}]}
+  ];
+  function renderCpChips(){
+    var el=document.getElementById('cpChips'); if(!el||el.childNodes.length) return;
+    el.innerHTML=PLANTILLAS.map(function(p,i){ return '<button class="cpchip" id="cpc-'+i+'" onclick="cpShow('+i+')">'+esc(p.n)+'</button>'; }).join('');
+  }
+  function cpShow(i){
+    var p=PLANTILLAS[i]; if(!p) return;
+    for(var j=0;j<PLANTILLAS.length;j++){ var c=document.getElementById('cpc-'+j); if(c) c.classList.toggle('on', j===i); }
+    var v=document.getElementById('cpView'); v.style.display='block';
+    v.innerHTML='<div class="cp-card"><div class="fa-t">'+esc(p.n)+'</div><div class="cp-uso">📌 <strong>Cuándo usarla:</strong> '+esc(p.uso)+'</div>'
+      +'<div class="cp-est">'+esc(p.e)+'</div>'
+      +p.ej.map(function(x){ return '<div class="cp-ej"><b>'+esc(x.c)+'</b>\n'+esc(x.t)+'</div>'; }).join('')
+      +'<div class="cm-formbtns"><button class="cm-save" onclick="cpUse('+i+')">📥 Usar en el entrenador</button><button class="cm-cancel" onclick="document.getElementById(\'cpView\').style.display=\'none\'">Cerrar</button></div></div>';
+  }
+  function cpUse(i){
+    var p=PLANTILLAS[i]; if(!p) return;
+    document.getElementById('ccDraft').value=p.e;
+    var card=document.querySelector('#copyModal .pm-card > div'); if(card) card.scrollTop=0;
+    document.getElementById('ccDraft').focus();
   }
   // --- Grupos (misiones por cohorte) ---
   var GADM=[];
