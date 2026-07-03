@@ -1080,6 +1080,10 @@ module.exports = async (req, res) => {
           mode: (await redis(['GET', 'config:ownermode'])) || 'asistente',
         });
       }
+      if (sub === 'assistclear') {
+        await redis(['DEL', 'assist:hist']);
+        return res.status(200).json({ ok: true });
+      }
       if (sub === 'focoreset') {
         await redis(['DEL', 'foco']);
         await redis(['DEL', 'foco:hist']);
