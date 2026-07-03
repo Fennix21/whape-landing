@@ -155,6 +155,41 @@ async function socio() {
   } catch (e) { console.error('socio', e); return ''; }
 }
 
+// 🧭 Chequeo de foco: pregunta de orientación en las horas de dispersión (3,4,5,6,9 pm Perú).
+// Abre una "sesión socrática": las respuestas del dueño las atiende el coach en whatsapp.js.
+const REFOCUS_HOURS = [15, 16, 17, 18, 21];
+const REFOCUS_QS = [
+  '¿Qué estás haciendo AHORA MISMO… y eso acerca o aleja a WHAPE?',
+  'Si WHAPE fuera tu único cliente, ¿qué le estarías entregando en esta hora?',
+  '¿Qué es lo ÚNICO que, si lo haces hoy, hará que el día haya valido la pena?',
+  'Del 1 al 10, ¿qué tan enfocado estás en este momento? ¿Qué te robó la atención?',
+  '¿Tu yo de dentro de 1 año está orgulloso de lo que estás haciendo justo ahora?',
+  '¿Qué harías en esta hora si supieras que la cohorte depende SOLO de ella?',
+  'Para 10 segundos: ¿cuál era tu tarea de hoy y qué le falta para estar cumplida?',
+  'En este momento, ¿estás creando o consumiendo?',
+  '¿Qué pendiente pequeño de WHAPE cabe en los próximos 25 minutos?',
+  '¿Qué te diría tu Socio si viera tu pantalla ahora mismo?',
+];
+async function refocusPing() {
+  try {
+    if (!REDIS_URL || !REDIS_TOKEN) return false;
+    if ((await redis(['GET', 'config:refocus'])) === '0') return false;
+    const peru = new Date(Date.now() - 5 * 3600000);
+    const h = peru.getUTCHours();
+    if (REFOCUS_HOURS.indexOf(h) < 0) return false;
+    const slot = peru.toISOString().slice(0, 10) + 'T' + h;
+    if ((await redis(['GET', 'refocus:ping'])) === slot) return false; // ya se envió este slot
+    const doy = Math.floor((peru - new Date(Date.UTC(peru.getUTCFullYear(), 0, 0))) / 86400000);
+    const q = REFOCUS_QS[(doy + h) % REFOCUS_QS.length];
+    const f = await getJ('foco', null);
+    const taskTxt = (f && f.date === hoyPeru() && !f.done) ? ('\n\n🎯 Tu tarea de hoy sigue en juego: "' + f.task + '"') : '';
+    await notifyOwner('🧭 *Chequeo de foco — ' + (h > 12 ? (h - 12) + ' pm' : h + ' am') + '*\n\n' + q + taskTxt + '\n\nRespóndeme con honestidad, socio. (Para cortar: "listo")');
+    await redis(['SET', 'refocus:ping', slot]);
+    await redis(['SET', 'refocus', JSON.stringify({ slot, active: true, startedAt: Date.now(), turns: [{ role: 'socio', t: q }] })]);
+    return true;
+  } catch (e) { console.error('refocusPing', e); return false; }
+}
+
 // Gimnasio del Copy: un reto diario al WhatsApp del dueño (rota 3 ejercicios y 10 temas).
 async function dailyGym() {
   try {
@@ -239,7 +274,8 @@ module.exports = async (req, res) => {
     const radar = await weeklyRadar();
     const gym = await dailyGym();
     const socioR = await socio();
-    return res.status(200).json({ ok: true, fired, risk, radar, gym, socio: socioR });
+    const refocus = await refocusPing();
+    return res.status(200).json({ ok: true, fired, risk, radar, gym, socio: socioR, refocus });
   } catch (e) {
     console.error('cron error', e);
     return res.status(500).json({ error: 'Error' });

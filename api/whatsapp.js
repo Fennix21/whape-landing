@@ -210,7 +210,7 @@ module.exports = async (req, res) => {
           }
         } else {
           const q = (maestroM[1] || '').trim().slice(0, 1000);
-          if (!q) reply = '🎓 *Tus comandos, socio:*\n\n✍️ Copy:\n• "maestro: [pregunta/pedido]" — te enseño\n• "copy: [borrador]" — lo evalúo con 2 variantes\n\n💡 Ideas:\n• "idea: …" / "anota: …" — la clasifico y guardo\n\n🤝 Foco:\n• "hoy: [tarea]" — declara LA tarea del día\n• "logré: …" — cierra el día (racha 🔥)\n• "aprendí: …" — guarda la lección\n• "tarea: …" — suma al backlog\n• "foco" — tu estado\n• "debería: …" — el Guardián evalúa si es dispersión';
+          if (!q) reply = '🎓 *Tus comandos, socio:*\n\n✍️ Copy:\n• "maestro: [pregunta/pedido]" — te enseño\n• "copy: [borrador]" — lo evalúo con 2 variantes\n\n💡 Ideas:\n• "idea: …" / "anota: …" — la clasifico y guardo\n\n🤝 Foco:\n• "hoy: [tarea]" — declara LA tarea del día\n• "logré: …" — cierra el día (racha 🔥)\n• "aprendí: …" — guarda la lección\n• "tarea: …" — suma al backlog\n• "foco" — tu estado\n• "debería: …" — el Guardián evalúa si es dispersión\n• "disperso" — sesión para recuperar tu foco ("listo" para salir)';
           else {
             const out = await askAIRaw(MASTER_SYS, q, 700);
             reply = out || '😮‍💨 El maestro tuvo un problema técnico. Intenta de nuevo en un momento.';
@@ -295,6 +295,53 @@ module.exports = async (req, res) => {
         }
         await sendWhatsApp(from, reply.slice(0, 3900));
         return res.status(200).send('ok');
+      }
+    }
+
+    // 🧭 Recuperación de foco del DUEÑO: sesión socrática (la abre el cron en horas de dispersión
+    // o el comando "disperso"); sus respuestas las atiende el coach hasta que recupere el foco.
+    if (HAS_REDIS && text) {
+      const manualStart = /^\s*(disperso|me distraje|perd[ií] el foco)\b/i.test(text);
+      const owner = ((await redis(['GET', 'config:ownerphone'])) || process.env.WHAPE_OWNER_PHONE || '').replace(/\D/g, '');
+      if (owner && from.replace(/\D/g, '') === owner) {
+        const getJ = async (k, d) => { const r0 = await redis(['GET', k]); if (r0) { try { return JSON.parse(r0); } catch (e) {} } return d; };
+        let ses = await getJ('refocus', null);
+        const activeSes = !!(ses && ses.active && (Date.now() - ses.startedAt < 45 * 60000) && (ses.turns || []).length < 12);
+        if (manualStart || activeSes) {
+          const today = new Date(Date.now() - 5 * 3600000).toISOString().slice(0, 10);
+          const f = await getJ('foco', null);
+          const taskTxt = (f && f.date === today && !f.done) ? f.task : '';
+          // salida manual
+          if (activeSes && /^\s*(listo|salir|enfocado|ya estoy|volv[ií])\b/i.test(text) && !manualStart) {
+            ses.active = false;
+            await redis(['SET', 'refocus', JSON.stringify(ses)]);
+            await sendWhatsApp(from, '🔥 De vuelta al juego, socio.' + (taskTxt ? (' Tu tarea espera: "' + taskTxt + '"') : ' Un paso a la vez.'));
+            return res.status(200).send('ok');
+          }
+          if (manualStart && !activeSes) { // inicio manual de sesión
+            const q = 'Respira. ¿Qué estás haciendo AHORA MISMO… y eso acerca o aleja a WHAPE?';
+            ses = { slot: 'manual-' + Date.now(), active: true, startedAt: Date.now(), turns: [{ role: 'socio', t: q }] };
+            await redis(['SET', 'refocus', JSON.stringify(ses)]);
+            await sendWhatsApp(from, '🧭 Ok, socio. Vamos a recuperarte.\n\n' + q + (taskTxt ? ('\n\n🎯 Tu tarea de hoy: "' + taskTxt + '"') : ''));
+            return res.status(200).send('ok');
+          }
+          // turno del coach: responde según lo que él contesta, hasta percibir foco recuperado
+          ses.turns.push({ role: 'martin', t: text.slice(0, 600) });
+          const nPreg = ses.turns.filter((x) => x.role === 'socio').length;
+          const convo = ses.turns.map((x) => (x.role === 'socio' ? 'Socio: ' : 'Martín: ') + x.t).join('\n');
+          const COACH_SYS = 'Eres "El Socio" de Martín en modo RECUPERACIÓN DE FOCO por WhatsApp. Él trabaja en su empleo de 1pm a 9pm y se dispersa; tu misión es que reconecte con WHAPE (su proyecto: comunidad + academia + CRM) mediante preguntas socráticas cortas: UNA por mensaje, máximo 3 líneas, construida sobre lo que él acaba de responder. No sermonees. Llévalo a: (1) reconocer dónde está su atención, (2) reconectar con su tarea del día y su porqué, (3) comprometerse a UNA acción física inmediata y pequeña. Cuando su respuesta muestre claridad y compromiso concreto de acción, cierra: repite su acción en 1 línea, una frase firme de socio, y termina tu mensaje EXACTAMENTE con la etiqueta [ENFOCADO]. Ya le hiciste ' + nPreg + ' pregunta(s); si van 4 o más, cierra SÍ o SÍ con la mejor acción posible y [ENFOCADO]. Español peruano neutro, cálido y directo.';
+          const out = await askAIRaw(COACH_SYS, 'Tarea del día de Martín: ' + (taskTxt ? ('"' + taskTxt + '"') : '(no declarada)') + '\n\nConversación:\n' + convo + '\n\nTu siguiente turno:', 300);
+          let reply = out || '¿Y cuál sería el paso más pequeño que puedes dar AHORA hacia tu tarea?';
+          if (reply.indexOf('[ENFOCADO]') >= 0) {
+            reply = reply.replace(/\[ENFOCADO\]/g, '').trim() + '\n\n🔥 De vuelta al juego.';
+            ses.active = false;
+          } else {
+            ses.turns.push({ role: 'socio', t: reply.slice(0, 400) });
+          }
+          await redis(['SET', 'refocus', JSON.stringify(ses)]);
+          await sendWhatsApp(from, reply.slice(0, 3900));
+          return res.status(200).send('ok');
+        }
       }
     }
 
