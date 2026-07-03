@@ -1071,6 +1071,40 @@ module.exports = async (req, res) => {
         if (!p.approved) { p.approved = true; await savePost(p); await bumpPoints(p.phone, 1); } // +1 punto por participar (post aprobado)
         return res.status(200).json({ ok: true });
       }
+      if (sub === 'focostatus') {
+        const getJ = async (k, d) => { const r0 = await redis(['GET', k]); if (r0) { try { return JSON.parse(r0); } catch (e) {} } return d; };
+        return res.status(200).json({
+          ok: true,
+          foco: await getJ('foco', null),
+          streak: Number((await redis(['GET', 'foco:streak'])) || 0),
+          tareas: await getJ('tareas', []),
+          aprendizajes: await getJ('aprendizajes', []),
+          hist: await getJ('foco:hist', []),
+        });
+      }
+      if (sub === 'tareaadd') {
+        const v = (b.text || '').toString().trim().slice(0, 300);
+        if (!v) return res.status(400).json({ error: 'Falta el texto.' });
+        const raw = await redis(['GET', 'tareas']);
+        let items = []; if (raw) { try { items = JSON.parse(raw); } catch (e) {} }
+        items.push({ id: 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), text: v, ts: Date.now() });
+        await redis(['SET', 'tareas', JSON.stringify(items.slice(-100))]);
+        return res.status(200).json({ ok: true });
+      }
+      if (sub === 'tareadel') {
+        const raw = await redis(['GET', 'tareas']);
+        let items = []; if (raw) { try { items = JSON.parse(raw); } catch (e) {} }
+        items = items.filter((x) => x.id !== (b.id || '').toString());
+        await redis(['SET', 'tareas', JSON.stringify(items)]);
+        return res.status(200).json({ ok: true });
+      }
+      if (sub === 'aprendel') {
+        const raw = await redis(['GET', 'aprendizajes']);
+        let items = []; if (raw) { try { items = JSON.parse(raw); } catch (e) {} }
+        items = items.filter((x) => x.id !== (b.id || '').toString());
+        await redis(['SET', 'aprendizajes', JSON.stringify(items)]);
+        return res.status(200).json({ ok: true });
+      }
       if (sub === 'radarlist') {
         const raw = await redis(['GET', 'radars']);
         let items = []; if (raw) { try { items = JSON.parse(raw); } catch (e) {} }

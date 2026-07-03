@@ -210,10 +210,87 @@ module.exports = async (req, res) => {
           }
         } else {
           const q = (maestroM[1] || '').trim().slice(0, 1000);
-          if (!q) reply = '🎓 *Maestro de Copy* — úsame así:\n\n• "maestro: [pregunta o pedido]"\n  (ej. "dame 5 ganchos sobre el valor de la hora")\n• "copy: [tu borrador]" → puntaje + error #1 + 2 variantes\n• "idea: …" → guardo tus ideas\n\nEl consejo: Schwartz, Halbert, Ogilvy, Hopkins, Sugarman, Collier, Caples y Bencivenga. 🧠';
+          if (!q) reply = '🎓 *Tus comandos, socio:*\n\n✍️ Copy:\n• "maestro: [pregunta/pedido]" — te enseño\n• "copy: [borrador]" — lo evalúo con 2 variantes\n\n💡 Ideas:\n• "idea: …" / "anota: …" — la clasifico y guardo\n\n🤝 Foco:\n• "hoy: [tarea]" — declara LA tarea del día\n• "logré: …" — cierra el día (racha 🔥)\n• "aprendí: …" — guarda la lección\n• "tarea: …" — suma al backlog\n• "foco" — tu estado\n• "debería: …" — el Guardián evalúa si es dispersión';
           else {
             const out = await askAIRaw(MASTER_SYS, q, 700);
             reply = out || '😮‍💨 El maestro tuvo un problema técnico. Intenta de nuevo en un momento.';
+          }
+        }
+        await sendWhatsApp(from, reply.slice(0, 3900));
+        return res.status(200).send('ok');
+      }
+    }
+
+    // 🤝 El Socio (accountability del DUEÑO): hoy / logré / aprendí / tarea / foco / debería
+    const socioHoy = text && text.match(/^\s*hoy\b[:,]?\s*([\s\S]*)$/i);
+    const socioLog = text && text.match(/^\s*(?:logr[eé]|cumpl[ií])\b[:,]?\s*([\s\S]*)$/i);
+    const socioApr = text && text.match(/^\s*aprend[ií]\b[:,]?\s*([\s\S]*)$/i);
+    const socioTar = text && text.match(/^\s*tarea\b[:,]?\s*([\s\S]*)$/i);
+    const socioFoco = text && /^\s*foco\s*$/i.test(text);
+    const socioDeb = text && text.match(/^\s*¿?\s*deber[ií]a\b[:,]?\s*([\s\S]*)$/i);
+    if (HAS_REDIS && (socioHoy || socioLog || socioApr || socioTar || socioFoco || socioDeb)) {
+      const owner = ((await redis(['GET', 'config:ownerphone'])) || process.env.WHAPE_OWNER_PHONE || '').replace(/\D/g, '');
+      if (owner && from.replace(/\D/g, '') === owner) {
+        const hoyPeru = () => new Date(Date.now() - 5 * 3600000).toISOString().slice(0, 10);
+        const getJ = async (k, d) => { const r0 = await redis(['GET', k]); if (r0) { try { return JSON.parse(r0); } catch (e) {} } return d; };
+        const today = hoyPeru();
+        let reply = '';
+        if (socioHoy) {
+          const task = (socioHoy[1] || '').trim().slice(0, 300);
+          if (!task) reply = '🎯 Dime tu tarea así: "hoy: [LA tarea que hace avanzar WHAPE]". Una sola.';
+          else {
+            await redis(['SET', 'foco', JSON.stringify({ date: today, task, declaredAt: Date.now(), done: false })]);
+            const streak = Number((await redis(['GET', 'foco:streak'])) || 0);
+            reply = '🎯 *Tarea del día registrada:*\n"' + task + '"\n\n🔥 Racha en juego: ' + streak + '\nA las 10 pm te pregunto cómo te fue. Sin excusas, socio. 🤝';
+          }
+        } else if (socioLog) {
+          const f = await getJ('foco', null);
+          if (!f || f.date !== today) reply = '🤔 Hoy no declaraste tarea. Dime "hoy: [tarea]" y arrancamos.';
+          else if (f.done) reply = '✅ Hoy ya cerraste, socio. 🔥 Racha: ' + Number((await redis(['GET', 'foco:streak'])) || 0) + '\nSi aprendiste algo más: "aprendí: …"';
+          else {
+            f.done = true; f.result = (socioLog[1] || '').trim().slice(0, 500); f.doneAt = Date.now();
+            await redis(['SET', 'foco', JSON.stringify(f)]);
+            const streak = Number((await redis(['GET', 'foco:streak'])) || 0) + 1;
+            await redis(['SET', 'foco:streak', String(streak)]);
+            const hist = await getJ('foco:hist', []);
+            hist.push({ date: today, task: f.task, done: true });
+            await redis(['SET', 'foco:hist', JSON.stringify(hist.slice(-90))]);
+            reply = '✅ *Día cumplido.* 🔥 Racha de foco: ' + streak + (streak === 1 ? ' día' : ' días') + '\n\n¿Qué te enseñó el día? "aprendí: …"\nDescansa: mañana a las 7am definimos la siguiente. 🤝';
+          }
+        } else if (socioApr) {
+          const v = (socioApr[1] || '').trim().slice(0, 1000);
+          if (!v) reply = '🧠 Dime el aprendizaje así: "aprendí: [la lección]".';
+          else {
+            const apr = await getJ('aprendizajes', []);
+            apr.push({ id: 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), text: v, ts: Date.now() });
+            await redis(['SET', 'aprendizajes', JSON.stringify(apr.slice(-500))]);
+            reply = '🧠 *Aprendizaje #' + apr.length + ' guardado.*\nVa a tu panel (🎯 Foco) y a Obsidian en el próximo sync.';
+          }
+        } else if (socioTar) {
+          const v = (socioTar[1] || '').trim().slice(0, 300);
+          if (!v) reply = '📋 Suma un pendiente así: "tarea: [texto]". Para ver todo: "foco".';
+          else {
+            const tareas = await getJ('tareas', []);
+            tareas.push({ id: 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), text: v, ts: Date.now() });
+            await redis(['SET', 'tareas', JSON.stringify(tareas.slice(-100))]);
+            reply = '📋 Pendiente guardado (#' + tareas.length + '). Recuerda: el backlog espera; tu tarea de HOY no. 🤝';
+          }
+        } else if (socioFoco) {
+          const f = await getJ('foco', null);
+          const streak = Number((await redis(['GET', 'foco:streak'])) || 0);
+          const tareas = await getJ('tareas', []);
+          const tt = tareas.slice(0, 5).map((t, i) => (i + 1) + ') ' + t.text).join('\n');
+          reply = '🎯 *Tu foco*\n\n' + (f && f.date === today ? ((f.done ? '✅ ' : '⏳ ') + '"' + f.task + '"') : '⚠️ Sin tarea declarada hoy → "hoy: …"')
+            + '\n🔥 Racha: ' + streak + (streak === 1 ? ' día' : ' días')
+            + '\n\n📋 Pendientes (' + tareas.length + '):\n' + (tt || '(vacío)');
+        } else if (socioDeb) {
+          const q = (socioDeb[1] || '').trim().slice(0, 800);
+          if (!q) reply = '⚖️ Pregúntame así: "debería: [la nueva idea/proyecto/curso que te tienta]" y te respondo como socio.';
+          else {
+            const f = await getJ('foco', null);
+            const GUARD_SYS = 'Eres "El Socio", el accountability partner implacable de Martín, dueño de WHAPE. Su compromiso declarado: enfocarse EXCLUSIVAMENTE en desarrollar WHAPE (comunidad + academia + CRM + bot de WhatsApp) hasta que despegue. Tu ÚNICO trabajo es proteger ese foco de la dispersión. Cuando pregunte si "debería" hacer algo, evalúa con honestidad brutal: ¿esto avanza WHAPE ESTA SEMANA o es dispersión disfrazada de oportunidad? Responde corto para WhatsApp (máx 8 líneas): VEREDICTO (✅ Avanza WHAPE / ⚠️ Puede esperar / ❌ Dispersión) + por qué en 2-3 líneas + qué hacer ahora. Si es dispersión: dile que la guarde con "idea:" y vuelva a su tarea. Directo, cálido y firme. Español peruano neutro.';
+            const out = await askAIRaw(GUARD_SYS, 'Su tarea de hoy: ' + (f && f.date === today ? '"' + f.task + '"' : '(no declarada)') + '\n\nMe pregunta: ¿debería ' + q + '?', 400);
+            reply = out || '😮‍💨 El Socio tuvo un problema técnico. Intenta de nuevo.';
           }
         }
         await sendWhatsApp(from, reply.slice(0, 3900));

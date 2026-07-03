@@ -147,8 +147,11 @@
   #lbClose{position:fixed;top:16px;right:16px;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:center;border:1px solid rgba(255,255,255,.25)}
   #lbClose:hover{background:rgba(255,255,255,.26)}
   /* Editor del prompt del bot */
-  #promptModal,#statsModal,#tplModal,#wtplModal,#communityModal,#progressModal,#inboxModal,#feedModal,#gruposModal,#copyModal,#ideasModal{display:none;position:fixed;inset:0;z-index:120;background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:18px}
-  #promptModal.open,#statsModal.open,#tplModal.open,#wtplModal.open,#communityModal.open,#progressModal.open,#inboxModal.open,#feedModal.open,#gruposModal.open,#copyModal.open,#ideasModal.open{display:flex}
+  #promptModal,#statsModal,#tplModal,#wtplModal,#communityModal,#progressModal,#inboxModal,#feedModal,#gruposModal,#copyModal,#ideasModal,#focoModal{display:none;position:fixed;inset:0;z-index:120;background:rgba(0,0,0,.7);align-items:center;justify-content:center;padding:18px}
+  #promptModal.open,#statsModal.open,#tplModal.open,#wtplModal.open,#communityModal.open,#progressModal.open,#inboxModal.open,#feedModal.open,#gruposModal.open,#copyModal.open,#ideasModal.open,#focoModal.open{display:flex}
+  .fc-hoy{background:var(--bg);border:1px solid var(--gold);border-radius:12px;padding:14px;margin-bottom:12px}
+  .fc-task{font-size:15px;font-weight:700;margin:6px 0}
+  .fc-streak{font-size:22px;font-weight:800;color:var(--gold)}
   .id-cat{display:inline-block;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:6px;background:rgba(142,45,226,.2);color:#c89bff;vertical-align:middle;text-transform:uppercase}
   .id-done{opacity:.55}
   .id-done .fa-t{text-decoration:line-through}
@@ -352,6 +355,7 @@
     <button class="ref" onclick="openGrupos()" style="margin-right:8px">🎯 Grupos</button>
     <button class="ref" onclick="openCopy()" style="margin-right:8px">✍️ Copy</button>
     <button class="ref" onclick="openIdeas()" style="margin-right:8px">💡 Ideas</button>
+    <button class="ref" onclick="openFoco()" style="margin-right:8px">🎯 Foco</button>
     <button class="ref" id="moreBtn" onclick="toggleMore(event)" style="margin-right:8px">⋯ Más</button>
     <button class="ref" onclick="loadLeads()" title="Actualizar">↻</button>
     <button class="ref" onclick="panelLogout()" title="Salir" style="margin-left:8px;color:#ff8aa0;border-color:rgba(255,138,160,.4)">🚪</button>
@@ -474,6 +478,27 @@
       <button class="pm-x" onclick="closeProgress()" aria-label="Cerrar">✕</button>
     </div>
     <div id="progBody" style="overflow-y:auto;max-height:76vh;max-height:76dvh;padding:2px"></div>
+  </div>
+</div>
+
+<div id="focoModal">
+  <div class="pm-card" style="max-width:680px">
+    <div class="pm-head">
+      <strong>🎯 Foco · El Socio</strong>
+      <button class="pm-x" onclick="closeFoco()" aria-label="Cerrar">✕</button>
+    </div>
+    <div style="overflow-y:auto;max-height:76vh;max-height:76dvh;padding:2px">
+      <p class="pm-hint">Tu accountability por WhatsApp: <strong>"hoy: …"</strong> declara la tarea · <strong>"logré: …"</strong> cierra el día · <strong>"aprendí: …"</strong> guarda la lección · <strong>"debería: …"</strong> consulta al Guardián.</p>
+      <div id="fcHoy" class="fc-hoy"></div>
+      <p class="pm-hint" style="margin-top:14px"><strong>📋 Backlog de pendientes</strong></p>
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <input id="fcNew" class="cmin" placeholder="Nueva tarea pendiente…" style="flex:1" />
+        <button class="cm-save" style="flex:none;padding:0 16px" onclick="focoAdd()">➕</button>
+      </div>
+      <div id="fcTareas"></div>
+      <p class="pm-hint" style="margin-top:14px"><strong>🧠 Aprendizajes</strong> (van a Obsidian con el sync)</p>
+      <div id="fcApren"></div>
+    </div>
   </div>
 </div>
 
@@ -1024,6 +1049,40 @@
     var m=document.getElementById('moreMenu');
     if(m && m.classList.contains('open') && !(e.target.closest && (e.target.closest('#moreMenu')||e.target.closest('#moreBtn')))) m.classList.remove('open');
   });
+  // --- Foco: El Socio (accountability) ---
+  function openFoco(){ document.getElementById('focoModal').classList.add('open'); loadFoco(); }
+  function closeFoco(){ document.getElementById('focoModal').classList.remove('open'); }
+  function loadFoco(){
+    document.getElementById('fcHoy').innerHTML='<p class="pm-hint">Cargando…</p>';
+    capi('focostatus').then(function(res){
+      if(!res.ok){ document.getElementById('fcHoy').innerHTML='<p class="pm-hint">'+esc((res.d&&res.d.error)||'Error')+'</p>'; return; }
+      var hoy=new Date(Date.now()-5*3600000).toISOString().slice(0,10);
+      var f=res.d.foco;
+      var estado = (f && f.date===hoy) ? ((f.done?'✅ Cumplida: ':'⏳ En juego: ')+'<span class="fc-task">"'+esc(f.task)+'"</span>') : '⚠️ Sin tarea declarada hoy — mándale a tu bot: <strong>"hoy: [tarea]"</strong>';
+      document.getElementById('fcHoy').innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div style="flex:1;min-width:200px">'+estado+'</div><div class="fc-streak">🔥 '+(res.d.streak||0)+'</div></div>';
+      var t=res.d.tareas||[];
+      document.getElementById('fcTareas').innerHTML=t.length?t.map(function(x){
+        return '<div class="fa-row" id="fct-'+x.id+'"><div class="fa-main"><div class="fa-body" style="margin-top:0">'+esc(x.text)+'</div></div><div class="fa-actions"><button onclick="focoDel(\''+x.id+'\',true)">✅ Hecha</button><button class="fa-del" onclick="focoDel(\''+x.id+'\',false)">🗑</button></div></div>';
+      }).join(''):'<p class="pm-hint">Backlog vacío. Suma con "tarea: …" por WhatsApp o aquí arriba.</p>';
+      var a=res.d.aprendizajes||[];
+      document.getElementById('fcApren').innerHTML=a.length?a.slice().reverse().map(function(x){
+        var when=new Date(x.ts).toLocaleDateString('es-PE',{day:'numeric',month:'short'});
+        return '<div class="fa-row" id="fca-'+x.id+'"><div class="fa-main"><div class="fa-meta">'+when+'</div><div class="fa-body" style="margin-top:2px">'+esc(x.text)+'</div></div><div class="fa-actions"><button class="fa-del" onclick="aprenDel(\''+x.id+'\')">🗑</button></div></div>';
+      }).join(''):'<p class="pm-hint">Aún no guardas aprendizajes. Por WhatsApp: "aprendí: …"</p>';
+    });
+  }
+  function focoAdd(){
+    var i=document.getElementById('fcNew'); var v=i.value.trim(); if(!v){ alert('Escribe la tarea.'); return; }
+    capi('tareaadd',{text:v}).then(function(res){ if(!res.ok){ alert((res.d&&res.d.error)||'No se pudo.'); return; } i.value=''; loadFoco(); });
+  }
+  function focoDel(id,done){
+    if(!done && !confirm('¿Borrar esta tarea del backlog?')) return;
+    capi('tareadel',{id:id}).then(function(res){ if(res.ok){ var r=document.getElementById('fct-'+id); if(r) r.remove(); } });
+  }
+  function aprenDel(id){
+    if(!confirm('¿Borrar este aprendizaje?')) return;
+    capi('aprendel',{id:id}).then(function(res){ if(res.ok){ var r=document.getElementById('fca-'+id); if(r) r.remove(); } });
+  }
   // --- Ideas capturadas por WhatsApp ---
   var IDEAS=[];
   function openIdeas(){ document.getElementById('ideasModal').classList.add('open'); loadIdeas(); }

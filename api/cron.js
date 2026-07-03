@@ -110,6 +110,51 @@ async function weeklyRadar() {
   } catch (e) { console.error('weeklyRadar', e); return false; }
 }
 
+// 🤝 El Socio (accountability partner): apertura del día (mañana) y cierre (noche, ~10pm Perú).
+async function getJ(key, dft) { const raw = await redis(['GET', key]); if (raw) { try { return JSON.parse(raw); } catch (e) {} } return dft; }
+function hoyPeru() { return new Date(Date.now() - 5 * 3600000).toISOString().slice(0, 10); }
+
+async function socio() {
+  try {
+    if (!REDIS_URL || !REDIS_TOKEN) return '';
+    if ((await redis(['GET', 'config:socio'])) === '0') return '';
+    const peruHour = new Date(Date.now() - 5 * 3600000).getUTCHours();
+    const today = hoyPeru();
+    if (peruHour < 12) { // APERTURA (corre con el cron de las 7am)
+      if ((await redis(['GET', 'socio:am'])) === today) return '';
+      const f = await getJ('foco', null);
+      let streak = Number((await redis(['GET', 'foco:streak'])) || 0);
+      if (f && f.date && f.date !== today) { // cierre de ayer no resuelto
+        if (!f.done) {
+          streak = 0; await redis(['SET', 'foco:streak', '0']);
+          const tareas = await getJ('tareas', []);
+          tareas.push({ id: 't' + Date.now().toString(36), text: f.task, ts: Date.now() });
+          await redis(['SET', 'tareas', JSON.stringify(tareas.slice(-100))]);
+        }
+        await redis(['DEL', 'foco']);
+      }
+      const pend = (await getJ('tareas', [])).slice(0, 3);
+      const pendTxt = pend.length ? ('\n\n📋 Pendientes:\n' + pend.map((t, i) => (i + 1) + ') ' + t.text).join('\n')) : '';
+      await notifyOwner('🤝 *El Socio — apertura del día*\n\n🔥 Racha de foco: ' + streak + (streak === 1 ? ' día' : ' días') + '\n\n¿Cuál es LA tarea que hace avanzar WHAPE hoy?\nRespóndeme: *"hoy: [tu tarea]"*' + pendTxt);
+      await redis(['SET', 'socio:am', today]);
+      return 'am';
+    }
+    if (peruHour >= 18) { // CIERRE (corre con el cron de las 10pm)
+      if ((await redis(['GET', 'socio:pm'])) === today) return '';
+      const f = await getJ('foco', null);
+      const streak = Number((await redis(['GET', 'foco:streak'])) || 0);
+      let msg;
+      if (f && f.date === today && f.done) msg = '🌙 *El Socio — cierre del día*\n\n✅ Hoy cumpliste: "' + f.task + '"\n🔥 Racha: ' + streak + '\n\n¿Qué te enseñó el día? *"aprendí: …"*\nDescansa, socio. Mañana seguimos. 🤝';
+      else if (f && f.date === today) msg = '🌙 *El Socio — cierre del día*\n\nTu tarea era: *"' + f.task + '"*\n\n¿La lograste? Respóndeme *"logré: [qué pasó]"* para proteger tu racha 🔥' + streak + '\nY si el día te enseñó algo: *"aprendí: …"*';
+      else msg = '🌙 *El Socio — cierre del día*\n\nHoy no declaraste tarea. Sin tarea declarada no hay foco que proteger.\nMañana a las 7am te espero: *"hoy: [tu tarea]"*. 🔥 Racha en juego: ' + streak;
+      await notifyOwner(msg);
+      await redis(['SET', 'socio:pm', today]);
+      return 'pm';
+    }
+    return '';
+  } catch (e) { console.error('socio', e); return ''; }
+}
+
 // Gimnasio del Copy: un reto diario al WhatsApp del dueño (rota 3 ejercicios y 10 temas).
 async function dailyGym() {
   try {
@@ -193,7 +238,8 @@ module.exports = async (req, res) => {
     const risk = await scanGroupRisk();
     const radar = await weeklyRadar();
     const gym = await dailyGym();
-    return res.status(200).json({ ok: true, fired, risk, radar, gym });
+    const socioR = await socio();
+    return res.status(200).json({ ok: true, fired, risk, radar, gym, socio: socioR });
   } catch (e) {
     console.error('cron error', e);
     return res.status(500).json({ error: 'Error' });
