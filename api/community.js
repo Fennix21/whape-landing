@@ -1071,6 +1071,15 @@ module.exports = async (req, res) => {
         if (!p.approved) { p.approved = true; await savePost(p); await bumpPoints(p.phone, 1); } // +1 punto por participar (post aprobado)
         return res.status(200).json({ ok: true });
       }
+      if (sub === 'assisthist') {
+        const getJ = async (k, d) => { const r0 = await redis(['GET', k]); if (r0) { try { return JSON.parse(r0); } catch (e) {} } return d; };
+        return res.status(200).json({
+          ok: true,
+          hist: await getJ('assist:hist', []),
+          refocus: await getJ('refocus', null),
+          mode: (await redis(['GET', 'config:ownermode'])) || 'asistente',
+        });
+      }
       if (sub === 'focostatus') {
         const getJ = async (k, d) => { const r0 = await redis(['GET', k]); if (r0) { try { return JSON.parse(r0); } catch (e) {} } return d; };
         return res.status(200).json({
