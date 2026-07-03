@@ -210,7 +210,7 @@ module.exports = async (req, res) => {
           }
         } else {
           const q = (maestroM[1] || '').trim().slice(0, 1000);
-          if (!q) reply = '🎓 *Tus comandos, socio:*\n\n✍️ Copy:\n• "maestro: [pregunta/pedido]" — te enseño\n• "copy: [borrador]" — lo evalúo con 2 variantes\n\n💡 Ideas:\n• "idea: …" / "anota: …" — la clasifico y guardo\n\n🤝 Foco:\n• "hoy: [tarea]" — declara LA tarea del día\n• "logré: …" — cierra el día (racha 🔥)\n• "aprendí: …" — guarda la lección\n• "tarea: …" — suma al backlog\n• "foco" — tu estado\n• "debería: …" — el Guardián evalúa si es dispersión\n• "disperso" — sesión para recuperar tu foco ("listo" para salir)';
+          if (!q) reply = '🎓 *Tus comandos, socio:*\n\n✍️ Copy:\n• "maestro: [pregunta/pedido]" — te enseño\n• "copy: [borrador]" — lo evalúo con 2 variantes\n\n💡 Ideas:\n• "idea: …" / "anota: …" — la clasifico y guardo\n\n🤝 Foco:\n• "hoy: [tarea]" — declara LA tarea del día\n• "logré: …" — cierra el día (racha 🔥)\n• "aprendí: …" — guarda la lección\n• "tarea: …" — suma al backlog\n• "foco" — tu estado\n• "debería: …" — el Guardián evalúa si es dispersión\n• "disperso" — sesión para recuperar tu foco ("listo" para salir)\n\n🎛️ Modos:\n• "modo vendedor" / "modo asistente" — cambia cómo te atiendo\n• Todo lo demás que me escribas: te respondo como tu asistente 🤖';
           else {
             const out = await askAIRaw(MASTER_SYS, q, 700);
             reply = out || '😮‍💨 El maestro tuvo un problema técnico. Intenta de nuevo en un momento.';
@@ -298,6 +298,27 @@ module.exports = async (req, res) => {
       }
     }
 
+    // 🎛️ Interruptor de modo del DUEÑO: "modo vendedor" (probar el bot) / "modo asistente"
+    const modoM = text && text.match(/^\s*modo\b[:,]?\s*(asistente|vendedor)?\s*$/i);
+    if (HAS_REDIS && modoM) {
+      const owner = ((await redis(['GET', 'config:ownerphone'])) || process.env.WHAPE_OWNER_PHONE || '').replace(/\D/g, '');
+      if (owner && from.replace(/\D/g, '') === owner) {
+        const want = (modoM[1] || '').toLowerCase();
+        let reply;
+        if (!want) {
+          const cur = (await redis(['GET', 'config:ownermode'])) || 'asistente';
+          reply = '🎛️ Modo actual: *' + cur.toUpperCase() + '*\n\n• "modo vendedor" — te atiendo como a un cliente (para probar el bot)\n• "modo asistente" — vuelvo a ser tu asistente';
+        } else {
+          await redis(['SET', 'config:ownermode', want]);
+          reply = want === 'vendedor'
+            ? '🛒 *Modo VENDEDOR activado.* Desde ahora te atiendo como a un cliente para que pruebes el bot.\n\nTus comandos siguen funcionando. Para volver: "modo asistente".'
+            : '🤝 *Modo ASISTENTE activado.* Aquí estoy, socio. ¿En qué avanzamos?';
+        }
+        await sendWhatsApp(from, reply);
+        return res.status(200).send('ok');
+      }
+    }
+
     // 🧭 Recuperación de foco del DUEÑO: sesión socrática (la abre el cron en horas de dispersión
     // o el comando "disperso"); sus respuestas las atiende el coach hasta que recupere el foco.
     if (HAS_REDIS && text) {
@@ -339,6 +360,37 @@ module.exports = async (req, res) => {
             ses.turns.push({ role: 'socio', t: reply.slice(0, 400) });
           }
           await redis(['SET', 'refocus', JSON.stringify(ses)]);
+          await sendWhatsApp(from, reply.slice(0, 3900));
+          return res.status(200).send('ok');
+        }
+      }
+    }
+
+    // 🤖 Modo ASISTENTE del DUEÑO (por defecto): si no fue comando ni sesión, Whapi es su
+    // asistente personal y NUNCA le vende. Con "modo vendedor" este bloque se salta al bot de ventas.
+    if (HAS_REDIS) {
+      const owner = ((await redis(['GET', 'config:ownerphone'])) || process.env.WHAPE_OWNER_PHONE || '').replace(/\D/g, '');
+      if (owner && from.replace(/\D/g, '') === owner) {
+        const mode = (await redis(['GET', 'config:ownermode'])) || 'asistente';
+        if (mode !== 'vendedor') {
+          if (!text) {
+            await sendWhatsApp(from, '📎 Recibido, socio. Si quieres que haga algo con esto, cuéntamelo en texto.');
+            return res.status(200).send('ok');
+          }
+          const getJ = async (k, d) => { const r0 = await redis(['GET', k]); if (r0) { try { return JSON.parse(r0); } catch (e) {} } return d; };
+          const today = new Date(Date.now() - 5 * 3600000).toISOString().slice(0, 10);
+          const f = await getJ('foco', null);
+          const streak = Number((await redis(['GET', 'foco:streak'])) || 0);
+          const tareas = await getJ('tareas', []);
+          let hist = await getJ('assist:hist', []);
+          hist.push({ r: 'm', t: text.slice(0, 600) });
+          const convo = hist.slice(-8).map((x) => (x.r === 'm' ? 'Martín: ' : 'Whapi: ') + x.t).join('\n');
+          const ASSIST_SYS = 'Eres "Whapi", el asistente personal de Martín, dueño y creador de WHAPE (Perú): plataforma que enseña a convertir problemas en negocios que venden por WhatsApp — landing whape.club (+ /reto), comunidad, academia, misiones de 21 días por cohortes, Premium S/99 único, CRM en whape.club/panel. Eres su mano derecha: piensa con él, responde, redacta, calcula, dale claridad y siguiente paso. Si su pedido encaja con un comando especializado, recomiéndaselo: "idea:" (guardar ideas), "copy:" y "maestro:" (copywriting), "hoy:"/"logré:"/"foco"/"tarea:" (accountability), "debería:" (anti-dispersión), "disperso" (recuperar foco), "modo vendedor" (probar el bot de ventas). Formato WhatsApp: corto y útil (máx ~10 líneas), *negritas* con moderación. Español peruano NEUTRO. JAMÁS le vendas WHAPE ni lo trates como cliente: él es el dueño.';
+          const ctx = 'Contexto de hoy: tarea ' + ((f && f.date === today) ? ('"' + f.task + '"' + (f.done ? ' (cumplida ✅)' : ' (en juego ⏳)')) : '(no declarada)') + ' · racha de foco: ' + streak + ' · pendientes en backlog: ' + tareas.length + '.';
+          const out = await askAIRaw(ASSIST_SYS, ctx + '\n\nConversación reciente:\n' + convo + '\n\nResponde el último mensaje de Martín.', 600);
+          const reply = out || 'Se me cruzaron los cables un segundo 😅 ¿Me lo repites, socio?';
+          hist.push({ r: 'w', t: reply.slice(0, 400) });
+          await redis(['SET', 'assist:hist', JSON.stringify(hist.slice(-16))]);
           await sendWhatsApp(from, reply.slice(0, 3900));
           return res.status(200).send('ok');
         }
