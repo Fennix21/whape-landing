@@ -15,6 +15,7 @@ const GRAPH = 'https://graph.facebook.com/v21.0';
 
 const { DEFAULT_PROMPT } = require('./_prompt');
 const { flushDueReminders } = require('./_reminders');
+const coach = require('./_coach');
 
 const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_URL;
 const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
@@ -94,6 +95,68 @@ async function askClaude(messages, systemPrompt) {
   if (!r.ok) { console.error('Claude error', JSON.stringify(data)); return 'Disculpa, tuve un problema. ¿Puedes repetirlo? 🙏'; }
   const block = (data.content || []).find((b) => b.type === 'text');
   return (block && block.text) || 'Disculpa, ¿puedes repetir tu mensaje?';
+}
+
+// Transporte a Claude CON tools (reusa la misma URL/headers/key que askClaude)
+async function callClaudeCoach(body) {
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-api-key': process.env.ANTHROPIC_API_KEY,
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify(body),
+  });
+  return r.json();
+}
+
+// Flujo coach: define+compromete objetivos por contacto. Persiste en lead.objetivos[].
+async function runCoachFlow(lead, from, history) {
+  if (!Array.isArray(lead.objetivos)) lead.objetivos = [];
+  const wipLimit = Number(process.env.WHAPE_COACH_WIP || 3);
+  const model = process.env.WHAPE_COACH_MODEL || 'claude-haiku-4-5-20251001';
+  const prompt = process.env.WHAPE_COACH_PROMPT || coach.DEFAULT_SYSTEM_PROMPT;
+  const activosCtx = () => lead.objetivos.filter(o => o.estado === 'activo');
+  const system = coach.buildSystem(prompt, {
+    activos: activosCtx().map(o => ({ titulo: o.titulo, siguientePaso: o.siguientePaso })),
+    wipLimit,
+  });
+  // messages en memoria para el loop de tool use (no se persiste verbatim)
+  const messages = history.map(m => ({ role: m.role, content: m.content }));
+  let finalText = '';
+  for (let hop = 0; hop < 3; hop++) {
+    const body = coach.buildRequestBody({ model, maxTokens: 700, system, messages });
+    const data = await callClaudeCoach(body);
+    const content = data.content || [];
+    messages.push({ role: 'assistant', content });
+    const tools = coach.extractToolUses(content);
+    if (data.stop_reason === 'tool_use' && tools.length) {
+      const results = [];
+      for (const tu of tools) {
+        let result;
+        if (tu.name === 'registrar_objetivo') {
+          if (coach.wipExceeded(activosCtx().length, wipLimit)) {
+            result = coach.toolResultWipExceeded(activosCtx().length, wipLimit);
+          } else {
+            const obj = coach.buildObjetivo(tu.input);
+            lead.objetivos.push(obj);
+            result = coach.toolResultOk({ id: obj.id, activos: activosCtx().length, limite: wipLimit, nota: null });
+          }
+        } else {
+          result = coach.toolResultDesconocida();
+        }
+        results.push({ type: 'tool_result', tool_use_id: tu.id, content: result });
+      }
+      messages.push({ role: 'user', content: results });
+      continue; // deja que el coach cierre con un mensaje final
+    }
+    finalText = coach.extractText(content);
+    break;
+  }
+  if (finalText) lead.messages.push({ role: 'assistant', text: finalText, ts: Date.now() });
+  await saveLead(lead);                       // reutiliza tu persistencia
+  if (finalText) await sendWhatsApp(from, finalText); // reutiliza tu envío (waFormat)
 }
 
 // Normaliza el formato al de WhatsApp: negrita con UN asterisco (no Markdown ** ni #), sin asteriscos sueltos.
@@ -416,6 +479,10 @@ module.exports = async (req, res) => {
     let lead = null;
     if (HAS_REDIS) {
       lead = await getLead(from);
+      if (msg.id) { // idempotencia: ignora reintentos de Meta del mismo mensaje
+        if (lead.lastMsgId === msg.id) return res.status(200).send('ok');
+        lead.lastMsgId = msg.id;
+      }
       const isNewLead = !lead.messages || lead.messages.length === 0;
       const prevStatus = lead.status || 'nuevo';
       if (isNewLead && !lead.source) lead.source = detectSource(text); // de dónde vino
@@ -543,6 +610,11 @@ module.exports = async (req, res) => {
       history = lead.messages.slice(-12).map((m) => ({ role: m.role === 'assistant' ? 'assistant' : 'user', content: m.text }));
     } else {
       history = [{ role: 'user', content: text }];
+    }
+
+    if (lead && (lead.mode === 'coach' || (lead.tags && lead.tags.includes('coach')))) {
+      await runCoachFlow(lead, from, history);
+      return res.status(200).send('ok');
     }
 
     const reply = await askClaude(history, await getPrompt());
