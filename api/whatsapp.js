@@ -96,11 +96,26 @@ async function askClaude(messages, systemPrompt) {
   return (block && block.text) || 'Disculpa, ¿puedes repetir tu mensaje?';
 }
 
+// Normaliza el formato al de WhatsApp: negrita con UN asterisco (no Markdown ** ni #), sin asteriscos sueltos.
+function waFormat(s) {
+  if (!s) return s;
+  let t = String(s);
+  t = t.replace(/\*\*\*([^\n]+?)\*\*\*/g, '*$1*'); // ***x*** -> *x*
+  t = t.replace(/\*\*([^\n]+?)\*\*/g, '*$1*');       // **x**  -> *x*
+  t = t.replace(/__([^\n]+?)__/g, '*$1*');           // __x__  -> *x*
+  t = t.replace(/^\s{0,3}#{1,6}\s+(.+?)\s*$/gm, '*$1*'); // encabezados markdown -> negrita
+  t = t.replace(/^(\s*)[*-]\s+/gm, '$1• ');           // viñetas markdown -> •
+  t = t.split('\n').map((line) => {                  // quita un asterisco huérfano por línea
+    if (((line.match(/\*/g) || []).length) % 2 === 1) line = line.replace(/\*(?=[^*]*$)/, '');
+    return line;
+  }).join('\n');
+  return t;
+}
 async function sendWhatsApp(to, body) {
   const r = await fetch(`${GRAPH}/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
     method: 'POST',
     headers: { 'content-type': 'application/json', Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}` },
-    body: JSON.stringify({ messaging_product: 'whatsapp', to, type: 'text', text: { body } }),
+    body: JSON.stringify({ messaging_product: 'whatsapp', to, type: 'text', text: { body: waFormat(body) } }),
   });
   if (!r.ok) console.error('WhatsApp send error', await r.text());
 }

@@ -7,6 +7,22 @@ const REDIS_URL = process.env.UPSTASH_REDIS_REST_URL || process.env.KV_REST_API_
 const REDIS_TOKEN = process.env.UPSTASH_REDIS_REST_TOKEN || process.env.KV_REST_API_TOKEN;
 const GRAPH = 'https://graph.facebook.com/v21.0';
 
+// Normaliza el formato al de WhatsApp (negrita con un solo asterisco; sin Markdown ** ni asteriscos sueltos).
+function waFormat(s) {
+  if (!s) return s;
+  let t = String(s);
+  t = t.replace(/\*\*\*([^\n]+?)\*\*\*/g, '*$1*');
+  t = t.replace(/\*\*([^\n]+?)\*\*/g, '*$1*');
+  t = t.replace(/__([^\n]+?)__/g, '*$1*');
+  t = t.replace(/^\s{0,3}#{1,6}\s+(.+?)\s*$/gm, '*$1*');
+  t = t.replace(/^(\s*)[*-]\s+/gm, '$1• ');
+  t = t.split('\n').map((line) => {
+    if (((line.match(/\*/g) || []).length) % 2 === 1) line = line.replace(/\*(?=[^*]*$)/, '');
+    return line;
+  }).join('\n');
+  return t;
+}
+
 async function redis(cmd) {
   const r = await fetch(REDIS_URL, {
     method: 'POST',
@@ -33,7 +49,7 @@ async function notifyOwner(text) {
     await fetch(`${GRAPH}/${process.env.WHATSAPP_PHONE_NUMBER_ID}/messages`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', Authorization: `Bearer ${process.env.WHATSAPP_TOKEN}` },
-      body: JSON.stringify({ messaging_product: 'whatsapp', to: owner, type: 'text', text: { body: text } }),
+      body: JSON.stringify({ messaging_product: 'whatsapp', to: owner, type: 'text', text: { body: waFormat(text) } }),
     });
   } catch (e) { console.error('cron notifyOwner', e); }
 }
