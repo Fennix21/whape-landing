@@ -73,6 +73,23 @@
 
   .reveal{opacity:0;transform:translateY(20px);transition:opacity .6s ease,transform .6s ease}
   .reveal.in{opacity:1;transform:none}
+  /* recibo interactivo */
+  .cs-tip{color:var(--muted);font-size:12.5px;margin:-8px 0 12px}
+  .cs-ctrl{display:flex;align-items:center;gap:7px}
+  .cs-btn{width:30px;height:30px;border-radius:9px;border:1.5px solid var(--stroke);background:var(--surface2);color:var(--text);font-family:inherit;font-size:17px;font-weight:800;cursor:pointer;line-height:1;padding:0}
+  .cs-btn:hover{border-color:var(--accent)}
+  .cs-val{min-width:50px;text-align:right}
+  /* círculo vicioso */
+  .cyc-env{border:1.5px dashed rgba(255,122,144,.5);border-radius:22px;padding:22px 14px 16px;position:relative;margin-top:26px}
+  .cyc-envlbl{position:absolute;top:-10px;left:50%;transform:translateX(-50%);background:var(--bg);padding:0 12px;font-size:10.5px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--warn);white-space:nowrap}
+  .cyc{display:flex;flex-direction:column;align-items:center}
+  .cyc-node{width:100%;background:var(--surface);border:1px solid var(--stroke);border-radius:14px;padding:12px 15px;display:flex;gap:11px;align-items:center}
+  .cyc-node .ic{font-size:20px;flex:none}
+  .cyc-node p{font-size:14px;line-height:1.45;color:#E7E3F4}
+  .cyc-node p b{color:var(--warn)}
+  .cyc-arrow{color:var(--warn);font-size:16px;line-height:1;padding:4px 0;font-weight:800}
+  .cyc-loop{margin-top:12px;text-align:center;color:var(--warn);font-size:13.5px;font-weight:800}
+  .cyc-note{color:var(--muted);font-size:12.5px;text-align:center;margin-top:12px;line-height:1.55}
 </style>
 <noscript><style>.reveal{opacity:1;transform:none}</style></noscript>
 </head>
@@ -101,18 +118,49 @@
       <div class="tick" id="cTick">—</div>
     </div>
     <p class="body">Suena a mucho tiempo. Pero ese tiempo <b>no es tuyo</b>. Mira un día cualquiera:</p>
+    <p class="cs-tip">Ajusta los números a TU realidad con los botones − / + :</p>
     <div class="calc">
       <div class="r"><span class="h">Tu día</span><span class="v">24 h</span></div>
-      <div class="r neg"><span class="h">− Dormir</span><span class="v">8 h</span></div>
-      <div class="r neg"><span class="h">− Trabajo y traslados</span><span class="v">9 h</span></div>
-      <div class="r neg"><span class="h">− Comer y pendientes</span><span class="v">2 h</span></div>
+      <div class="r neg"><span class="h">− Dormir</span><span class="cs-ctrl"><button class="cs-btn" onclick="csAdj('dormir',-0.5)" aria-label="menos">−</button><span class="v cs-val" id="vDormir">8 h</span><button class="cs-btn" onclick="csAdj('dormir',0.5)" aria-label="más">+</button></span></div>
+      <div class="r neg"><span class="h">− Trabajo y traslados</span><span class="cs-ctrl"><button class="cs-btn" onclick="csAdj('trabajo',-0.5)" aria-label="menos">−</button><span class="v cs-val" id="vTrabajo">10 h</span><button class="cs-btn" onclick="csAdj('trabajo',0.5)" aria-label="más">+</button></span></div>
+      <div class="r neg"><span class="h">− Comer y pendientes</span><span class="cs-ctrl"><button class="cs-btn" onclick="csAdj('comer',-0.5)" aria-label="menos">−</button><span class="v cs-val" id="vComer">2 h</span><button class="cs-btn" onclick="csAdj('comer',0.5)" aria-label="más">+</button></span></div>
       <div class="sep"></div>
-      <div class="r res"><span class="h">Para ti</span><span class="v">5 h</span></div>
-      <div class="note">…y llegas a ellas agotado.</div>
+      <div class="r res"><span class="h">Para ti</span><span class="v" id="vParaTi">4 h</span></div>
+      <div class="note" id="csNote">…y llegas a ellas agotado.</div>
     </div>
-    <p class="body">Cada día le das <b style="color:var(--warn)">9 horas</b> a un sueldo… y <b style="color:var(--gold)">5 horas cansadas</b> a tu propia vida.</p>
-    <div class="punch">De los <b id="mDays">—</b> días que faltan, solo <b id="mRealD">—</b> son <b>realmente tuyos</b>.<br><span style="color:var(--muted);font-weight:600;font-size:.8em">(<span id="mDays2">—</span> días × 5 h = <span id="mFreeH">—</span> horas tuyas)</span></div>
+    <p class="body">Cada día le das <b style="color:var(--warn)" id="dTrabajo">10 horas</b> a un sueldo… y <b style="color:var(--gold)" id="dParaTi">4 horas cansadas</b> a tu propia vida.</p>
+    <div class="punch">De los <b id="mDays">—</b> días que faltan, solo <b id="mRealD">—</b> son <b>realmente tuyos</b>.<br><span style="color:var(--muted);font-weight:600;font-size:.8em">(<span id="mDays2">—</span> días × <span id="mHrs">4</span> h = <span id="mFreeH">—</span> horas tuyas)</span></div>
     <p class="body" style="margin-top:20px">Y los vives sin energía.</p>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- 2b. EL CÍRCULO VICIOSO -->
+<section>
+  <div class="wrap reveal">
+    <div class="kick warn">La trampa completa</div>
+    <h2>¿Y por qué llegas sin energía?</h2>
+    <p class="body">Pusimos 8 horas de sueño en la cuenta. Seamos honestos: <b>dormir 8 horas es un lujo</b>. La mayoría duerme 5–7… y ahí empieza la rueda:</p>
+    <div class="cyc-env">
+      <span class="cyc-envlbl">⚡ Tu entorno — drenando energía todo el día</span>
+      <div class="cyc">
+        <div class="cyc-node"><span class="ic">😴</span><p>Duermes <b>5–7 horas</b>: descansas a medias.</p></div>
+        <div class="cyc-arrow">↓</div>
+        <div class="cyc-node"><span class="ic">🪫</span><p>Despiertas agotado: más horas despierto, <b>menos rendimiento</b>.</p></div>
+        <div class="cyc-arrow">↓</div>
+        <div class="cyc-node"><span class="ic">🍔</span><p>Sin energía decides peor: comida rápida, todo "para después".</p></div>
+        <div class="cyc-arrow">↓</div>
+        <div class="cyc-node"><span class="ic">😔</span><p>No haces lo que te propusiste → <b>culpa</b>.</p></div>
+        <div class="cyc-arrow">↓</div>
+        <div class="cyc-node"><span class="ic">📱</span><p>Anestesias la culpa: scroll, comida, Netflix… hasta tarde.</p></div>
+        <div class="cyc-arrow">↓</div>
+        <div class="cyc-node"><span class="ic">🌙</span><p>Te duermes tarde otra vez → mañana despiertas <b>peor</b>.</p></div>
+      </div>
+      <div class="cyc-loop">↺ …y la rueda vuelve a girar. Cada vuelta, con menos energía.</div>
+      <div class="cyc-note">Y alrededor de todo, el entorno empuja la rueda: quejas, ruido, gente que apaga tus ganas. Drena lo mental, lo físico y lo emocional.</div>
+    </div>
+    <p class="body" style="margin-top:22px">Esto no es falta de voluntad. Es un <b>sistema que se alimenta solo</b> — y los sistemas no se rompen con ganas: se rompen con diseño.</p>
   </div>
 </section>
 
@@ -167,15 +215,34 @@
     set('cTick', pad(h) + 'h ' + pad(m) + 'm ' + pad(s) + 's');
     return days;
   }
+  // Recibo interactivo del día (la muestra: trabajo 10h -> "para ti" 4h)
+  var CS = { dormir: 8, trabajo: 10, comer: 2 };
+  var CSLIM = { dormir: [3, 12], trabajo: [0, 16], comer: [0, 8] };
+  function fmtH(n){ return n.toLocaleString('es-PE'); }
+  function paraTi(){ return Math.max(0, Math.round((24 - CS.dormir - CS.trabajo - CS.comer) * 2) / 2); }
+  function csAdj(k, d){
+    CS[k] = Math.min(CSLIM[k][1], Math.max(CSLIM[k][0], Math.round((CS[k] + d) * 2) / 2));
+    csRender();
+  }
+  function csRender(){
+    var p = paraTi();
+    set('vDormir', fmtH(CS.dormir) + ' h'); set('vTrabajo', fmtH(CS.trabajo) + ' h'); set('vComer', fmtH(CS.comer) + ' h');
+    set('vParaTi', fmtH(p) + ' h');
+    set('dTrabajo', fmtH(CS.trabajo) + ' horas'); set('dParaTi', fmtH(p) + ' horas cansadas');
+    var note = document.getElementById('csNote');
+    if(note) note.textContent = p <= 0 ? '…tu día ya ni siquiera alcanza. Esto es urgente.' : (p <= 2 ? ('…apenas ' + fmtH(p) + ' h, y llegas a ellas agotado.') : '…y llegas a ellas agotado.');
+    fillMath();
+  }
   function fillMath(){
     var days = tick();
-    var freeH = days * 5;
+    var p = paraTi();
+    var freeH = Math.round(days * p);
     var realD = Math.round(freeH / 24);
-    set('mDays', days); set('mDays2', days);
+    set('mDays', days); set('mDays2', days); set('mHrs', fmtH(p));
     set('mFreeH', freeH.toLocaleString('es-PE'));
     set('mRealD', realD);
   }
-  fillMath();
+  csRender();
   setInterval(tick, 1000);
 
   (function(){
