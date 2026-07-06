@@ -124,11 +124,12 @@
       <div class="r neg"><span class="h">− Dormir</span><span class="cs-ctrl"><button class="cs-btn" onclick="csAdj('dormir',-0.5)" aria-label="menos">−</button><span class="v cs-val" id="vDormir">8 h</span><button class="cs-btn" onclick="csAdj('dormir',0.5)" aria-label="más">+</button></span></div>
       <div class="r neg"><span class="h">− Trabajo y traslados</span><span class="cs-ctrl"><button class="cs-btn" onclick="csAdj('trabajo',-0.5)" aria-label="menos">−</button><span class="v cs-val" id="vTrabajo">10 h</span><button class="cs-btn" onclick="csAdj('trabajo',0.5)" aria-label="más">+</button></span></div>
       <div class="r neg"><span class="h">− Comer y pendientes</span><span class="cs-ctrl"><button class="cs-btn" onclick="csAdj('comer',-0.5)" aria-label="menos">−</button><span class="v cs-val" id="vComer">2 h</span><button class="cs-btn" onclick="csAdj('comer',0.5)" aria-label="más">+</button></span></div>
+      <div class="r neg"><span class="h">− Celular y redes sociales</span><span class="cs-ctrl"><button class="cs-btn" onclick="csAdj('celular',-0.5)" aria-label="menos">−</button><span class="v cs-val" id="vCelular">3 h</span><button class="cs-btn" onclick="csAdj('celular',0.5)" aria-label="más">+</button></span></div>
       <div class="sep"></div>
       <div class="r res"><span class="h">Para ti</span><span class="v" id="vParaTi">4 h</span></div>
       <div class="note" id="csNote">…y llegas a ellas agotado.</div>
     </div>
-    <p class="body">Cada día le das <b style="color:var(--warn)" id="dTrabajo">10 horas</b> a un sueldo… y <b style="color:var(--gold)" id="dParaTi">4 horas cansadas</b> a tu propia vida.</p>
+    <p class="body">Cada día le das <b style="color:var(--warn)" id="dTrabajo">10 horas</b> a un sueldo, <b style="color:var(--warn)" id="dCelular">3</b> al celular… y te queda <b style="color:var(--gold)" id="dParaTi">1 hora cansada</b> para tu propia vida.</p>
     <div class="punch">De los <b id="mDays">—</b> días que faltan, solo <b id="mRealD">—</b> son <b>realmente tuyos</b>.<br><span style="color:var(--muted);font-weight:600;font-size:.8em">(<span id="mDays2">—</span> días × <span id="mHrs">4</span> h = <span id="mFreeH">—</span> horas tuyas)</span></div>
     <p class="body" style="margin-top:20px">Y los vives sin energía.</p>
   </div>
@@ -216,19 +217,20 @@
     return days;
   }
   // Recibo interactivo del día (la muestra: trabajo 10h -> "para ti" 4h)
-  var CS = { dormir: 8, trabajo: 10, comer: 2 };
-  var CSLIM = { dormir: [3, 12], trabajo: [0, 16], comer: [0, 8] };
+  var CS = { dormir: 8, trabajo: 10, comer: 2, celular: 3 };
+  var CSLIM = { dormir: [3, 12], trabajo: [0, 16], comer: [0, 8], celular: [0, 10] };
   function fmtH(n){ return n.toLocaleString('es-PE'); }
-  function paraTi(){ return Math.max(0, Math.round((24 - CS.dormir - CS.trabajo - CS.comer) * 2) / 2); }
+  function paraTi(){ return Math.max(0, Math.round((24 - CS.dormir - CS.trabajo - CS.comer - CS.celular) * 2) / 2); }
   function csAdj(k, d){
     CS[k] = Math.min(CSLIM[k][1], Math.max(CSLIM[k][0], Math.round((CS[k] + d) * 2) / 2));
     csRender();
   }
   function csRender(){
     var p = paraTi();
-    set('vDormir', fmtH(CS.dormir) + ' h'); set('vTrabajo', fmtH(CS.trabajo) + ' h'); set('vComer', fmtH(CS.comer) + ' h');
+    set('vDormir', fmtH(CS.dormir) + ' h'); set('vTrabajo', fmtH(CS.trabajo) + ' h'); set('vComer', fmtH(CS.comer) + ' h'); set('vCelular', fmtH(CS.celular) + ' h');
     set('vParaTi', fmtH(p) + ' h');
-    set('dTrabajo', fmtH(CS.trabajo) + ' horas'); set('dParaTi', fmtH(p) + ' horas cansadas');
+    set('dTrabajo', fmtH(CS.trabajo) + ' horas'); set('dCelular', fmtH(CS.celular));
+    set('dParaTi', p === 1 ? '1 hora cansada' : (fmtH(p) + ' horas cansadas'));
     var note = document.getElementById('csNote');
     if(note) note.textContent = p <= 0 ? '…tu día ya ni siquiera alcanza. Esto es urgente.' : (p <= 2 ? ('…apenas ' + fmtH(p) + ' h, y llegas a ellas agotado.') : '…y llegas a ellas agotado.');
     fillMath();
