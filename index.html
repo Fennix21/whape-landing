@@ -34,6 +34,7 @@
   section.hero{padding:30px 0 34px;text-align:center}
   .eyebrow{display:inline-block;font-size:12.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
   h1{font-size:clamp(30px,8vw,46px);line-height:1.08;font-weight:800;letter-spacing:-.02em}
+  section.hero h1{font-size:clamp(42px,11vw,56px);margin-top:32px}
   h2{font-size:clamp(24px,6vw,34px);line-height:1.15;font-weight:800;letter-spacing:-.02em;margin-bottom:14px}
   p.lead{font-size:18px;color:var(--read);line-height:1.7;margin-top:16px}
   p.body{font-size:17px;color:var(--read);line-height:1.72;margin-bottom:14px}
@@ -100,9 +101,11 @@
 <!-- 1. HOOK -->
 <section class="hero">
   <div class="wrap">
-    <span class="eyebrow">Una pregunta incómoda</span>
-    <h1>¿Cuánto de tu día es <span class="grad">realmente tuyo</span>?</h1>
-    <p class="lead">Trabajas, vuelves cansado, Y cuando por fin llega el momento de hacer eso que realmente importa para ti… ya no te queda energía.</p>
+    <div class="kick">Hagamos un cálculo rápido.</div>
+    <p class="lead">Faltan <span class="grad" style="font-weight:700" id="cDays">—</span> días para que termine el año.</p>
+    <p class="body">Parece mucho tiempo.</p>
+    <p class="body">Pero primero respondamos una pregunta más importante:</p>
+    <h1 class="grad">¿Cuánto de ese tiempo es realmente tuyo?</h1>
   </div>
 </section>
 
@@ -111,13 +114,7 @@
 <!-- 2. COUNTDOWN + MATEMÁTICA -->
 <section>
   <div class="wrap reveal">
-    <div class="kick">Hagamos números</div>
-    <div class="count">
-      <div class="big grad" id="cDays">—</div>
-      <div class="lbl">días para que acabe el año</div>
-      <div class="tick" id="cTick">—</div>
-    </div>
-    <p class="body">Suena a mucho tiempo. Pero ese tiempo <b>no es tuyo</b>. Mira un día cualquiera:</p>
+    <p class="body">Mira un día cualquiera:</p>
     <p class="cs-tip">Ajusta los números a TU realidad con los botones − / + :</p>
     <div class="calc">
       <div class="r"><span class="h">Tu día</span><span class="v">24 h</span></div>
