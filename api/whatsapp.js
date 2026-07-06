@@ -66,6 +66,7 @@ function detectSource(text) {
   if (t.indexOf('(tiktok)') >= 0) return 'tiktok';
   if (t.indexOf('(web)') >= 0) return 'web';
   if (t.indexOf('(academia)') >= 0) return 'academia';
+  if (t.indexOf('(calculadora)') >= 0) return 'calculadora';
   return 'directo';
 }
 

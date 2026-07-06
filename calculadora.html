@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>¿Cuánto te cuesta el scroll? — Calculadora WHAPE</title>
+<meta name="description" content="Calcula en 60 segundos cuánto dinero y cuántos días de tu vida le regalas a las redes sociales — y qué podrías construir con ese tiempo." />
+<meta property="og:type" content="website" />
+<meta property="og:title" content="¿Cuánto te cuesta el scroll? Haz la cuenta." />
+<meta property="og:description" content="60 segundos para descubrir cuánto dinero y cuántos días de tu vida se van en redes — y qué podrías crear con ese tiempo." />
+<meta property="og:image" content="https://whape.club/logo.png" />
+<meta property="og:url" content="https://whape.club/calculadora" />
+<link rel="icon" href="logo.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#0F0C1C; --surface:#1A1630; --surface2:#241F3D; --stroke:#332C52;
+    --accent:#8E2DE2; --accent2:#4A00E0; --success:#2BD9A6; --gold:#FFD24A; --warn:#ff7a90;
+    --text:#FFFFFF; --muted:#ABA4C7;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{font-family:'Sora',system-ui,Arial,sans-serif;background:var(--bg);color:var(--text);line-height:1.5;-webkit-font-smoothing:antialiased;min-height:100dvh}
+  .grad{background:linear-gradient(100deg,var(--accent) 10%,var(--success) 90%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
+  .app{max-width:560px;margin:0 auto;padding:0 16px 48px}
+
+  .bar{display:flex;align-items:center;gap:9px;padding:16px 2px 10px}
+  .bar img{width:30px;height:30px;border-radius:8px}
+  .bar b{font-weight:800;letter-spacing:.12em;font-size:14px}
+  .prog{height:5px;background:var(--surface2);border-radius:999px;overflow:hidden;margin:4px 2px 18px}
+  .prog > i{display:block;height:100%;width:10%;background:linear-gradient(90deg,var(--accent),var(--success));transition:width .4s ease}
+
+  .card{background:var(--surface);border:1px solid var(--stroke);border-radius:18px;padding:24px 20px;margin-bottom:14px;animation:fade .4s ease}
+  h1{font-size:clamp(24px,6.4vw,32px);line-height:1.15;font-weight:800;letter-spacing:-.02em}
+  .sub{color:var(--muted);font-size:14.5px;margin-top:10px;line-height:1.6}
+  .q{font-size:19px;font-weight:800;line-height:1.3;margin-bottom:6px}
+  .hint{color:var(--muted);font-size:13px;margin-bottom:14px}
+
+  .opts{display:flex;flex-direction:column;gap:9px}
+  .opt{display:flex;align-items:center;gap:11px;text-align:left;background:#2C2552;border:1.5px solid var(--accent);color:#fff;font-family:inherit;font-size:15px;font-weight:700;padding:14px 16px;border-radius:13px;cursor:pointer;transition:transform .12s,background .12s}
+  .opt::before{content:"›";color:var(--gold);font-weight:800;font-size:19px;line-height:1}
+  .opt:hover{background:linear-gradient(120deg,var(--accent),var(--accent2));transform:translateX(3px)}
+
+  .chips{display:flex;flex-wrap:wrap;gap:9px;margin-bottom:16px}
+  .chip{background:var(--surface2);border:1.5px solid var(--stroke);color:var(--text);font-family:inherit;font-size:14px;font-weight:700;padding:10px 15px;border-radius:999px;cursor:pointer}
+  .chip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+
+  .field{width:100%;background:var(--surface2);border:1.5px solid var(--stroke);color:var(--text);border-radius:12px;padding:13px 14px;font-family:inherit;font-size:17px;font-weight:700;margin-bottom:12px}
+  .field:focus{outline:none;border-color:var(--accent)}
+
+  .btnrow{display:flex;gap:9px;flex-wrap:wrap;margin-top:6px}
+  .btn{flex:1;min-width:150px;padding:14px;border-radius:13px;font-weight:800;font-family:inherit;font-size:15px;cursor:pointer;border:0;text-align:center;text-decoration:none;color:#fff;display:block}
+  .btn.pri{background:linear-gradient(120deg,var(--accent),var(--accent2))}
+  .btn.gold{background:linear-gradient(120deg,var(--gold),#ff9d2e);color:#241a00}
+  .btn.sec{background:var(--surface2);border:1.5px solid var(--stroke);color:var(--text)}
+  .btn.wa{background:var(--success);color:#06241B}
+
+  /* resultados */
+  .punch{background:linear-gradient(120deg,rgba(255,122,144,.12),rgba(142,45,226,.10));border:1px solid rgba(255,122,144,.45);border-radius:18px;padding:22px 20px;text-align:center;margin-bottom:14px}
+  .punch .t{font-size:clamp(17px,4.6vw,21px);font-weight:800;line-height:1.4}
+  .punch .t b{color:var(--warn)}
+  .bignum{font-size:clamp(40px,12vw,62px);font-weight:800;letter-spacing:-.03em;line-height:1;color:var(--warn)}
+  .bigsub{color:var(--muted);font-size:13px;margin-top:8px;text-transform:uppercase;letter-spacing:.06em;font-weight:700}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:14px}
+  .cell{background:var(--surface);border:1px solid var(--stroke);border-radius:15px;padding:16px 14px;text-align:center}
+  .cell .n{font-size:clamp(20px,5.6vw,26px);font-weight:800;color:var(--gold)}
+  .cell .l{color:var(--muted);font-size:11.5px;margin-top:5px;font-weight:600}
+
+  .vs{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin-bottom:4px}
+  .vscol{border-radius:15px;padding:16px 14px}
+  .vscol.bad{background:rgba(255,122,144,.06);border:1px solid rgba(255,122,144,.35)}
+  .vscol.good{background:rgba(43,217,166,.07);border:1px solid rgba(43,217,166,.4)}
+  .vscol h4{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;margin-bottom:10px}
+  .vscol.bad h4{color:var(--warn)} .vscol.good h4{color:var(--success)}
+  .vscol ul{list-style:none;display:flex;flex-direction:column;gap:8px}
+  .vscol li{font-size:13px;color:#E7E3F4;line-height:1.45}
+
+  .alt{border-left:3px solid var(--gold);padding:4px 0 4px 14px;margin:6px 0}
+  .alt p{font-size:14.5px;line-height:1.65}
+  .fine{color:var(--muted);font-size:11.5px;margin-top:10px;line-height:1.5}
+  .restart{display:block;margin:18px auto 0;background:none;border:none;color:var(--muted);font-family:inherit;font-size:13px;cursor:pointer;text-decoration:underline}
+  @keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="bar"><img src="logo.png" alt="WHAPE" /><b>WHAPE</b></div>
+  <div class="prog"><i id="pfill"></i></div>
+  <div id="stage"></div>
+</div>
+
+<script>
+  var D = { horas: 0, tarifa: 0, ingreso: 0, redes: [], periodo: 365 };
+  var stage = function(){ return document.getElementById('stage'); };
+  function prog(p){ document.getElementById('pfill').style.width = p + '%'; }
+  function fmt(n){ return Math.round(n).toLocaleString('es-PE'); }
+
+  // ---- Paso 0: intro ----
+  function p0(){
+    prog(8);
+    stage().innerHTML =
+      '<div class="card" style="text-align:center">'
+      + '<h1>¿Cuánto te cuesta <span class="grad">el scroll</span>?</h1>'
+      + '<p class="sub">La mayoría cree que las redes son gratis. En 60 segundos vas a ver — con TUS números — cuánto dinero y cuántos días de tu vida cuestan de verdad.</p>'
+      + '<div class="btnrow" style="margin-top:20px"><button class="btn gold" onclick="p1()">Hacer mi cuenta →</button></div>'
+      + '<p class="fine">Sin registro. Sin trucos. Solo matemática.</p></div>';
+  }
+
+  // ---- Paso 1: horas/día ----
+  function p1(){
+    prog(30);
+    stage().innerHTML =
+      '<div class="card"><div class="q">¿Cuántas horas al día pasas en redes sociales?</div>'
+      + '<div class="hint">Sé honesto: revisa "Tiempo de pantalla" (iPhone) o "Bienestar digital" (Android) si dudas.</div>'
+      + '<div class="opts">'
+      + '<button class="opt" onclick="setHoras(1)">Menos de 1 hora</button>'
+      + '<button class="opt" onclick="setHoras(2)">1 a 2 horas</button>'
+      + '<button class="opt" onclick="setHoras(3.5)">3 a 4 horas (el promedio real)</button>'
+      + '<button class="opt" onclick="setHoras(5.5)">5 horas o más</button>'
+      + '</div></div>';
+  }
+  function setHoras(h){ D.horas = h; p2(); }
+
+  // ---- Paso 2: ingreso ----
+  function p2(){
+    prog(55);
+    stage().innerHTML =
+      '<div class="card"><div class="q">¿Cuánto ganas al mes, aprox.?</div>'
+      + '<div class="hint">Con esto calculamos cuánto vale tu hora (asumiendo 8 h × 26 días). Si prefieres, escribe tu monto exacto.</div>'
+      + '<div class="opts">'
+      + '<button class="opt" onclick="setIngreso(1100)">Alrededor de S/ 1,100 (mínimo)</button>'
+      + '<button class="opt" onclick="setIngreso(1800)">S/ 1,500 – 2,200</button>'
+      + '<button class="opt" onclick="setIngreso(3000)">S/ 2,500 – 3,500</button>'
+      + '<button class="opt" onclick="setIngreso(5000)">S/ 4,000 o más</button>'
+      + '</div>'
+      + '<div style="display:flex;gap:9px;margin-top:14px"><input id="ingCustom" class="field" type="number" inputmode="numeric" placeholder="O escribe tu ingreso mensual (S/)" style="margin:0" /><button class="btn sec" style="flex:none;min-width:0;padding:0 18px" onclick="ingCustom()">OK</button></div>'
+      + '</div>';
+  }
+  function setIngreso(m){ D.ingreso = m; D.tarifa = m / 208; p3(); }
+  function ingCustom(){ var v = Number(document.getElementById('ingCustom').value); if(!v || v < 100){ alert('Escribe tu ingreso mensual en soles.'); return; } setIngreso(v); }
+
+  // ---- Paso 3: redes ----
+  function p3(){
+    prog(75);
+    var R = ['TikTok','Instagram','Facebook','YouTube','X / Twitter','WhatsApp (estados)'];
+    stage().innerHTML =
+      '<div class="card"><div class="q">¿Dónde se te va más el tiempo?</div>'
+      + '<div class="hint">Marca las que más te atrapan (puedes elegir varias).</div>'
+      + '<div class="chips">' + R.map(function(r,i){ return '<button class="chip" id="ch'+i+'" onclick="tog('+i+',\''+r+'\')">'+r+'</button>'; }).join('') + '</div>'
+      + '<div class="btnrow"><button class="btn pri" onclick="p4()">Continuar →</button></div></div>';
+  }
+  function tog(i, r){
+    var el = document.getElementById('ch'+i); el.classList.toggle('on');
+    var ix = D.redes.indexOf(r);
+    if(ix >= 0) D.redes.splice(ix,1); else D.redes.push(r);
+  }
+
+  // ---- Paso 4: período ----
+  function p4(){
+    prog(90);
+    stage().innerHTML =
+      '<div class="card"><div class="q">¿Qué período quieres ver?</div>'
+      + '<div class="hint">El número principal de tu resultado. (Igual te mostramos el año y los 5 años.)</div>'
+      + '<div class="opts">'
+      + '<button class="opt" onclick="setPer(30)">El último mes</button>'
+      + '<button class="opt" onclick="setPer(365)">El último año</button>'
+      + '<button class="opt" onclick="setPer(1825)">Los últimos 5 años</button>'
+      + '</div></div>';
+  }
+  function setPer(dias){ D.periodo = dias; result(); }
+
+  // ---- Resultado ----
+  function result(){
+    prog(100);
+    var h = D.horas, t = D.tarifa;
+    var perD = h * t;
+    var costo = perD * D.periodo;
+    var anual = perD * 365, cinco = anual * 5, mensual = perD * 30;
+    var horasAno = h * 365;
+    var diasVida = horasAno / 16; // días despierto
+    var redesTxt = D.redes.length ? D.redes.slice(0,3).join(' + ') : 'las redes';
+    var perTxt = D.periodo === 30 ? 'este mes' : (D.periodo === 365 ? 'este año' : 'en 5 años');
+
+    // alternativa según horas
+    var alt;
+    if(h <= 1) alt = 'Estás mejor que el promedio. Ahora dale dirección: convierte solo <b>30 minutos diarios</b> en un "bloque de creación" y en un año tendrás <b>182 horas</b> construyendo algo tuyo.';
+    else if(h <= 2) alt = 'Recupera solo <b>1 hora al día</b> y este año tendrás <b>365 horas</b> para ti: suficiente para aprender una habilidad de alto valor Y lanzar tu primera oferta con ella.';
+    else if(h <= 4) alt = 'Recupera solo la MITAD de ese tiempo y este año tendrás <b>' + fmt(horasAno/2) + ' horas</b>: más que suficiente para aprender a vender por WhatsApp, montar tu sistema y conseguir tus primeros clientes.';
+    else alt = 'Alerta seria: son <b>' + fmt(diasVida) + ' días completos de tu año</b>. No intentes cortarlo de golpe: empieza recuperando 1 hora al día. Solo eso son <b>365 horas/año</b> — se construyen negocios enteros con menos.';
+
+    var shareText = encodeURIComponent('📱 Acabo de calcular cuánto me cuesta el scroll: S/ ' + fmt(anual) + ' al año y ' + fmt(diasVida) + ' días de mi vida. Haz tu cuenta (60 seg): https://whape.club/calculadora');
+
+    stage().innerHTML =
+      '<div class="punch"><div class="bignum">S/ ' + fmt(costo) + '</div>'
+      + '<div class="bigsub">le regalaste a ' + redesTxt + ' ' + perTxt + '</div>'
+      + '<div class="t" style="margin-top:16px">Estás tirando <b>S/ ' + fmt(anual) + ' al año</b> consumiendo… en lugar de creando.</div></div>'
+
+      + '<div class="grid">'
+      + '<div class="cell"><div class="n">S/ ' + fmt(mensual) + '</div><div class="l">cada mes</div></div>'
+      + '<div class="cell"><div class="n">S/ ' + fmt(anual) + '</div><div class="l">cada año</div></div>'
+      + '<div class="cell"><div class="n">S/ ' + fmt(cinco) + '</div><div class="l">en 5 años</div></div>'
+      + '<div class="cell"><div class="n">' + fmt(diasVida) + ' días</div><div class="l">de tu vida, cada año</div></div>'
+      + '</div>'
+
+      + '<div class="card"><div class="q">El contraste que duele</div><div class="vs">'
+      + '<div class="vscol bad"><h4>Con esas ' + fmt(horasAno) + ' h/año hiciste</h4><ul><li>Scroll infinito</li><li>Vidas de otros</li><li>Cero activos tuyos</li><li>Cansancio mental</li></ul></div>'
+      + '<div class="vscol good"><h4>Con esas mismas horas podías</h4><ul><li>Dominar una habilidad de alto valor (300+ h)</li><li>Grabar ' + fmt(horasAno) + ' videos de tu negocio</li><li>Leer ' + fmt(horasAno/8) + ' libros</li><li>Montar un sistema que venda por ti</li></ul></div>'
+      + '</div></div>'
+
+      + '<div class="card"><div class="q">Tu movida inteligente</div><div class="alt"><p>' + alt + '</p></div>'
+      + '<p class="fine">El objetivo no es dejar el celular: es cambiar la dirección — de consumir a crear. El mismo aparato que te cuesta S/ ' + fmt(anual) + ' al año puede ser la herramienta que te los genere.</p></div>'
+
+      + '<div class="card" style="text-align:center"><div class="q">¿Quieres recuperar ese tiempo?</div>'
+      + '<p class="sub" style="margin-bottom:16px">Hay una experiencia de 2 minutos que te muestra cómo convertir esas horas en tu primer negocio. Gratis.</p>'
+      + '<div class="btnrow">'
+      + '<a class="btn gold" data-ev="reto_start" href="/reto">Quiero recuperar mis horas →</a>'
+      + '<a class="btn wa" href="https://wa.me/?text=' + shareText + '" target="_blank" rel="noopener">📲 Compartir mi resultado</a>'
+      + '</div>'
+      + '<p class="fine">Tu hora vale S/ ' + t.toFixed(1) + ' (según tu ingreso, 8 h × 26 días). Cifras lineales, sin exagerar: la realidad ya es suficientemente cara.</p></div>'
+
+      + '<button class="restart" onclick="location.reload()">↻ Calcular de nuevo</button>';
+    window.scrollTo(0,0);
+  }
+
+  p0();
+</script>
+<script defer src="/_vercel/insights/script.js"></script>
+<script src="/track.js"></script>
+</body>
+</html>
