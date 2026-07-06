@@ -55,7 +55,8 @@
   .calc .sep{border-top:1px dashed var(--stroke);margin:6px 0}
   .calc .r.res{font-weight:800;font-size:18px}
   .calc .r.res .v{color:var(--gold)}
-  .calc .note{color:var(--muted);font-size:13.5px;margin-top:8px;text-align:right}
+  .calc .note{color:var(--warn);font-size:15.5px;font-weight:700;margin-top:12px;padding-top:12px;border-top:1px dashed var(--stroke);text-align:center;line-height:1.4}
+  .calc .note b{color:var(--warn);font-size:1.1em}
 
   .punch{font-size:clamp(20px,5.2vw,27px);font-weight:700;line-height:1.32;margin:26px 0 0}
   .punch b{color:var(--gold)}
@@ -236,7 +237,7 @@
     set('dTrabajo', fmtH(CS.trabajo) + ' horas'); set('dCelular', fmtH(CS.celular));
     set('dParaTi', p === 1 ? '1 hora cansada' : (fmtH(p) + ' horas cansadas'));
     var note = document.getElementById('csNote');
-    if(note) note.textContent = p <= 0 ? '…tu día ya ni siquiera alcanza. Esto es urgente.' : (p <= 2 ? ('…apenas ' + fmtH(p) + ' h, y llegas a ellas agotado.') : '…y llegas a ellas agotado.');
+    if(note) note.innerHTML = p <= 0 ? '…tu día ya ni siquiera alcanza. <b>Esto es urgente.</b>' : (p <= 2 ? ('…apenas <b>' + fmtH(p) + ' h</b>, y llegas a ellas agotado.') : '…y llegas a ellas <b>agotado</b>.');
     fillMath();
   }
   function fillMath(){
