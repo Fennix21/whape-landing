@@ -1103,6 +1103,22 @@ module.exports = async (req, res) => {
           hist: await getJ('foco:hist', []),
         });
       }
+      if (sub === 'focoset') { // declarar/editar la tarea del día desde el panel
+        const task = (b.text || '').toString().trim().slice(0, 300);
+        if (!task) return res.status(400).json({ error: 'Falta la tarea.' });
+        const today = new Date(Date.now() - 5 * 3600000).toISOString().slice(0, 10);
+        const raw = await redis(['GET', 'foco']);
+        let prev = null; if (raw) { try { prev = JSON.parse(raw); } catch (e) {} }
+        const sameDay = prev && prev.date === today;
+        const foco = { date: today, task, declaredAt: (sameDay && prev.declaredAt) ? prev.declaredAt : Date.now(), done: !!(sameDay && prev.done) };
+        if (sameDay && prev.done) { foco.result = prev.result; foco.doneAt = prev.doneAt; }
+        await redis(['SET', 'foco', JSON.stringify(foco)]);
+        return res.status(200).json({ ok: true });
+      }
+      if (sub === 'fococlear') { // eliminar la tarea del día (no toca racha ni backlog)
+        await redis(['DEL', 'foco']);
+        return res.status(200).json({ ok: true });
+      }
       if (sub === 'tareaadd') {
         const v = (b.text || '').toString().trim().slice(0, 300);
         if (!v) return res.status(400).json({ error: 'Falta el texto.' });

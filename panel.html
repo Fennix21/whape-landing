@@ -1057,9 +1057,14 @@
     capi('focostatus').then(function(res){
       if(!res.ok){ document.getElementById('fcHoy').innerHTML='<p class="pm-hint">'+esc((res.d&&res.d.error)||'Error')+'</p>'; return; }
       var hoy=new Date(Date.now()-5*3600000).toISOString().slice(0,10);
-      var f=res.d.foco;
-      var estado = (f && f.date===hoy) ? ((f.done?'✅ Cumplida: ':'⏳ En juego: ')+'<span class="fc-task">"'+esc(f.task)+'"</span>') : '⚠️ Sin tarea declarada hoy — mándale a tu bot: <strong>"hoy: [tarea]"</strong>';
-      document.getElementById('fcHoy').innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div style="flex:1;min-width:200px">'+estado+'</div><div class="fc-streak">🔥 '+(res.d.streak||0)+'</div></div>';
+      var f=res.d.foco; var hasToday = f && f.date===hoy;
+      FC_TASK = hasToday ? f.task : '';
+      var estado = hasToday ? ((f.done?'✅ Cumplida: ':'⏳ En juego: ')+'<span class="fc-task">"'+esc(f.task)+'"</span>') : '⚠️ Sin tarea declarada hoy.';
+      var btnE='background:var(--surface2);border:1px solid var(--stroke);color:var(--text);border-radius:9px;padding:8px 14px;font-family:inherit;font-weight:700;font-size:13px;cursor:pointer';
+      var ctrl = hasToday
+        ? '<div style="display:flex;gap:8px;margin-top:10px"><button style="'+btnE+'" onclick="focoEdit()">✎ Editar</button><button style="'+btnE+';color:#ff8aa0;border-color:rgba(255,138,160,.4)" onclick="focoClear()">🗑 Eliminar</button></div>'
+        : '<div style="display:flex;gap:8px;margin-top:10px"><input id="fcHoyInput" class="cmin" placeholder="La tarea que hace avanzar WHAPE hoy…" style="flex:1" onkeydown="if(event.key===\'Enter\')focoDeclare()"/><button class="cm-save" style="flex:none;padding:0 16px" onclick="focoDeclare()">Declarar</button></div>';
+      document.getElementById('fcHoy').innerHTML='<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><div style="flex:1;min-width:200px">'+estado+'</div><div class="fc-streak">🔥 '+(res.d.streak||0)+'</div></div>'+ctrl;
       var t=res.d.tareas||[];
       document.getElementById('fcTareas').innerHTML=t.length?t.map(function(x){
         return '<div class="fa-row" id="fct-'+x.id+'"><div class="fa-main"><div class="fa-body" style="margin-top:0">'+esc(x.text)+'</div></div><div class="fa-actions"><button onclick="focoDel(\''+x.id+'\',true)">✅ Hecha</button><button class="fa-del" onclick="focoDel(\''+x.id+'\',false)">🗑</button></div></div>';
@@ -1070,6 +1075,19 @@
         return '<div class="fa-row" id="fca-'+x.id+'"><div class="fa-main"><div class="fa-meta">'+when+'</div><div class="fa-body" style="margin-top:2px">'+esc(x.text)+'</div></div><div class="fa-actions"><button class="fa-del" onclick="aprenDel(\''+x.id+'\')">🗑</button></div></div>';
       }).join(''):'<p class="pm-hint">Aún no guardas aprendizajes. Por WhatsApp: "aprendí: …"</p>';
     });
+  }
+  var FC_TASK='';
+  function focoDeclare(){
+    var i=document.getElementById('fcHoyInput'); if(!i) return; var v=i.value.trim(); if(!v){ alert('Escribe la tarea de hoy.'); return; }
+    capi('focoset',{text:v}).then(function(res){ if(!res.ok){ alert((res.d&&res.d.error)||'No se pudo.'); return; } loadFoco(); });
+  }
+  function focoEdit(){
+    document.getElementById('fcHoy').innerHTML='<div style="display:flex;gap:8px"><input id="fcHoyInput" class="cmin" style="flex:1"/><button class="cm-save" style="flex:none;padding:0 14px" onclick="focoDeclare()">Guardar</button><button class="cm-cancel" style="flex:none;padding:0 14px" onclick="loadFoco()">Cancelar</button></div>';
+    var i=document.getElementById('fcHoyInput'); i.value=FC_TASK; i.focus();
+  }
+  function focoClear(){
+    if(!confirm('¿Eliminar la tarea de hoy? (tu racha y tu backlog no se tocan)')) return;
+    capi('fococlear').then(function(res){ if(!res.ok){ alert((res.d&&res.d.error)||'No se pudo.'); return; } loadFoco(); });
   }
   function focoAdd(){
     var i=document.getElementById('fcNew'); var v=i.value.trim(); if(!v){ alert('Escribe la tarea.'); return; }
