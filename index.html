@@ -74,7 +74,8 @@
   .reveal{opacity:0;transform:translateY(20px);transition:opacity .6s ease,transform .6s ease}
   .reveal.in{opacity:1;transform:none}
   /* recibo interactivo */
-  .cs-tip{color:var(--muted);font-size:12.5px;margin:-8px 0 12px}
+  .cs-tip{display:flex;align-items:center;justify-content:center;gap:7px;text-align:center;color:var(--success);font-size:14px;font-weight:700;background:rgba(43,217,166,.1);border:1px solid rgba(43,217,166,.35);padding:10px 16px;border-radius:999px;margin:14px 0 16px}
+  .cs-tip .ic{font-size:16px;flex:none}
   .cs-ctrl{display:flex;align-items:center;gap:7px}
   .cs-btn{width:30px;height:30px;border-radius:9px;border:1.5px solid var(--stroke);background:var(--surface2);color:var(--text);font-family:inherit;font-size:17px;font-weight:800;cursor:pointer;line-height:1;padding:0}
   .cs-btn:hover{border-color:var(--accent)}
@@ -120,8 +121,8 @@
     <p class="body">Parece mucho tiempo.</p>
     <p class="body">Pero primero respondamos una pregunta más importante:</p>
     <div class="punch">¿Cuánto de ese tiempo es <b>realmente tuyo</b>?</div>
-    <p class="body" style="margin-top:20px">Mira un día cualquiera:</p>
-    <p class="cs-tip">Ajusta los números a TU realidad con los botones − / + :</p>
+    <p class="body" style="margin-top:20px;text-align:center;font-weight:700">Mira un día cualquiera:</p>
+    <div class="cs-tip"><span class="ic">👆</span> Toca − / + y ajústalo a <b>TU</b> realidad</div>
     <div class="calc">
       <div class="r"><span class="h">Tu día</span><span class="v">24 h</span></div>
       <div class="r neg"><span class="h">− Dormir</span><span class="cs-ctrl"><button class="cs-btn" onclick="csAdj('dormir',-0.5)" aria-label="menos">−</button><span class="v cs-val" id="vDormir">8 h</span><button class="cs-btn" onclick="csAdj('dormir',0.5)" aria-label="más">+</button></span></div>
