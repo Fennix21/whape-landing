@@ -45,6 +45,7 @@ WHATSAPP_TOKEN / WHATSAPP_PHONE_NUMBER_ID / WHATSAPP_VERIFY_TOKEN · ANTHROPIC_A
 - **Puntos comunidad = participación**: post aprobado +1, comentario +1, graduación +5; likes NO dan puntos. Posts nacen `approved:false` (se aprueban en panel → Feed, con aviso WhatsApp al dueño).
 - Hora Perú = UTC-5 (`new Date(Date.now()-5*3600000)`); día de cohorte con `cohortDay(startStr)`.
 - Estilo del código existente: ES5-ish en frontend (var, funciones con nombre), español en comentarios y UI, emojis en labels.
+- No hagas verificaciones E2E en producción salvo que Martín lo pida ("yo pruebo").
 
 ## Fuera del repo (no buscar aquí dentro)
 - `C:\Users\CORDOVA\whape-sync\` → puente CRM→Obsidian (sync.js diario 8:30am, vault "The Game Of Time", frontmatter minúsculas tema/estado/creada) + config.json (pass) + cron-ping.vbs.
