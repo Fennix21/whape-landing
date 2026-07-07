@@ -303,19 +303,34 @@
 </div>
 
 <script>
-  // Barra de progreso de lectura: sigue el scroll y se autocorrige al subir
+  // Barra de progreso de lectura: cuenta también las compuertas cerradas para que
+  // el % refleje el viaje COMPLETO (no salta al abrir un gate y se autocorrige al subir)
   (function(){
     var fill = document.getElementById('progFill'); if(!fill) return;
-    var pending = false;
+    var pending = false, extra = 0;
+    function measure(){
+      extra = 0;
+      var gs = document.querySelectorAll('.gate');
+      for(var i = 0; i < gs.length; i++){
+        var g = gs[i];
+        if(g.classList.contains('open')) continue; // ya suma en scrollHeight
+        g.style.visibility = 'hidden'; g.style.display = 'block'; // medición síncrona: no llega a pintarse
+        extra += g.offsetHeight;
+        g.style.display = ''; g.style.visibility = '';
+      }
+    }
     function upd(){
-      var d = document.documentElement, max = d.scrollHeight - d.clientHeight;
+      var d = document.documentElement;
+      var max = d.scrollHeight + extra - d.clientHeight;
       var p = max > 0 ? (window.pageYOffset || d.scrollTop) / max : 0;
       fill.style.width = (Math.max(0, Math.min(1, p)) * 100) + '%';
       pending = false;
     }
+    window.progRecalc = function(){ measure(); upd(); };
     window.addEventListener('scroll', function(){ if(!pending){ pending = true; requestAnimationFrame(upd); } }, { passive: true });
-    window.addEventListener('resize', upd);
-    upd();
+    window.addEventListener('resize', window.progRecalc);
+    window.addEventListener('load', window.progRecalc); // re-mide cuando cargan fuentes/imágenes
+    window.progRecalc();
   })();
 
   function pad(n){ return n < 10 ? '0' + n : '' + n; }
@@ -391,7 +406,7 @@
     btn.classList.add('sel');
     var next = gateId ? document.getElementById(gateId) : document.getElementById('sigue');
     if(!next) return;
-    if(gateId) next.classList.add('open');
+    if(gateId){ next.classList.add('open'); if(window.progRecalc) progRecalc(); }
     setTimeout(function(){ next.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60);
   }
   csRender();
