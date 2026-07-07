@@ -62,6 +62,11 @@
   .punch b{color:var(--gold)}
   .quote{font-size:clamp(21px,5.4vw,29px);font-weight:700;line-height:1.3;margin:26px 0 0}
 
+  .choices{display:flex;flex-direction:column;gap:10px;margin:24px 0 4px}
+  .choice{display:flex;align-items:center;gap:12px;background:var(--surface);border:1.5px solid var(--stroke);border-radius:14px;padding:15px 18px;color:var(--text);font-weight:600;font-size:16.5px;text-decoration:none;transition:border-color .15s,background .15s,transform .15s}
+  .choice:hover{border-color:var(--accent);background:var(--surface2);transform:translateY(-1px)}
+  .choice .dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--muted);flex:none}
+
   .divider{height:1px;background:linear-gradient(90deg,transparent,var(--stroke),transparent);max-width:600px;margin:0 auto}
 
   .cta{text-align:center;background:radial-gradient(70% 90% at 50% 0%,rgba(142,45,226,.22),transparent 70%)}
@@ -177,17 +182,42 @@
   <div class="wrap reveal">
     <div class="kick go">La verdad</div>
     <h2>No te falta tiempo. Te falta energía.</h2>
-    <p class="body">Con tiempo y sin energía, el tiempo no sirve de nada. Tus ideas necesitan energía. El enfoque necesita energía. Aprender requiere mucha energía. Convertir información en conocimiento requiere energía. Emprender requiere mucha energía.</p>
+    <p class="body">Con tiempo y sin energía, el tiempo no sirve de nada. Tus ideas necesitan energía. El enfoque necesita energía. Aprender requiere mucha energía. Convertir información en conocimiento requiere energía. Emprender requiere mucha energpia.</p>
   </div>
 </section>
 
-<!-- 4. EL LADRÓN -->
+<!-- 4. LA PREGUNTA -->
 <section>
   <div class="wrap reveal">
-    <div class="kick warn">El ladrón</div>
-    <h2>Y tu entorno es quien te la roba.</h2>
-    <p class="body">La gente que se queja, que apaga tus ideas, que vive cansada y resignada… te drena sin que lo notes. La energía del entorno lo es todo.</p>
-    <div class="quote grad">Cambia el aire que respiras, y recuperas la energía para vivir lo que sí quieres.</div>
+    <div class="kick warn">Ahora responde esta pregunta</div>
+    <p class="lead" style="margin-top:0">Si este año terminara exactamente igual que hoy…</p>
+    <h2 style="margin-top:10px">¿Estarías orgulloso de cómo invertiste tu tiempo?</h2>
+    <div class="choices">
+      <a class="choice" href="/reto" data-ev="resp_si"><span class="dot"></span> Sí</a>
+      <a class="choice" href="/reto" data-ev="resp_no"><span class="dot"></span> No</a>
+      <a class="choice" href="/reto" data-ev="resp_nose"><span class="dot"></span> No lo sé</a>
+    </div>
+  </div>
+</section>
+
+<!-- 4b. LA REVELACIÓN -->
+<section>
+  <div class="wrap reveal">
+    <div class="kick">No importa cuál haya sido tu respuesta</div>
+    <h2>Quizá el problema nunca fue únicamente el tiempo.</h2>
+    <p class="body">Lo importante es que probablemente acabas de darte cuenta de algo. Quizá hay cosas que están influyendo en tu vida sin que seas plenamente consciente de ellas. Y mientras no puedas verlas… seguirás intentando cambiar los resultados repitiendo las mismas estrategias.</p>
+  </div>
+</section>
+
+<div class="divider"></div>
+
+<!-- 4c. LA SUPERFICIE -->
+<section>
+  <div class="wrap reveal">
+    <div class="kick warn">Esto es solo la superficie</div>
+    <h2>Hasta ahora solo calculaste tus horas.</h2>
+    <p class="body">Pero las horas no son el verdadero problema.</p>
+    <div class="quote grad">El verdadero problema es todo aquello que consume tu energía sin que lo notes. Y cuando no puedes verlo… es imposible cambiarlo.</div>
   </div>
 </section>
 
@@ -196,11 +226,11 @@
 <!-- 5. CTA -->
 <section class="cta">
   <div class="wrap reveal">
-    <span class="cupos">🔥 Solo 100 cupos</span>
-    <h2>Hay un lugar hecho para devolverte tu energía.</h2>
-    <p class="body">Del otro lado hay una experiencia de 2 minutos que puede cambiar cómo ves tu tiempo… y tus problemas.</p>
-    <div style="margin-top:24px"><a class="btn" data-ev="reto_start" href="/reto">Quiero recuperar mi tiempo →</a></div>
-    <p class="sub">Toma 2 minutos.</p>
+    <p class="body">Por eso preparamos una experiencia interactiva de apenas 2 minutos. No busca motivarte. No busca convencerte.</p>
+    <h2>Busca ayudarte a descubrir algo sobre tu propia vida que hoy quizá todavía no estás viendo.</h2>
+    <p class="body">Al terminar… es muy probable que nunca vuelvas a mirar tu tiempo de la misma manera.</p>
+    <div style="margin-top:24px"><a class="btn" data-ev="reto_start" href="/reto">Quiero descubrir qué está consumiendo mi vida →</a></div>
+    <p class="sub">Solo toma 2 minutos.</p>
   </div>
 </section>
 
