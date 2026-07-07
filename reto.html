@@ -250,7 +250,7 @@
       opts: [{ t: "Dime 👊" }, { t: "Adelante" }] },
 
     // Closer — desafío, no curso
-    { bot: ["El mundo está lleno de cursos que se compran y nunca se terminan. Contenido que se consume… y se olvida.", "WHAPE funciona distinto: es un desafío de 21 días para construir tu primera fuente de ingresos, con misiones diarias y un grupo que empieza contigo.", "¿La meta? Resolver problemas de alto valor e impacto que nadie está resolviendo.", "Y justo por eso son tan valiosos: quien los resuelve… cobra. 💰"],
+    { bot: ["El mundo está lleno de cursos que se compran y nunca se terminan. Contenido que se consume… y se olvida.", "WHAPE funciona distinto: es un desafío con fecha límite. Los " + DAYS + " días que le quedan al año, construyendo tu primera fuente de ingresos, con misiones diarias y un grupo que empieza contigo.", "¿La meta? Llegar al 31 de diciembre cobrando por resolver problemas de alto valor e impacto que nadie está resolviendo.", "Y justo por eso son tan valiosos: quien los resuelve… cobra. 💰"],
       ask: "¿Ves por qué esto no es un curso más?",
       opts: [{ t: "Sí, es otro nivel 🔥" }, { t: "¿Qué incluye exactamente?" }] },
 
@@ -260,7 +260,7 @@
       opts: [{ t: "Dímelo" }, { t: "¿Qué cosa?" }] },
 
     // Closer — urgencia real: 100 cupos + tarjeta Premium
-    { bot: ["Solo entran 100 miembros. Y no es un truco de marketing:", "Todos empiezan el desafío juntos, el mismo día. Por eso, cuando el cupo se llena, la puerta se cierra.", "Y no vuelve a abrirse hasta que este grupo termine su desafío.", "La pregunta no es si esto funciona. Es si vas a estar dentro cuando empiece. 👇"],
+    { bot: ["Solo entran 100 miembros. Y no es un truco de marketing:", "Todos empiezan el desafío juntos y corren contra la misma fecha: el 31 de diciembre. Por eso, cuando el cupo se llena, la puerta se cierra.", "Y no vuelve a abrirse hasta que este grupo termine su desafío.", "Piénsalo: hoy el desafío tiene " + DAYS + " días. Mañana tendrá uno menos. Es el único precio que sube cada día que lo piensas. 👇"],
       premium: true,
       opts: [{ t: "¿Y si aún tengo dudas?" }, { t: "¿Puedo verlo antes de decidir? 🌱" }] },
 
@@ -312,7 +312,7 @@
     var prem = el('<div class="card premium hot"></div>');
     prem.innerHTML =
       '<h3>🚀 Acceso Premium</h3>' +
-      '<p>El desafío completo: academia, misiones de 21 días, tu sistema de ventas por WhatsApp y un grupo que empieza contigo.</p>' +
+      '<p>El desafío de ' + DAYS + ' días: academia, misiones diarias, tu sistema de ventas por WhatsApp y un grupo que corre contigo hasta el 31 de diciembre.</p>' +
       '<div class="now">S/99 <small>pago único · acceso de por vida · garantía de 7 días</small></div>' +
       '<div class="scar">🔥 Solo 100 cupos. Todos empiezan el desafío juntos: al llenarse, la puerta se cierra hasta que el grupo termine.</div>' +
       '<a class="btn btn-prem" data-ev="premium_click" href="https://wa.me/' + WA + '?text=' + encodeURIComponent('Hola, quiero el ACCESO PREMIUM de WHAPE (S/99) (premium)') + '" target="_blank" rel="noopener">Quiero mi cupo Premium →</a>';
