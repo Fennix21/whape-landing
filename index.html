@@ -47,6 +47,7 @@
   p.body:last-child{margin-bottom:0}
   .kick{color:var(--accent);font-weight:700;font-size:13px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px}
   .kick.warn{color:var(--warn)} .kick.go{color:var(--success)}
+  .kick.type{font-size:20.5px}
 
   /* countdown */
   .count{text-align:center;margin:6px 0 26px}
@@ -219,7 +220,7 @@
 <!-- 2b. EL CÍRCULO VICIOSO -->
 <section>
   <div class="wrap reveal">
-    <div class="kick warn">La trampa completa</div>
+    <div class="kick warn type">La trampa completa</div>
     <h2>¿Y por qué llegas sin energía?</h2>
     <p class="body">Pusiste <b style="color:var(--warn)" id="cycSleep">8 h</b> de sueño en la cuenta. <span id="cycTail">Seamos honestos: <b style="color:var(--warn)">dormir 8 horas es un lujo</b>. La mayoría duerme 5–7…</span> y ahí empieza la rueda:</p>
     <div class="cyc-env">
@@ -248,7 +249,7 @@
 <!-- 3. ENERGÍA > TIEMPO -->
 <section>
   <div class="wrap reveal">
-    <div class="kick go">La verdad</div>
+    <div class="kick go type">La verdad</div>
     <h2>No te falta tiempo. Te falta energía.</h2>
     <p class="body">Con tiempo y sin energía, el tiempo no sirve de nada.</p>
     <ul class="body" style="list-style:none;padding:0;margin:0 0 14px">
@@ -264,7 +265,7 @@
 <!-- 4. LA PREGUNTA -->
 <section>
   <div class="wrap reveal">
-    <div class="kick warn">Ahora responde esta pregunta</div>
+    <div class="kick warn type">Ahora responde esta pregunta</div>
     <p class="lead" style="margin-top:0">Si este año terminara exactamente igual que hoy…</p>
     <h2 style="margin-top:10px">¿Estarías orgulloso de cómo invertiste tu tiempo?</h2>
     <div class="choices">
@@ -278,7 +279,7 @@
 <!-- 4b. LA REVELACIÓN -->
 <section id="sigue">
   <div class="wrap reveal">
-    <div class="kick go">Sea cual sea tu respuesta</div>
+    <div class="kick go type">Sea cual sea tu respuesta</div>
     <h2>Si dudaste aunque sea un segundo… ya tienes tu respuesta.</h2>
     <p class="body">Y no es porque te falten ganas o disciplina.<br>
     Es que hay cosas decidiendo por ti, todos los días, sin que seas plenamente consciente de ellas.<br>
@@ -291,7 +292,7 @@
 <!-- 4c. LA SUPERFICIE -->
 <section style="padding-bottom:14px">
   <div class="wrap reveal">
-    <div class="kick warn">Y esto es solo la superficie</div>
+    <div class="kick warn type">Y esto es solo la superficie</div>
     <h2>Hasta ahora solo calculaste tus horas.</h2>
     <p class="body">Pero las horas no son el verdadero problema.</p>
     <div class="quote grad anim">El verdadero problema es todo aquello que consume tu energía sin que lo notes.<br>
@@ -370,11 +371,10 @@
   }
   // Rebote visual cuando cambia un número
   function bump(id){ var e = document.getElementById(id); if(!e) return; e.classList.remove('bump'); void e.offsetWidth; e.classList.add('bump'); }
-  // Máquina de escribir para "Mira un día cualquiera:" (se dispara al entrar en pantalla)
-  var typedMira = false;
-  function typeMira(){
-    if(typedMira) return; typedMira = true;
-    var el = document.getElementById('miraDia'); if(!el || RM) return;
+  // Máquina de escribir genérica: teclea cada .type al entrar en pantalla (una sola vez)
+  function typeEl(el){
+    if(!el || el._typed) return; el._typed = true;
+    if(RM) return;
     var txt = el.textContent, i = 0;
     el.textContent = ''; el.classList.add('on');
     (function step(){
@@ -440,7 +440,7 @@
     function fire(el){
       el.classList.add('in');
       if(!counted && el.querySelector && el.querySelector('#cDays')){ counted = true; countUp(); }
-      if(el.querySelector && el.querySelector('#miraDia')) typeMira();
+      if(el.querySelectorAll){ var ts = el.querySelectorAll('.type'); for(var j = 0; j < ts.length; j++) typeEl(ts[j]); }
     }
     if(!('IntersectionObserver' in window)){ counting = false; els.forEach(function(e){ e.classList.add('in'); }); tick(); return; }
     var io = new IntersectionObserver(function(en){ en.forEach(function(x){ if(x.isIntersecting){ fire(x.target); io.unobserve(x.target); } }); }, { threshold:.14 });
