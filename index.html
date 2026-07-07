@@ -134,7 +134,7 @@
       <div class="r res"><span class="h">Para ti</span><span class="v" id="vParaTi">4 h</span></div>
       <div class="note" id="csNote">…y llegas a ellas agotado.</div>
     </div>
-    <p class="punch">Cada día le das <b style="color:var(--warn)" id="dTrabajo">10 horas</b> a un sueldo, <b style="color:var(--warn)" id="dCelular">3</b> al celular… y te queda <b style="color:var(--gold)" id="dParaTi">1 hora cansada</b> para tu propia vida.</p>
+    <p class="punch">Cada día: <b style="color:var(--warn)" id="dDormir">8 h</b> a dormir, <b style="color:var(--warn)" id="dTrabajo">10 h</b> a un sueldo, <b style="color:var(--warn)" id="dComer">2 h</b> a comer y pendientes y <b style="color:var(--warn)" id="dCelular">3 h</b> al celular… y te queda <b style="color:var(--gold)" id="dParaTi">1 hora cansada</b> para tu propia vida.</p>
     <div class="punch">De los <b id="mDays">—</b> días que faltan, solo <b id="mRealD">—</b> son <b>realmente tuyos</b>.<br><span style="color:var(--muted);font-weight:600;font-size:.8em">(<span id="mDays2">—</span> días × <span id="mHrs">4</span> h = <span id="mFreeH">—</span> horas tuyas)</span></div>
     <p class="body" style="margin-top:20px">Y los vives sin energía.</p>
   </div>
@@ -234,7 +234,7 @@
     var p = paraTi();
     set('vDormir', fmtH(CS.dormir) + ' h'); set('vTrabajo', fmtH(CS.trabajo) + ' h'); set('vComer', fmtH(CS.comer) + ' h'); set('vCelular', fmtH(CS.celular) + ' h');
     set('vParaTi', fmtH(p) + ' h');
-    set('dTrabajo', fmtH(CS.trabajo) + ' horas'); set('dCelular', fmtH(CS.celular));
+    set('dDormir', fmtH(CS.dormir) + ' h'); set('dTrabajo', fmtH(CS.trabajo) + ' h'); set('dComer', fmtH(CS.comer) + ' h'); set('dCelular', fmtH(CS.celular) + ' h');
     set('dParaTi', p === 1 ? '1 hora cansada' : (fmtH(p) + ' horas cansadas'));
     var note = document.getElementById('csNote');
     if(note) note.innerHTML = p <= 0 ? '…tu día ya ni siquiera alcanza. <b>Esto es urgente.</b>' : (p <= 2 ? ('…apenas <b>' + fmtH(p) + ' h</b>, y llegas a ellas agotado.') : '…y llegas a ellas <b>agotado</b>.');
