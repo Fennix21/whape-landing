@@ -244,8 +244,28 @@
     { bot: ["Piensa en cualquier persona a la que le va extraordinariamente bien.", "Ninguna llegó ahí consumiendo. Todas crearon algo: un producto, un servicio, una solución.", "Esa es la regla del juego: los consumidores pagan. Los creadores cobran. 💸", "Y el mundo premia más a quien resuelve los problemas más valiosos."],
       opts: [{ t: "Quiero estar del lado que crea 🚀", focus: "premium" }, { t: "¿Y cómo empiezo a crear?" }] },
 
-    // La promesa de la comunidad + opciones de ingreso
+    // La promesa de la comunidad
     { bot: ["De eso se trata WHAPE:", "🎯 Aprendes a generar ingresos resolviendo problemas de alto valor e impacto.", "💡 Entrenas tu creatividad: mejorar lo que ya existe y convertirlo en ingresos.", "🤝 Rodeado de creadores que se exigen, te retan y celebran cada avance contigo.", "Aquí no vienes a consumir contenido. Vienes a construir tu primera fuente de ingresos."],
+      ask: "¿Puedo ser directo contigo?",
+      opts: [{ t: "Dime 👊" }, { t: "Adelante" }] },
+
+    // Closer — desafío, no curso
+    { bot: ["El mundo está lleno de cursos que se compran y nunca se terminan. Contenido que se consume… y se olvida.", "WHAPE funciona distinto: es un desafío de 21 días para construir tu primera fuente de ingresos, con misiones diarias y un grupo que empieza contigo.", "¿La meta? Resolver problemas de alto valor e impacto que nadie está resolviendo.", "Y justo por eso son tan valiosos: quien los resuelve… cobra. 💰"],
+      ask: "¿Ves por qué esto no es un curso más?",
+      opts: [{ t: "Sí, es otro nivel 🔥" }, { t: "¿Qué incluye exactamente?" }] },
+
+    // Closer — qué recibes
+    { bot: ["Esto es lo que recibes al entrar:", "🎓 La academia completa: de la idea a tu negocio, paso a paso, en misiones diarias.", "🤖 Tu sistema de ventas funcionando desde el día uno: landing + bot que vende por WhatsApp 24/7 + CRM.", "🤝 Un grupo que empieza contigo, se exige contigo y no te deja soltar.", "Todo por S/99, pago único. Sin mensualidades. Y si en 7 días sientes que no es para ti, te devolvemos tu dinero. El riesgo lo asumimos nosotros."],
+      ask: "Ahora viene lo más importante. ¿Te lo digo?",
+      opts: [{ t: "Dímelo" }, { t: "¿Qué cosa?" }] },
+
+    // Closer — urgencia real: 100 cupos + tarjeta Premium
+    { bot: ["Solo entran 100 miembros. Y no es un truco de marketing:", "Todos empiezan el desafío juntos, el mismo día. Por eso, cuando el cupo se llena, la puerta se cierra.", "Y no vuelve a abrirse hasta que este grupo termine su desafío.", "La pregunta no es si esto funciona. Es si vas a estar dentro cuando empiece. 👇"],
+      premium: true,
+      opts: [{ t: "¿Y si aún tengo dudas?" }, { t: "¿Puedo verlo antes de decidir? 🌱" }] },
+
+    // La puerta gratuita + despedida
+    { bot: ["Claro. También existe la entrada gratuita.", "Te deja conocer la comunidad por dentro, ver cómo trabajamos y decidir con calma.", "Eso sí: el desafío de los 100 es solo para miembros Premium. La puerta gratis te muestra el entorno… la Premium te pone a construir. 😉"],
       fork: true }
   ];
 
@@ -269,7 +289,7 @@
       if(s.render === 'contrast') appendSpecial(CONTRAST);
       if(s.render === 'summary') appendSpecial(SUMMARY);
       if(s.render === 'creators') appendSpecial(CREATORS);
-      var finish = function(){ s.fork ? renderFork() : renderOpts(s); };
+      var finish = function(){ if(s.premium) premiumCard(); s.fork ? renderFork() : renderOpts(s); };
       if(s.ask){ showTyping(); setTimeout(function(){ hideTyping(); appendBot(s.ask); setTimeout(finish, 300); }, 600); }
       else finish();
     })();
@@ -287,23 +307,29 @@
     setTimeout(function(){ go(STEP + 1); }, 250);
   }
 
+  // Tarjeta Premium — se muestra sola, tras el cierre de ventas
+  function premiumCard(){
+    var prem = el('<div class="card premium hot"></div>');
+    prem.innerHTML =
+      '<h3>🚀 Acceso Premium</h3>' +
+      '<p>El desafío completo: academia, misiones de 21 días, tu sistema de ventas por WhatsApp y un grupo que empieza contigo.</p>' +
+      '<div class="now">S/99 <small>pago único · acceso de por vida · garantía de 7 días</small></div>' +
+      '<div class="scar">🔥 Solo 100 cupos. Todos empiezan el desafío juntos: al llenarse, la puerta se cierra hasta que el grupo termine.</div>' +
+      '<a class="btn btn-prem" data-ev="premium_click" href="https://wa.me/' + WA + '?text=' + encodeURIComponent('Hola, quiero el ACCESO PREMIUM de WHAPE (S/99) (premium)') + '" target="_blank" rel="noopener">Quiero mi cupo Premium →</a>';
+    var wrap = el('<div class="special"></div>');
+    wrap.appendChild(prem);
+    chat().appendChild(wrap); scrollDown();
+  }
+
   function renderFork(){
     progress(STEPS.length - 1);
-    var premHot = FOCUS === 'premium';
-    var prem = el('<div class="card premium' + (premHot ? ' hot' : '') + '"></div>');
-    prem.innerHTML =
-      '<h3>🚀 Entrar como Premium</h3>' +
-      '<p>Acceso completo: academia, misiones de 21 días, tu sistema de ventas por WhatsApp y acompañamiento cercano.</p>' +
-      '<div class="now">S/99 <small>pago único · acceso de por vida · garantía de 7 días</small></div>' +
-      '<a class="btn btn-prem" data-ev="premium_click" href="https://wa.me/' + WA + '?text=' + encodeURIComponent('Hola, quiero el ACCESO PREMIUM de WHAPE (S/99) (premium)') + '" target="_blank" rel="noopener">Quiero mi acceso Premium →</a>';
-
     var free = el('<div class="card free"></div>');
     free.innerHTML =
       '<h3>🌱 Entrar gratis</h3><p>Conoce el entorno por dentro y decide después. Sin compromiso.</p>' +
       '<a class="btn btn-free" data-ev="gratis_click" href="https://wa.me/' + WA + '?text=' + encodeURIComponent('Hola, quiero entrar GRATIS a la comunidad WHAPE (gratis)') + '" target="_blank" rel="noopener">Entrar gratis</a>';
 
     var box = el('<div class="fork"></div>');
-    if(premHot){ box.appendChild(prem); box.appendChild(free); } else { box.appendChild(free); box.appendChild(prem); }
+    box.appendChild(free);
 
     // Despedida — CTA emocional
     var bye = el('<div class="bye"></div>');
