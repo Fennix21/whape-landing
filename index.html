@@ -26,9 +26,12 @@
   .grad{background:linear-gradient(100deg,var(--accent) 5%,var(--success) 95%);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent}
   .wrap{max-width:600px;margin:0 auto;padding:0 22px}
 
-  .topbar{display:flex;align-items:center;gap:9px;padding:18px 22px}
+  .top{position:sticky;top:0;z-index:50;background:var(--bg)}
+  .topbar{display:flex;align-items:center;gap:9px;padding:18px 22px 10px}
   .topbar img{width:28px;height:28px;border-radius:8px}
   .topbar b{font-weight:800;letter-spacing:.14em;font-size:13px}
+  .prog{height:5px;background:var(--surface2);border-radius:999px;overflow:hidden;margin:0 22px 12px}
+  .prog > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--success));transition:width .1s linear}
 
   section{padding:52px 0}
   section.hero{padding:30px 0 34px;text-align:center}
@@ -130,7 +133,10 @@
 </head>
 <body>
 
-<div class="topbar"><img src="logo.png" alt="WHAPE" /><b>WHAPE</b></div>
+<div class="top">
+  <div class="topbar"><img src="logo.png" alt="WHAPE" /><b>WHAPE</b></div>
+  <div class="prog"><i id="progFill"></i></div>
+</div>
 
 <!-- 1. HOOK -->
 <section class="hero">
@@ -269,6 +275,21 @@
 </section>
 
 <script>
+  // Barra de progreso de lectura: sigue el scroll y se autocorrige al subir
+  (function(){
+    var fill = document.getElementById('progFill'); if(!fill) return;
+    var pending = false;
+    function upd(){
+      var d = document.documentElement, max = d.scrollHeight - d.clientHeight;
+      var p = max > 0 ? (window.pageYOffset || d.scrollTop) / max : 0;
+      fill.style.width = (Math.max(0, Math.min(1, p)) * 100) + '%';
+      pending = false;
+    }
+    window.addEventListener('scroll', function(){ if(!pending){ pending = true; requestAnimationFrame(upd); } }, { passive: true });
+    window.addEventListener('resize', upd);
+    upd();
+  })();
+
   function pad(n){ return n < 10 ? '0' + n : '' + n; }
   function set(id, v){ var e = document.getElementById(id); if(e) e.textContent = v; }
   // Conteo animado del número grande: mientras "counting" sea true, tick() no lo pisa
