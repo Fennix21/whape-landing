@@ -4,10 +4,10 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>WHAPE — El camino a recuperar tu tiempo</title>
-<meta name="description" content="Tus horas no rinden por estar en el entorno equivocado. Descubre cómo cambiar de círculo." />
+<meta name="description" content="¿Qué está decidiendo qué haces con tu tiempo? Descúbrelo en 2 minutos." />
 <meta property="og:type" content="website" />
 <meta property="og:title" content="El camino a recuperar tu tiempo y tu energía" />
-<meta property="og:description" content="Del círculo vicioso al círculo virtuoso. Solo 100 cupos." />
+<meta property="og:description" content="Primero cambia el entorno. Después cambia la vida. Descúbrelo en 2 minutos." />
 <meta property="og:image" content="https://whape.club/logo.png" />
 <meta property="og:url" content="https://whape.club/reto" />
 <link rel="icon" href="logo.png" />
@@ -29,7 +29,6 @@
   .bar{display:flex;align-items:center;gap:9px;padding:16px 2px 10px}
   .bar img{width:30px;height:30px;border-radius:8px}
   .bar b{font-weight:800;letter-spacing:.12em;font-size:14px}
-  .bar .cupos{margin-left:auto;font-size:11px;font-weight:700;color:var(--gold);background:rgba(255,210,74,.12);border:1px solid rgba(255,210,74,.3);padding:5px 10px;border-radius:999px}
 
   .prog{height:5px;background:var(--surface2);border-radius:999px;overflow:hidden;margin:4px 2px 14px}
   .prog > i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--accent),var(--success));transition:width .5s ease}
@@ -99,7 +98,6 @@
 <div class="app">
   <div class="bar">
     <img src="logo.png" alt="WHAPE" /><b>WHAPE</b>
-    <span class="cupos">🔥 Solo 100 cupos</span>
   </div>
   <div class="prog"><i id="progFill"></i></div>
   <div class="chat" id="chat"></div>
@@ -112,49 +110,95 @@
 
   var now = new Date(), end = new Date(now.getFullYear(), 11, 31, 23, 59, 59);
   var DAYS = Math.max(1, Math.floor((end - now) / 86400000));
-  var FREEH = (DAYS * 5).toLocaleString('es-PE');
+
+  // Horas "para ti" que el usuario calculó en el recibo de la landing
+  var MYH = null;
+  try { var _h = parseFloat(localStorage.getItem('whape_h')); if(!isNaN(_h) && _h >= 0 && _h <= 24) MYH = _h; } catch(e){}
+  function fmtH(n){ return n.toLocaleString('es-PE'); }
+
+  var HELLO = MYH !== null
+    ? ["Antes calculaste algo muy importante.", "Descubriste que de tus 24 horas, solo " + (MYH === 1 ? "1 hora es realmente tuya" : fmtH(MYH) + " horas son realmente tuyas") + ".", "Pero ahora viene la pregunta que cambia todo. 👇"]
+    : ["Empecemos por algo que casi nadie calcula:", "cuánto de su día le pertenece de verdad. Para la mayoría: menos de 2 horas.", "Pero la pregunta que cambia todo es otra. 👇"];
 
   var CONTRAST =
     '<div class="ct">' +
-      '<div class="ct-col bad"><div class="ct-h">🌫️ El entorno que te limita</div><ul>' +
-        '<li>“Eso no funciona”</li><li>Quejas, miedo y excusas</li><li>Te roba la energía</li><li><b style="color:var(--warn)">Círculo vicioso:</b> igual cada año</li></ul></div>' +
-      '<div class="ct-col good"><div class="ct-h">🚀 Nuestro entorno</div><ul>' +
-        '<li>“¿Y cómo lo harías?”</li><li>Soluciones y acción</li><li>Te recarga la energía</li><li><b style="color:var(--success)">Círculo virtuoso:</b> creces sin parar</li></ul></div>' +
+      '<div class="ct-col bad"><div class="ct-h">😔 Mundo A</div><ul>' +
+        '<li>Quejas, miedo, excusas</li><li>Todo parece imposible</li><li>Cada intento recibe críticas</li><li><b style="color:var(--warn)">Resultado:</b> cada día cuesta más empezar</li></ul></div>' +
+      '<div class="ct-col good"><div class="ct-h">🚀 Mundo B</div><ul>' +
+        '<li>Ideas, acción, aprendizaje</li><li>Personas creando contigo</li><li>Celebran tus avances</li><li><b style="color:var(--success)">Resultado:</b> avanzar se vuelve más fácil</li></ul></div>' +
     '</div>';
 
   var SUMMARY =
-    '<div class="sum"><div class="sum-h">💡 Lo que acabas de descubrir</div><ul>' +
-      '<li><b>✓</b> No te falta tiempo. Te falta energía.</li>' +
-      '<li><b>✓</b> Tu entorno decide: círculo vicioso o virtuoso.</li>' +
-      '<li><b>✓</b> Con el entorno correcto, tus pocas horas rinden como nunca.</li>' +
-      '<li><b>✓</b> Tu mayor problema puede ser tu próximo negocio.</li>' +
-    '</ul><div class="sum-cta">Estás a <span class="grad">un solo paso</span> de cambiar de círculo. 👇</div></div>';
+    '<div class="sum"><div class="sum-h">💡 Hasta ahora descubriste tres cosas</div><ul>' +
+      '<li><b>✓</b> No te falta tanto tiempo como creías.</li>' +
+      '<li><b>✓</b> El problema no es solamente la disciplina.</li>' +
+      '<li><b>✓</b> El sistema donde pasas tus días influye en las decisiones que tomas.</li>' +
+    '</ul><div class="sum-cta">No necesitas convertirte en otra persona.<br>Necesitas <span class="grad">entrar en otro sistema</span>.</div></div>';
 
   var STEPS = [
-    { bot: ["Cruzaste la puerta. 👏", "Eso ya te separa de la mayoría, que solo se queja y se queda en el mismo lugar.", "Antes de mostrarte el camino, mira algo con tus propios números."],
-      opts: [{ t: "Muéstrame 👀" }, { t: "Estoy listo" }] },
+    // Bienvenida
+    { bot: HELLO,
+      ask: "¿Qué está decidiendo qué haces con ese tiempo?",
+      opts: [{ t: "👉 Muéstramelo" }] },
 
-    { bot: ["Te dije que te quedan ~" + DAYS + " días este año.", "Pero tú no vives en días. Vives en horas.", "Y de cada día, solo unas 5 son realmente tuyas… y cansadas. En lo que queda del año, eso son apenas " + FREEH + " horas tuyas."],
-      ask: "¿Cuántas de esas horas usas hoy para algo que te acerque a tu libertad?",
-      opts: [{ t: "Casi ninguna 😕" }, { t: "Una o dos" }, { t: "Se me van en el celular" }] },
+    // Las 2 horas regaladas
+    { bot: ["Imagina que mañana despiertas…", "y alguien te regala 2 horas completamente libres.", "Sin trabajo. Sin pendientes. Solo dos horas para ti."],
+      ask: "¿Qué harías?",
+      opts: [{ t: "Trabajaría en un proyecto" }, { t: "Aprendería algo" }, { t: "Descansaría" }, { t: "No lo sé" }] },
 
-    { bot: ["Eso es lo normal… cuando estás en el entorno equivocado.", "Llegas agotado → no actúas → nada cambia → te frustras → te agotas más.", "Un círculo vicioso que te deja igual, año tras año."],
-      opts: [{ t: "Me pasa, sí 😔" }, { t: "Llevo años así" }] },
+    // La brecha entre intención y realidad
+    { bot: ["Curiosamente… la mayoría responde algo parecido.", "Pero cuando esas dos horas realmente aparecen…", "casi nunca hacemos eso."],
+      ask: "¿Por qué crees que pasa?",
+      opts: [{ t: "Me distraigo" }, { t: "Estoy cansado" }, { t: "Siempre aparece algo" }, { t: "Nunca lo había pensado" }] },
 
-    { bot: ["Ahora mira la diferencia entre los dos mundos:"],
+    // El estado decide, no el tiempo
+    { bot: ["Exacto.", "Las decisiones no dependen únicamente del tiempo. Dependen del estado en el que llegas.", "Cuando llegas agotado, tu cerebro deja de buscar crecimiento. Empieza a buscar alivio.", "Y por eso aparecen: 📱 redes, 🍔 comida, 📺 series, 😴 dormir.", "No porque seas débil. Porque tu cerebro intenta recuperar energía."],
+      opts: [{ t: "Tiene sentido" }] },
+
+    // Lo que escuchas alrededor
+    { bot: ["Déjame preguntarte algo.", "Cuando tienes un problema importante o cuentas una idea…"],
+      ask: "¿Qué escuchas normalmente a tu alrededor?",
+      opts: [{ t: "«Eso no funciona»" }, { t: "«Ya existe»" }, { t: "«Es muy difícil»" }, { t: "«Mejor busca algo seguro»" }, { t: "Todo lo anterior 😅" }] },
+
+    // El escenario contrario
+    { bot: ["Ahora imagina el escenario contrario.", "Cuentas una idea… y escuchas:", "«¿Y cómo lo harías?» «Yo te ayudo.» «Prueba esto.» «Conozco a alguien.» «Vamos.»"],
+      ask: "¿Qué sentirías?",
+      opts: [{ t: "Más energía" }, { t: "Más confianza" }, { t: "Más ganas de actuar" }, { t: "Todo lo anterior ⚡" }] },
+
+    // La revelación: solo cambió el entorno
+    { bot: ["Fíjate en algo.", "No cambió tu inteligencia. No cambió tu tiempo. No cambió tu talento.", "Solo cambió… el entorno."],
+      opts: [{ t: "😮 Nunca lo había visto así" }] },
+
+    // Los dos mundos
+    { bot: ["Míralo en dos mundos:"],
       render: "contrast",
       ask: "¿En cuál crecerías más rápido?",
-      opts: [{ t: "En el de posibilidades", focus: "premium" }, { t: "En el que me impulsa", focus: "premium" }] },
+      opts: [{ t: "En el Mundo A 😔" }, { t: "En el Mundo B 🚀", focus: "premium" }] },
 
-    { bot: ["Así operamos en WHAPE:", "Entras a un entorno que te DA energía → actúas con claridad → ves resultados → te motivas → actúas más.", "Un círculo virtuoso. Y con un sistema: comunidad + academia + el método para convertir tus problemas en un negocio por WhatsApp."],
-      opts: [{ t: "Eso necesito 🔥", focus: "premium" }, { t: "Cuéntame cómo entro" }] },
+    // El orden real del cambio
+    { bot: ["La mayoría cree que cambia cuando encuentra más motivación.", "Pero ocurre exactamente al revés:", "Primero cambia el entorno. Después las conversaciones. Después las decisiones. Después los hábitos.", "Y al final… cambia la vida."],
+      opts: [{ t: "Continúa" }] },
 
-    { bot: ["Imagina los próximos " + DAYS + " días distintos.", "Cerrar el año con claridad, un proyecto tuyo avanzando, y gente que construye CONTIGO en vez de frenarte."],
-      ask: "¿Cómo quieres llegar a fin de año?",
-      opts: [{ t: "Igual que hoy… no, gracias" }, { t: "Quiero llegar distinto", focus: "premium" }] },
-
-    { bot: ["Antes de elegir, llévate esto:"],
+    // Resumen de descubrimientos
+    { bot: ["Hasta ahora descubriste tres cosas:"],
       render: "summary",
+      opts: [{ t: "Quiero verlo" }] },
+
+    // Aquí recién aparece WHAPE
+    { bot: ["Eso es exactamente lo que construimos.", "WHAPE no nació para motivar. La motivación desaparece.", "Diseñamos un sistema donde avanzar resulta más fácil que quedarse igual:", "los problemas se convierten en proyectos, las ideas en acción… y las conversaciones te empujan hacia adelante en lugar de agotarte."],
+      opts: [{ t: "Eso estoy buscando" }] },
+
+    // Proyección al 31 de diciembre
+    { bot: ["Imagina llegar al 31 de diciembre y mirar hacia atrás."],
+      ask: "¿Qué versión de ti quieres encontrar?",
+      opts: [{ t: "La misma de hoy" }, { t: "Una que construyó algo propio", focus: "premium" }, { t: "Una con más claridad", focus: "premium" }, { t: "Una rodeada de gente que la impulsa", focus: "premium" }] },
+
+    // Cierre
+    { bot: ["Todo empieza con una decisión muy pequeña:", "elegir el sistema donde pasarás tus próximos " + DAYS + " días.", "Porque no somos únicamente el resultado de nuestras decisiones. También somos el resultado del entorno que hace esas decisiones fáciles… o difíciles.", "Bienvenido a WHAPE. 👇"],
+      opts: [{ t: "Quiero construir una vida distinta 🔥" }] },
+
+    // Fork Premium / Gratis
+    { bot: ["Tienes dos formas de empezar hoy:"],
       fork: true }
   ];
 
