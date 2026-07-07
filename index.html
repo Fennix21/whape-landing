@@ -98,8 +98,35 @@
   .cyc-arrow{color:var(--warn);font-size:16px;line-height:1;padding:4px 0;font-weight:800}
   .cyc-loop{margin-top:12px;text-align:center;color:var(--warn);font-size:13.5px;font-weight:800}
   .cyc-note{color:var(--muted);font-size:12.5px;text-align:center;margin-top:12px;line-height:1.55}
+
+  /* ===== animaciones ===== */
+  @keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+  @keyframes shimmer{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+  @keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.25)}100%{transform:scale(1)}}
+  @keyframes shine{0%{left:-70%}55%,100%{left:130%}}
+  @keyframes spin{to{transform:rotate(-360deg)}}
+  @keyframes bob{0%,100%{transform:translateY(1px)}50%{transform:translateY(-3px)}}
+  /* entrada del hero: eyebrow → título → lead, todo en ~1s */
+  .hero .eyebrow{animation:rise .5s ease both}
+  .hero h1{animation:rise .6s ease .15s both}
+  .hero .lead{animation:rise .6s ease .38s both}
+  .grad.anim{background-size:200% 100%;animation:shimmer 3.5s ease-in-out infinite}
+  /* cascada de hijos (recibo y círculo) al entrar en pantalla */
+  .stag>*{opacity:0;transform:translateY(10px);transition:opacity .45s ease,transform .45s ease}
+  .stag.in>*{opacity:1;transform:none}
+  .cs-tip .ic{animation:bob 1.6s ease-in-out infinite}
+  .cs-btn:active{transform:scale(.86)}
+  .choice:active{transform:scale(.985)}
+  .bump{display:inline-block;animation:pop .35s ease}
+  .cyc-rot{display:inline-block;animation:spin 5s linear infinite}
+  .btn{position:relative;overflow:hidden}
+  .btn::after{content:"";position:absolute;top:0;left:-70%;width:45%;height:100%;background:linear-gradient(105deg,transparent,rgba(255,255,255,.5),transparent);animation:shine 3.4s ease-in-out infinite}
+  @media (prefers-reduced-motion:reduce){
+    .hero .eyebrow,.hero h1,.hero .lead,.grad.anim,.cs-tip .ic,.bump,.cyc-rot,.btn::after{animation:none!important}
+    .reveal,.stag>*{opacity:1!important;transform:none!important;transition:none!important}
+  }
 </style>
-<noscript><style>.reveal{opacity:1;transform:none}</style></noscript>
+<noscript><style>.reveal,.stag>*{opacity:1;transform:none}</style></noscript>
 </head>
 <body>
 
@@ -109,7 +136,7 @@
 <section class="hero">
   <div class="wrap">
     <span class="eyebrow">Una pregunta incómoda</span>
-    <h1>¿Cuánto de tu día es <span class="grad">realmente tuyo</span>?</h1>
+    <h1>¿Cuánto de tu día es <span class="grad anim">realmente tuyo</span>?</h1>
     <p class="lead">Trabajas. Vuelves cansado. Y cuando por fin llega el momento de hacer eso que realmente importa para ti… ya no te queda energía.</p>
   </div>
 </section>
@@ -130,7 +157,7 @@
     <div class="punch">¿Cuánto de ese tiempo es <b>realmente tuyo</b>?</div>
     <p class="body" style="margin-top:20px;text-align:center;font-weight:700">Mira un día cualquiera:</p>
     <div class="cs-tip"><span class="ic">👆</span> Toca − / + y ajústalo a <b>TU</b> realidad</div>
-    <div class="calc">
+    <div class="calc stag">
       <div class="r"><span class="h">Tu día</span><span class="v">24 h</span></div>
       <div class="r neg"><span class="h">− Dormir</span><span class="cs-ctrl"><button class="cs-btn" onclick="csAdj('dormir',-0.5)" aria-label="menos">−</button><span class="v cs-val" id="vDormir">8 h</span><button class="cs-btn" onclick="csAdj('dormir',0.5)" aria-label="más">+</button></span></div>
       <div class="r neg"><span class="h">− Trabajo y traslados</span><span class="cs-ctrl"><button class="cs-btn" onclick="csAdj('trabajo',-0.5)" aria-label="menos">−</button><span class="v cs-val" id="vTrabajo">10 h</span><button class="cs-btn" onclick="csAdj('trabajo',0.5)" aria-label="más">+</button></span></div>
@@ -156,7 +183,7 @@
     <p class="body">Pusiste <b style="color:var(--warn)" id="cycSleep">8 h</b> de sueño en la cuenta. <span id="cycTail">Seamos honestos: <b style="color:var(--warn)">dormir 8 horas es un lujo</b>. La mayoría duerme 5–7…</span> y ahí empieza la rueda:</p>
     <div class="cyc-env">
       <span class="cyc-envlbl">⚡ Tu entorno — drenando energía todo el día</span>
-      <div class="cyc">
+      <div class="cyc stag">
         <div class="cyc-node"><span class="ic">😴</span><p>Duermes <b>5–7 horas</b>: descansas a medias.</p></div>
         <div class="cyc-arrow">↓</div>
         <div class="cyc-node"><span class="ic">🪫</span><p>Despiertas agotado: más horas despierto, <b>menos rendimiento</b>.</p></div>
@@ -169,7 +196,7 @@
         <div class="cyc-arrow">↓</div>
         <div class="cyc-node"><span class="ic">🌙</span><p>Te duermes tarde otra vez → mañana despiertas <b>peor</b>.</p></div>
       </div>
-      <div class="cyc-loop">↺ …y la rueda vuelve a girar. Cada vuelta, con menos energía.</div>
+      <div class="cyc-loop"><span class="cyc-rot">↺</span> …y la rueda vuelve a girar. Cada vuelta, con menos energía.</div>
     </div>
     <p class="body" style="margin-top:22px">Esto no es falta de voluntad. Es un <b style="color:var(--warn)">sistema que se alimenta solo</b> — y los sistemas no se rompen con ganas: <b style="color:var(--success)">se rompen con diseño</b>.</p>
   </div>
@@ -222,7 +249,7 @@
     <div class="kick warn">Esto es solo la superficie</div>
     <h2>Hasta ahora solo calculaste tus horas.</h2>
     <p class="body">Pero las horas no son el verdadero problema.</p>
-    <div class="quote grad">El verdadero problema es todo aquello que consume tu energía sin que lo notes.<br>
+    <div class="quote grad anim">El verdadero problema es todo aquello que consume tu energía sin que lo notes.<br>
     Y cuando no puedes verlo… es imposible cambiarlo.</div>
   </div>
 </section>
@@ -240,6 +267,9 @@
 <script>
   function pad(n){ return n < 10 ? '0' + n : '' + n; }
   function set(id, v){ var e = document.getElementById(id); if(e) e.textContent = v; }
+  // Conteo animado del número grande: mientras "counting" sea true, tick() no lo pisa
+  var RM = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var counting = !RM, counted = false;
   function tick(){
     var now = new Date();
     var end = new Date(now.getFullYear(), 11, 31, 23, 59, 59);
@@ -248,10 +278,24 @@
     var h = Math.floor(diff % 86400000 / 3600000);
     var m = Math.floor(diff % 3600000 / 60000);
     var s = Math.floor(diff % 60000 / 1000);
-    set('cDays', days);
+    if(!counting) set('cDays', days);
     set('cTick', pad(h) + 'h ' + pad(m) + 'm ' + pad(s) + 's');
     return days;
   }
+  function countUp(){
+    var target = tick(), t0 = null, dur = 900;
+    if(RM || !window.requestAnimationFrame){ counting = false; set('cDays', target); return; }
+    function fr(ts){
+      if(!t0) t0 = ts;
+      var k = Math.min(1, (ts - t0) / dur);
+      k = 1 - Math.pow(1 - k, 3);
+      set('cDays', Math.round(target * k));
+      if(k < 1) requestAnimationFrame(fr); else counting = false;
+    }
+    requestAnimationFrame(fr);
+  }
+  // Rebote visual cuando cambia un número
+  function bump(id){ var e = document.getElementById(id); if(!e) return; e.classList.remove('bump'); void e.offsetWidth; e.classList.add('bump'); }
   // Recibo interactivo del día (por defecto: 24−8−10−2−3 = 1 h "para ti")
   var CS = { dormir: 8, trabajo: 10, comer: 2, celular: 3 };
   var CSLIM = { dormir: [3, 12], trabajo: [0, 16], comer: [0, 8], celular: [0, 10] };
@@ -260,6 +304,8 @@
   function csAdj(k, d){
     CS[k] = Math.min(CSLIM[k][1], Math.max(CSLIM[k][0], Math.round((CS[k] + d) * 2) / 2));
     csRender();
+    bump('v' + k.charAt(0).toUpperCase() + k.slice(1));
+    bump('vParaTi');
   }
   function csRender(){
     var p = paraTi();
@@ -297,9 +343,17 @@
   setInterval(tick, 1000);
 
   (function(){
-    var els = document.querySelectorAll('.reveal');
-    if(!('IntersectionObserver' in window)){ els.forEach(function(e){ e.classList.add('in'); }); return; }
-    var io = new IntersectionObserver(function(en){ en.forEach(function(x){ if(x.isIntersecting){ x.target.classList.add('in'); io.unobserve(x.target); } }); }, { threshold:.14 });
+    // Retraso progresivo a los hijos de cada .stag (cascada)
+    document.querySelectorAll('.stag').forEach(function(s){
+      for(var i = 0; i < s.children.length; i++) s.children[i].style.transitionDelay = (i * 70) + 'ms';
+    });
+    var els = document.querySelectorAll('.reveal,.stag');
+    function fire(el){
+      el.classList.add('in');
+      if(!counted && el.querySelector && el.querySelector('#cDays')){ counted = true; countUp(); }
+    }
+    if(!('IntersectionObserver' in window)){ counting = false; els.forEach(function(e){ e.classList.add('in'); }); tick(); return; }
+    var io = new IntersectionObserver(function(en){ en.forEach(function(x){ if(x.isIntersecting){ fire(x.target); io.unobserve(x.target); } }); }, { threshold:.14 });
     els.forEach(function(e){ io.observe(e); });
   })();
 </script>
