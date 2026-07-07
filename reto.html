@@ -275,7 +275,13 @@
   function progress(i){ document.getElementById('progFill').style.width = Math.round(i / (STEPS.length - 1) * 100) + '%'; }
   function el(html){ var d = document.createElement('div'); d.innerHTML = html.trim(); return d.firstChild; }
   function chat(){ return document.getElementById('chat'); }
-  function scrollDown(){ window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }); }
+  var anchorY = 0; // punto de lectura: donde empieza el bloque de mensajes actual
+  function scrollDown(){
+    // sigue la conversación, pero sin empujar el punto de lectura fuera de pantalla
+    var max = document.body.scrollHeight - window.innerHeight;
+    var target = Math.min(max, anchorY - 120);
+    if(target > window.scrollY) window.scrollTo({ top: target, behavior: 'smooth' });
+  }
 
   function appendBot(text){ var r = el('<div class="row bot"><div class="av">🧠</div><div class="bubble"></div></div>'); r.querySelector('.bubble').textContent = text; chat().appendChild(r); scrollDown(); }
   function appendMe(text){ var r = el('<div class="row me"><div class="bubble"></div></div>'); r.querySelector('.bubble').textContent = text; chat().appendChild(r); scrollDown(); }
@@ -285,6 +291,7 @@
 
   function go(i){
     STEP = i; progress(i);
+    anchorY = document.body.scrollHeight; // marca el punto de lectura antes de los mensajes nuevos
     var s = STEPS[i];
     var msgs = s.bot.slice();
     (function next(){
