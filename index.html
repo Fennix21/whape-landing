@@ -80,6 +80,10 @@
   .gate{display:none}
   .gate.open{display:block}
 
+  /* máquina de escribir: cursor dorado mientras teclea */
+  .type.on::after{content:"";display:inline-block;width:2.5px;height:1.05em;background:var(--gold);margin-left:3px;vertical-align:-3px;animation:caretblink .8s steps(1) infinite}
+  @keyframes caretblink{50%{opacity:0}}
+
   .divider{height:1px;background:linear-gradient(90deg,transparent,var(--stroke),transparent);max-width:600px;margin:0 auto}
 
   .cta{text-align:center;padding-top:24px;background:radial-gradient(70% 90% at 50% 0%,rgba(142,45,226,.22),transparent 70%)}
@@ -190,7 +194,7 @@
 <!-- 2a. EL RECIBO DE TU DÍA -->
 <section>
   <div class="wrap reveal">
-    <p class="body" style="text-align:center;font-weight:700">Mira un día cualquiera:</p>
+    <p class="body type" id="miraDia" style="text-align:center;font-weight:700;font-size:20.5px">Mira un día cualquiera:</p>
     <div class="cs-tip"><span class="ic">👇</span> Toca − / + y ajústalo a <b>TU</b> realidad</div>
     <div class="calc stag">
       <div class="r"><span class="h">Tu día</span><span class="v">24 h</span></div>
@@ -364,6 +368,19 @@
   }
   // Rebote visual cuando cambia un número
   function bump(id){ var e = document.getElementById(id); if(!e) return; e.classList.remove('bump'); void e.offsetWidth; e.classList.add('bump'); }
+  // Máquina de escribir para "Mira un día cualquiera:" (se dispara al entrar en pantalla)
+  var typedMira = false;
+  function typeMira(){
+    if(typedMira) return; typedMira = true;
+    var el = document.getElementById('miraDia'); if(!el || RM) return;
+    var txt = el.textContent, i = 0;
+    el.textContent = ''; el.classList.add('on');
+    (function step(){
+      el.textContent = txt.slice(0, ++i);
+      if(i < txt.length) setTimeout(step, 55);
+      else setTimeout(function(){ el.classList.remove('on'); }, 1500);
+    })();
+  }
   // Recibo interactivo del día (por defecto: 24−8−10−2−3 = 1 h "para ti")
   var CS = { dormir: 8, trabajo: 10, comer: 2, celular: 3 };
   var CSLIM = { dormir: [3, 12], trabajo: [0, 16], comer: [0, 8], celular: [0, 10] };
@@ -421,6 +438,7 @@
     function fire(el){
       el.classList.add('in');
       if(!counted && el.querySelector && el.querySelector('#cDays')){ counted = true; countUp(); }
+      if(el.querySelector && el.querySelector('#miraDia')) typeMira();
     }
     if(!('IntersectionObserver' in window)){ counting = false; els.forEach(function(e){ e.classList.add('in'); }); tick(); return; }
     var io = new IntersectionObserver(function(en){ en.forEach(function(x){ if(x.isIntersecting){ fire(x.target); io.unobserve(x.target); } }); }, { threshold:.14 });
