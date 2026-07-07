@@ -262,10 +262,15 @@
       ask: "Ahora viene lo más importante. ¿Te lo digo?",
       opts: [{ t: "Dímelo" }, { t: "¿Qué cosa?" }] },
 
-    // Closer — urgencia real: 100 cupos + tarjeta Premium
-    { bot: ["Solo entran 100 miembros. Y no es un truco de marketing:", "Todos empiezan el desafío juntos y corren contra la misma fecha: el 31 de diciembre. Por eso, cuando el cupo se llena, la puerta se cierra.", "Y no vuelve a abrirse hasta que este grupo termine su desafío.", "Piénsalo: hoy el desafío tiene " + DAYS + " días. Mañana tendrá uno menos. Es el único precio que sube cada día que lo piensas. 👇"],
+    // Closer — urgencia real: 100 cupos → micro-compromiso antes de la oferta
+    { bot: ["Solo entran 100 miembros. Y no es un truco de marketing:", "Todos empiezan el desafío juntos y corren contra la misma fecha: el 31 de diciembre. Por eso, cuando el cupo se llena, la puerta se cierra.", "Y no vuelve a abrirse hasta que este grupo termine su desafío.", "Piénsalo: hoy el desafío tiene " + DAYS + " días. Mañana tendrá uno menos. Es el único precio que sube cada día que lo piensas."],
+      ask: "¿Quieres asegurar tu lugar antes de que se llene?",
+      opts: [{ t: "Sí, quiero mi cupo 🚀" }, { t: "¿Cómo entro al desafío?" }] },
+
+    // Modo de ingreso Premium — tarjeta sola, pedida por el usuario
+    { bot: ["Perfecto. Esta es tu puerta de entrada: 👇"],
       premium: true,
-      opts: [{ t: "¿Y si aún tengo dudas?" }, { t: "¿Puedo verlo antes de decidir? 🌱" }] },
+      opts: [{ t: "¿Y hay alguna opción gratuita? 🌱" }] },
 
     // La puerta gratuita + despedida
     { bot: ["Claro. También existe la entrada gratuita.", "Te deja conocer la comunidad por dentro, ver cómo trabajamos y decidir con calma.", "Eso sí: el desafío de los 100 es solo para miembros Premium. La puerta gratis te muestra el entorno… la Premium te pone a construir. 😉"],
