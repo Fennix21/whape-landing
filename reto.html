@@ -98,6 +98,8 @@
   .btn-free:hover{transform:translateY(-2px)}
   .card.free{background:var(--surface2)}
   .restart{display:block;margin:20px auto 0;background:none;border:none;color:var(--muted);font-family:inherit;font-size:13px;cursor:pointer;text-decoration:underline}
+  .bye{text-align:center;font-size:14.5px;color:#E7E3F4;line-height:1.7;padding:16px 14px 2px;animation:fade .6s ease}
+  .bye b{color:#fff}
 
   @keyframes fade{from{opacity:0}to{opacity:1}}
   @keyframes slide{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
@@ -145,6 +147,20 @@
       '<li><b>✓</b> El problema no es tu disciplina. Es tu energía.</li>' +
       '<li><b>✓</b> Tu entorno decide por ti más de lo que crees.</li>' +
     '</ul><div class="sum-cta">No necesitas convertirte en otra persona.<br>Necesitas <span class="grad">entrar en otro sistema</span>.</div></div>';
+
+  var CREATORS =
+    '<div class="ct">' +
+      '<div class="ct-col bad"><div class="ct-h">🛋️ Consumidores</div><ul>' +
+        '<li>Scroll, series, compras</li>' +
+        '<li>Se quejan de los problemas</li>' +
+        '<li>Se frustran con la primera dificultad</li>' +
+        '<li><b style="color:var(--warn)">Resultado:</b> pagan con su tiempo y su dinero</li></ul></div>' +
+      '<div class="ct-col good"><div class="ct-h">🛠️ Creadores</div><ul>' +
+        '<li>Productos, servicios, soluciones</li>' +
+        '<li>Ven oportunidades en los problemas</li>' +
+        '<li>Mejoran lo que ya existe</li>' +
+        '<li><b style="color:var(--success)">Resultado:</b> el mundo les paga</li></ul></div>' +
+    '</div>';
 
   var STEPS = [
     // Bienvenida — la pregunta que abre la brecha
@@ -209,8 +225,27 @@
       ask: "¿Empezamos?",
       opts: [{ t: "Quiero construir una vida distinta 🔥", focus: "premium" }, { t: "Muéstrame las opciones" }] },
 
-    // Fork Premium / Gratis — anclaje de valor antes de las tarjetas
+    // Bienvenida a WHAPE — la conversación continúa
     { bot: ["Bienvenido a WHAPE. 🎉 Nuestra Comunidad para personas con grandes ambiciones.", "Una Comunidad donde convertimos cualquier problema en fuentes de ingresos: 💰"],
+      ask: "¿Quieres ver qué se vive dentro?",
+      opts: [{ t: "Muéstrame 👀" }, { t: "Sí, quiero verlo" }] },
+
+    // El entorno correcto
+    { bot: ["Dentro no se habla de problemas para quejarse. Se habla de soluciones y de oportunidades para generar ingresos. 💰", "Se habla de crecimiento personal y profesional. De sacar tu máximo potencial.", "Y hay una regla no escrita: aquí nos exigimos al máximo… y nos apoyamos al máximo."],
+      opts: [{ t: "Eso quiero para mí 🔥", focus: "premium" }, { t: "¿Qué lo hace tan distinto?" }] },
+
+    // Consumidores vs creadores
+    { bot: ["Lo que lo hace distinto es el tipo de personas.", "Porque en el mundo existen dos bandos… y casi nadie elige el suyo conscientemente:"],
+      render: "creators",
+      ask: "¿En qué lado has pasado más tiempo?",
+      opts: [{ t: "Consumiendo, la verdad 😔" }, { t: "Un poco de ambos" }, { t: "Quiero crear 🛠️", focus: "premium" }] },
+
+    // La regla del juego: consumir vs crear
+    { bot: ["Piensa en cualquier persona a la que le va extraordinariamente bien.", "Ninguna llegó ahí consumiendo. Todas crearon algo: un producto, un servicio, una solución.", "Esa es la regla del juego: los consumidores pagan. Los creadores cobran. 💸", "Y el mundo premia más a quien resuelve los problemas más valiosos."],
+      opts: [{ t: "Quiero estar del lado que crea 🚀", focus: "premium" }, { t: "¿Y cómo empiezo a crear?" }] },
+
+    // La promesa de la comunidad + opciones de ingreso
+    { bot: ["De eso se trata WHAPE:", "🎯 Aprendes a generar ingresos resolviendo problemas de alto valor e impacto.", "💡 Entrenas tu creatividad: mejorar lo que ya existe y convertirlo en ingresos.", "🤝 Rodeado de creadores que se exigen, te retan y celebran cada avance contigo.", "Aquí no vienes a consumir contenido. Vienes a construir tu primera fuente de ingresos."],
       fork: true }
   ];
 
@@ -233,6 +268,7 @@
       if(msgs.length){ showTyping(); setTimeout(function(){ hideTyping(); appendBot(msgs.shift()); setTimeout(next, 350); }, 600); return; }
       if(s.render === 'contrast') appendSpecial(CONTRAST);
       if(s.render === 'summary') appendSpecial(SUMMARY);
+      if(s.render === 'creators') appendSpecial(CREATORS);
       var finish = function(){ s.fork ? renderFork() : renderOpts(s); };
       if(s.ask){ showTyping(); setTimeout(function(){ hideTyping(); appendBot(s.ask); setTimeout(finish, 300); }, 600); }
       else finish();
@@ -256,30 +292,27 @@
     var premHot = FOCUS === 'premium';
     var prem = el('<div class="card premium' + (premHot ? ' hot' : '') + '"></div>');
     prem.innerHTML =
-      (premHot ? '<span class="tag">⭐ Recomendado para ti</span>' : '') +
-      '<h3>🚀 Acceso Premium</h3>' +
-      '<p>Todo lo que necesitas para lanzar tu primer negocio por WhatsApp:</p>' +
-      '<ul class="stack">' +
-        '<li><em>🎓 Academia completa: de la idea a tu negocio, en misiones de 21 días</em><b>S/297</b></li>' +
-        '<li><em>🤖 Tu sistema de ventas listo: landing + bot que vende 24/7 + CRM</em><b>S/499</b></li>' +
-        '<li><em>🎁 Bono 1: plantillas probadas — copia, pega y vende</em><b>S/97</b></li>' +
-        '<li><em>🎁 Bono 2: comunidad + acompañamiento para no soltarte</em><b>S/147</b></li>' +
-      '</ul>' +
-      '<div class="tot"><span>Valor total</span><s>S/1,040</s></div>' +
-      '<div class="now">Hoy: S/99 <small>pago único · acceso de por vida · sin mensualidades</small></div>' +
-      '<div class="scar">🔥 Solo 100 cupos. Cuando se llenen, cerramos la puerta para acompañar bien a los que ya entraron.</div>' +
-      '<div class="guar">🛡️ <b>Garantía de 7 días:</b> si entras y no es para ti, te devolvemos tu dinero. Sin preguntas.</div>' +
+      '<h3>🚀 Entrar como Premium</h3>' +
+      '<p>Acceso completo: academia, misiones de 21 días, tu sistema de ventas por WhatsApp y acompañamiento cercano.</p>' +
+      '<div class="now">S/99 <small>pago único · acceso de por vida · garantía de 7 días</small></div>' +
       '<a class="btn btn-prem" data-ev="premium_click" href="https://wa.me/' + WA + '?text=' + encodeURIComponent('Hola, quiero el ACCESO PREMIUM de WHAPE (S/99) (premium)') + '" target="_blank" rel="noopener">Quiero mi acceso Premium →</a>';
 
     var free = el('<div class="card free"></div>');
     free.innerHTML =
-      (premHot
-        ? '<h3>🌱 ¿Aún con dudas? Empieza gratis</h3><p>Entra, mira el entorno por dentro y decide después. Sin compromiso.</p>'
-        : '<h3>🌱 Empezar gratis</h3><p>Prueba el entorno por dentro y decide después. Sin compromiso.</p>') +
+      '<h3>🌱 Entrar gratis</h3><p>Conoce el entorno por dentro y decide después. Sin compromiso.</p>' +
       '<a class="btn btn-free" data-ev="gratis_click" href="https://wa.me/' + WA + '?text=' + encodeURIComponent('Hola, quiero entrar GRATIS a la comunidad WHAPE (gratis)') + '" target="_blank" rel="noopener">Entrar gratis</a>';
 
     var box = el('<div class="fork"></div>');
     if(premHot){ box.appendChild(prem); box.appendChild(free); } else { box.appendChild(free); box.appendChild(prem); }
+
+    // Despedida — CTA emocional
+    var bye = el('<div class="bye"></div>');
+    bye.innerHTML = 'Dentro de <b>' + DAYS + ' días</b> este año se acaba.<br>' +
+      'Puedes llegar a esa fecha siendo la misma persona…<br>' +
+      'o siendo alguien que <span class="grad">crea, resuelve y genera</span>.<br><br>' +
+      '<b>El entorno ya existe. Solo falta que entres.<br>Te esperamos dentro. 💜</b>';
+    box.appendChild(bye);
+
     var restart = el('<button class="restart">↻ Empezar de nuevo</button>');
     restart.onclick = function(){ location.reload(); };
     box.appendChild(restart);
