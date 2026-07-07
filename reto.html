@@ -80,6 +80,16 @@
   .card ul{list-style:none;margin:0 0 16px;display:flex;flex-direction:column;gap:7px}
   .card li{font-size:13.5px;color:#E7E3F4;display:flex;gap:8px}
   .card li b{color:var(--success)}
+  /* stack de valor (oferta) */
+  .stack{list-style:none;margin:0 0 12px;display:flex;flex-direction:column;gap:9px}
+  .stack li{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-size:13.5px;color:#E7E3F4;line-height:1.45}
+  .stack li em{font-style:normal}
+  .stack li b{color:var(--muted);font-weight:700;white-space:nowrap}
+  .tot{display:flex;justify-content:space-between;align-items:center;border-top:1px dashed var(--stroke);padding-top:10px;margin-bottom:4px;font-size:13.5px;color:var(--muted);font-weight:700}
+  .tot s{color:var(--warn);font-size:15.5px;font-weight:800}
+  .now{font-size:23px;font-weight:800;color:var(--gold);margin:2px 0 12px}
+  .now small{display:block;font-size:12.5px;color:var(--muted);font-weight:600;margin-top:2px}
+  .scar{font-size:12.5px;color:var(--gold);background:rgba(255,210,74,.08);border:1px solid rgba(255,210,74,.25);border-radius:10px;padding:9px 11px;margin-bottom:14px;line-height:1.5}
   .btn{display:block;text-align:center;font-weight:800;font-size:16px;padding:15px;border-radius:14px;border:none;cursor:pointer;width:100%;transition:transform .15s,box-shadow .15s}
   .btn-prem{background:linear-gradient(120deg,var(--gold),#ff9d2e);color:#241a00;box-shadow:0 10px 30px rgba(255,210,74,.3)}
   .btn-prem:hover{transform:translateY(-2px)}
@@ -198,8 +208,8 @@
       ask: "¿Empezamos?",
       opts: [{ t: "Quiero construir una vida distinta 🔥", focus: "premium" }, { t: "Muéstrame las opciones" }] },
 
-    // Fork Premium / Gratis
-    { bot: ["Bienvenido a WHAPE. Tienes dos formas de empezar hoy: 👇"],
+    // Fork Premium / Gratis — anclaje de valor antes de las tarjetas
+    { bot: ["Bienvenido a WHAPE. 🎉 Antes de que elijas, mira esto:", "Montar todo esto por tu cuenta —una web, un bot que vende 24/7, un CRM y un método probado— te costaría más de S/1,000.", "Hoy entras a todo con un pago único de S/99, de por vida. Elige cómo empezar: 👇"],
       fork: true }
   ];
 
@@ -247,19 +257,23 @@
     prem.innerHTML =
       (premHot ? '<span class="tag">⭐ Recomendado para ti</span>' : '') +
       '<h3>🚀 Acceso Premium</h3>' +
-      '<div class="price">Pago único S/99 <small>· de por vida, sin mensualidad</small></div>' +
-      '<p>El sistema completo para convertir tu problema en tu primer negocio. Solo 100 cupos.</p>' +
-      '<ul>' +
-        '<li><b>✓</b> Academia paso a paso: de la idea a tu primer negocio por WhatsApp</li>' +
-        '<li><b>✓</b> Sistema listo: landing + bot + CRM (sin saber de tecnología)</li>' +
-        '<li><b>✓</b> Plantillas + acompañamiento para no soltarte</li>' +
+      '<p>Todo lo que necesitas para lanzar tu primer negocio por WhatsApp:</p>' +
+      '<ul class="stack">' +
+        '<li><em>🎓 Academia completa: de la idea a tu negocio, en misiones de 21 días</em><b>S/297</b></li>' +
+        '<li><em>🤖 Tu sistema de ventas listo: landing + bot que vende 24/7 + CRM</em><b>S/499</b></li>' +
+        '<li><em>🎁 Bono 1: plantillas probadas — copia, pega y vende</em><b>S/97</b></li>' +
+        '<li><em>🎁 Bono 2: comunidad + acompañamiento para no soltarte</em><b>S/147</b></li>' +
       '</ul>' +
+      '<div class="tot"><span>Valor total</span><s>S/1,040</s></div>' +
+      '<div class="now">Hoy: S/99 <small>pago único · acceso de por vida · sin mensualidades</small></div>' +
+      '<div class="scar">🔥 Solo 100 cupos. Cuando se llenen, cerramos la puerta para acompañar bien a los que ya entraron.</div>' +
       '<a class="btn btn-prem" data-ev="premium_click" href="https://wa.me/' + WA + '?text=' + encodeURIComponent('Hola, quiero el ACCESO PREMIUM de WHAPE (S/99) (premium)') + '" target="_blank" rel="noopener">Quiero mi acceso Premium →</a>';
 
     var free = el('<div class="card free"></div>');
     free.innerHTML =
-      '<h3>🌱 Empezar gratis</h3>' +
-      '<p>Conoce el entorno por dentro: comunidad + academia inicial, sin pagar nada.</p>' +
+      (premHot
+        ? '<h3>🌱 ¿Aún con dudas? Empieza gratis</h3><p>Entra, mira el entorno por dentro y decide después. Sin compromiso.</p>'
+        : '<h3>🌱 Empezar gratis</h3><p>Prueba el entorno por dentro y decide después. Sin compromiso.</p>') +
       '<a class="btn btn-free" data-ev="gratis_click" href="https://wa.me/' + WA + '?text=' + encodeURIComponent('Hola, quiero entrar GRATIS a la comunidad WHAPE (gratis)') + '" target="_blank" rel="noopener">Entrar gratis</a>';
 
     var box = el('<div class="fork"></div>');
