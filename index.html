@@ -76,6 +76,10 @@
   .choice.sel{border-color:var(--success);background:var(--surface2)}
   .choice.sel .dot{background:var(--success);border-color:var(--success)}
 
+  /* compuertas: bloques que se revelan al responder (como reto.html) */
+  .gate{display:none}
+  .gate.open{display:block}
+
   .divider{height:1px;background:linear-gradient(90deg,transparent,var(--stroke),transparent);max-width:600px;margin:0 auto}
 
   .cta{text-align:center;padding-top:24px;background:radial-gradient(70% 90% at 50% 0%,rgba(142,45,226,.22),transparent 70%)}
@@ -133,7 +137,7 @@
     .reveal,.stag>*{opacity:1!important;transform:none!important;transition:none!important}
   }
 </style>
-<noscript><style>.reveal,.stag>*{opacity:1;transform:none}</style></noscript>
+<noscript><style>.reveal,.stag>*{opacity:1;transform:none}.gate{display:block}</style></noscript>
 </head>
 <body>
 
@@ -148,9 +152,16 @@
     <span class="eyebrow alert">Una pregunta incómoda</span>
     <h1>¿Cuánto de tu día es <span class="grad anim">realmente tuyo</span>?</h1>
     <p class="lead">Trabajas. Vuelves cansado. Y cuando por fin llega el momento de hacer eso que realmente importa para ti… ya no te queda energía.</p>
+    <p class="lead" style="font-weight:700;color:var(--text)">Te pasa a menudo, ¿cierto? 👇</p>
+    <div class="choices" style="max-width:460px;margin:18px auto 0">
+      <button class="choice" data-ev="hook_siempre" onclick="answer(this,'gate1')"><span class="dot"></span> Me pasa todo el tiempo 😩</button>
+      <button class="choice" data-ev="hook_suele" onclick="answer(this,'gate1')"><span class="dot"></span> Suele pasarme</button>
+      <button class="choice" data-ev="hook_aveces" onclick="answer(this,'gate1')"><span class="dot"></span> Me pasa a veces</button>
+    </div>
   </div>
 </section>
 
+<div class="gate" id="gate1">
 <div class="divider"></div>
 
 <!-- 2. COUNTDOWN + MATEMÁTICA -->
@@ -163,9 +174,23 @@
       <div class="tick" id="cTick">—</div>
     </div>
     <p class="body">Parece mucho tiempo.</p>
-    <p class="body">Pero primero respondamos una pregunta más importante:</p>
-    <div class="punch">¿Cuánto de ese tiempo es <b>realmente tuyo</b>?</div>
-    <p class="body" style="margin-top:20px;text-align:center;font-weight:700">Mira un día cualquiera:</p>
+    <p class="body">Pero antes hay una pregunta más importante:</p>
+    <div class="punch">¿Quieres saber cuánto de ese tiempo te pertenece <b>realmente</b>?</div>
+    <div class="choices">
+      <button class="choice" data-ev="saber_si" onclick="answer(this,'gate2')"><span class="dot"></span> Sí, quiero saberlo 👀</button>
+      <button class="choice" data-ev="saber_miedo" onclick="answer(this,'gate2')"><span class="dot"></span> Me da un poco de miedo… pero sí 😅</button>
+    </div>
+  </div>
+</section>
+</div>
+
+<div class="gate" id="gate2">
+<div class="divider"></div>
+
+<!-- 2a. EL RECIBO DE TU DÍA -->
+<section>
+  <div class="wrap reveal">
+    <p class="body" style="text-align:center;font-weight:700">Mira un día cualquiera:</p>
     <div class="cs-tip"><span class="ic">👇</span> Toca − / + y ajústalo a <b>TU</b> realidad</div>
     <div class="calc stag">
       <div class="r"><span class="h">Tu día</span><span class="v">24 h</span></div>
@@ -275,6 +300,7 @@
     <p class="sub">Solo toma 2 minutos.</p>
   </div>
 </section>
+</div>
 
 <script>
   // Barra de progreso de lectura: sigue el scroll y se autocorrige al subir
@@ -358,13 +384,15 @@
     set('mFreeH', freeH.toLocaleString('es-PE'));
     set('mRealD', realD); set('mRealD2', realD);
   }
-  // Pregunta Sí/No: marca la elección y revela la siguiente sección (sin salir de la página)
-  function answer(btn){
-    var cs = document.querySelectorAll('.choice');
+  // Preguntas con opciones: marca la elección en SU grupo y revela el siguiente bloque (sin salir de la página)
+  function answer(btn, gateId){
+    var cs = btn.parentNode.querySelectorAll('.choice');
     for(var i = 0; i < cs.length; i++) cs[i].classList.remove('sel');
     btn.classList.add('sel');
-    var next = document.getElementById('sigue');
-    if(next) next.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    var next = gateId ? document.getElementById(gateId) : document.getElementById('sigue');
+    if(!next) return;
+    if(gateId) next.classList.add('open');
+    setTimeout(function(){ next.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60);
   }
   csRender();
   setInterval(tick, 1000);
