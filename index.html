@@ -79,6 +79,8 @@
   /* compuertas: bloques que se revelan al responder (como reto.html) */
   .gate{display:none}
   .gate.open{display:block}
+  /* destino de los scrolls: deja sitio para el header sticky */
+  #sigue,.gate{scroll-margin-top:78px}
 
   /* máquina de escribir: cursor dorado mientras teclea */
   .type.on::after{content:"";display:inline-block;width:2.5px;height:1.05em;background:var(--gold);margin-left:3px;vertical-align:-3px;animation:caretblink .8s steps(1) infinite}
